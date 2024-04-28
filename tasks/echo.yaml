@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=file:///home/thicc/dd/vai/vai.schema.json
+
+world:
+  - cmd: |
+      echo "$message"
+    with:
+      message: ${{ input "fallback" }}
