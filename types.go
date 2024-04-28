@@ -30,6 +30,7 @@ func (t Task) Run(with With) error {
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	// logger.Print(*t.CMD)
 	return cmd.Run()
 }
 
@@ -155,7 +156,7 @@ func (t Task) JSONSchema() *jsonschema.Schema {
 		Type: "string",
 	})
 	oneOfUses := &jsonschema.Schema{
-		Required:   []string{"uses", "with"},
+		Required:   []string{"uses"},
 		Properties: usesProps,
 	}
 

@@ -27,8 +27,7 @@
             }
           },
           "required": [
-            "uses",
-            "with"
+            "uses"
           ]
         }
       ],

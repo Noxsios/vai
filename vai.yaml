@@ -3,6 +3,9 @@
 build:
   - cmd: go build -o bin/ -ldflags="-s -w" ./cmd/vai
 
+gen:
+  - cmd: go run gen/main.go
+
 echo:
   - uses: ./tasks/echo.yaml#world
     with:
