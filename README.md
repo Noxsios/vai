@@ -16,12 +16,21 @@ echo:
   - cmd: echo "\$message"
     with:
       message: \${{ input }}
+
+echo-matrix:
+  - cmd: echo "\$message"
+    matrix:
+      message: ["Hello", "World!"]
 EOF
 ```
 
 ```sh
 $ vai echo --with message="Hello World!"
-hello world
+Hello World!
+
+$ vai echo-matrix
+Hello
+World!
 ```
 
 Learn more w/ `vai --help`

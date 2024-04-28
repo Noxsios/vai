@@ -76,6 +76,5 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringToStringVarP(&w, "with", "w", nil, "variables to pass to tasks")
-	// TODO: change default level back to info
-	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "debug", "log level")
+	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "info", "log level")
 }
