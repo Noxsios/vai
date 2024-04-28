@@ -5,7 +5,7 @@ A simple task runner. Imagine GitHub actions and Makefile had a baby.
 ## Installation
 
 ```sh
-go install github.com/Noxsios/vai@latest
+go install github.com/Noxsios/vai/cmd/vai@latest
 ```
 
 ## Example
