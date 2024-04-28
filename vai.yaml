@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=file:///home/thicc/dd/vai/vai.schema.json
+
+build:
+  - cmd: go build -o bin/ -ldflags="-s -w" ./cmd/vai
+
+echo:
+  - uses: ./tasks/echo.yaml#world
+    with:
+      message: ${{ input }}
+
+echo-world:
+  - uses: ./tasks/echo.yaml#world
+    with:
+      message: "Hello, World!"
+
+clean:
+  - cmd: rm -rf dist/

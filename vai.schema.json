@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Noxsios/vai/workflow",
+  "$defs": {
+    "Task": {
+      "oneOf": [
+        {
+          "properties": {
+            "cmd": {
+              "type": "string"
+            },
+            "uses": {
+              "not": true
+            }
+          },
+          "required": [
+            "cmd"
+          ]
+        },
+        {
+          "properties": {
+            "cmd": {
+              "not": true
+            },
+            "uses": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "uses",
+            "with"
+          ]
+        }
+      ],
+      "properties": {
+        "cmd": {
+          "type": "string",
+          "description": "Command to run"
+        },
+        "uses": {
+          "type": "string",
+          "description": "Call another task"
+        },
+        "with": {
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "type": "object",
+          "description": "Additional parameters for the task"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "TaskGroup": {
+      "items": {
+        "$ref": "#/$defs/Task"
+      },
+      "type": "array"
+    }
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/TaskGroup"
+  },
+  "type": "object"
+}
