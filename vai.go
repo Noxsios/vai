@@ -9,9 +9,9 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func Run(tg TaskGroup, with With) error {
+func Run(tg TaskGroup, outer With) error {
 	use := func(u string, with With) error {
-		fmt.Println(">", u)
+		logger.Debug("using", "task", u)
 
 		uri, err := url.Parse(u)
 		if err != nil {
@@ -49,29 +49,39 @@ func Run(tg TaskGroup, with With) error {
 		return Run(tg, with)
 	}
 
-	executeAll := func(tg TaskGroup, with With) error {
-		for _, t := range tg {
-			if t.Uses != nil && t.CMD != nil {
-				return fmt.Errorf("task cannot have both cmd and uses")
-			}
-			if t.Uses != nil {
-				if err := t.With.Apply(with); err != nil {
-					return err
-				}
-				return use(*t.Uses, t.With)
-			}
-			if t.CMD != nil {
-				if t.With != nil {
-					if err := t.With.Apply(with); err != nil {
-						return err
-					}
-				}
-				return t.Run()
+	for _, t := range tg {
+		instances := make([]MatrixInstance, 0)
+		for k, v := range t.Matrix {
+			for _, i := range v {
+				mi := make(MatrixInstance)
+				mi[k] = i
+				instances = append(instances, mi)
 			}
 		}
+		if len(instances) == 0 {
+			instances = append(instances, MatrixInstance{})
+		}
+		if t.Uses != nil && t.CMD != nil {
+			return fmt.Errorf("task cannot have both cmd and uses")
+		}
+		for _, mi := range instances {
+			w, err := PeformLookups(outer, t.With, mi)
+			if err != nil {
+				return err
+			}
 
-		return nil
+			if t.Uses != nil {
+				if err := use(*t.Uses, w); err != nil {
+					return err
+				}
+			}
+			if t.CMD != nil {
+				if err := t.Run(w); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
-	return executeAll(tg, with)
+	return nil
 }

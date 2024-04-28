@@ -8,10 +8,12 @@ echo:
     with:
       message: ${{ input }}
 
-echo-world:
+echo-matrix:
   - uses: ./tasks/echo.yaml#world
     with:
-      message: "Hello, World!"
+      message: ${{ matrix "message" }}
+    matrix:
+      message: ["Hello, World!", "General Kenobi!"]
 
 clean:
-  - cmd: rm -rf dist/
+  - cmd: rm -rf bin

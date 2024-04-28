@@ -1,26 +1,29 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/Noxsios/vai"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 var w map[string]string
+var ll string
 
 var rootCmd = &cobra.Command{
 	Use:   "vai",
 	Short: "A simple task runner",
-	Args:  cobra.MaximumNArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
-		call := ""
-		if len(args) > 0 {
-			call = args[0]
+	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+		l, err := log.ParseLevel(ll)
+		if err != nil {
+			return err
 		}
-
+		vai.SetLogLevel(l)
+		return nil
+	},
+	RunE: func(_ *cobra.Command, args []string) error {
 		var wf vai.Workflow
 
 		b, err := os.ReadFile("vai.yaml")
@@ -32,30 +35,39 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		if call == "" {
-			fmt.Println("Available:")
-			fmt.Println()
+		logger := vai.Logger()
+
+		if len(args) == 0 {
+			logger.Print("Available:\n")
 			for k := range wf {
-				fmt.Println("-", k)
+				logger.Printf("- %s", k)
 			}
 			return nil
 		}
 
-		tg, err := wf.Find(call)
-		if err != nil {
-			return err
+		with := make(vai.With)
+		for k, v := range w {
+			with[k] = v
 		}
 
-		with := make(vai.With)
-		with.FromStringMap(w)
+		for _, call := range args {
+			tg, err := wf.Find(call)
+			if err != nil {
+				return err
+			}
 
-		return vai.Run(tg, with)
+			if err := vai.Run(tg, with); err != nil {
+				return err
+			}
+		}
+		return nil
 	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	rootCmd.SilenceUsage = true
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -64,4 +76,6 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringToStringVarP(&w, "with", "w", nil, "variables to pass to tasks")
+	// TODO: change default level back to info
+	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "debug", "log level")
 }
