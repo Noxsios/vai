@@ -2,94 +2,86 @@ package vai
 
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 
 	"github.com/invopop/jsonschema"
 )
 
 type Task struct {
-	CMD  *string `json:"cmd,omitempty"`
-	Uses *string `json:"uses,omitempty"`
-	With With    `json:"with,omitempty"`
+	CMD    *string `json:"cmd,omitempty"`
+	Uses   *string `json:"uses,omitempty"`
+	With   With    `json:"with,omitempty"`
+	Matrix Matrix  `json:"matrix,omitempty"`
 }
 
-func (t Task) Run() error {
+type Matrix map[string][]interface{}
+
+type MatrixInstance map[string]interface{}
+
+func (t Task) Run(with With) error {
 	env := os.Environ()
-	for k, v := range t.With {
+	for k, v := range with {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 	cmd := exec.Command("sh", "-e", "-c", *t.CMD)
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	fmt.Println(*t.CMD)
 	return cmd.Run()
 }
 
 type With map[string]interface{}
 
-func (w With) StringMap() (map[string]string, error) {
-	out := make(map[string]string)
-	for k, v := range w {
-		switch v := v.(type) {
-		case string:
-			out[k] = v
-		case bool:
-			out[k] = fmt.Sprintf("%t", v)
-		case int:
-			out[k] = fmt.Sprintf("%d", v)
-		default:
-			return nil, fmt.Errorf("invalid type for key %s", k)
-		}
-	}
-	return out, nil
-}
+func PeformLookups(parent, child With, mi MatrixInstance) (With, error) {
+	logger.Debug("templating", "parent", parent, "child", child, "instance", mi)
 
-func (w With) FromStringMap(m map[string]string) {
-	for k, v := range m {
-		w[k] = v
-	}
-}
+	r := make(With)
 
-func (w With) Set(k string, v any) {
-	w[k] = v
-}
-
-func (w With) Apply(parent With) error {
-	tmpl := template.New("with and inputs").Option("missingkey=error").Delims("${{", "}}")
-
-	fmt.Println("# templating", w, "with", parent)
-
-	for k, v := range w {
+	for k, v := range child {
 		val := fmt.Sprintf("%s", v)
 		fm := template.FuncMap{
 			"input": func(fallback ...any) any {
 				v, ok := parent[k]
 				if !ok || v == "" {
 					if len(fallback) == 0 {
+						logger.Warn("no input", "key", k)
 						return nil
 					}
 					return fallback[0]
 				}
 				return v
 			},
+			"matrix": func(m string) string {
+				if mi == nil {
+					logger.Warn("no matrix instance", "key", m)
+					return ""
+				}
+				v, ok := mi[m]
+				if !ok {
+					logger.Warn("no matrix value", "key", m)
+					return ""
+				}
+				return fmt.Sprintf("%v", v)
+			},
 		}
+		tmpl := template.New("withs").Option("missingkey=error").Delims("${{", "}}")
 		tmpl.Funcs(fm)
 		tmpl, err := tmpl.Parse(val)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		var templated strings.Builder
 		if err := tmpl.Execute(&templated, nil); err != nil {
-			return err
+			return nil, err
 		}
 		result := templated.String()
-		w[k] = result
+		r[k] = result
 	}
-	return nil
+	logger.Debug("templated", "result", r)
+	return r, nil
 }
 
 func (t Task) JSONSchema() *jsonschema.Schema {
@@ -123,6 +115,29 @@ func (t Task) JSONSchema() *jsonschema.Schema {
 			},
 		},
 	}
+
+	matrix := &jsonschema.Schema{
+		Type:        "object",
+		Description: "Matrix of parameters",
+		AdditionalProperties: &jsonschema.Schema{
+			Type: "array",
+			Items: &jsonschema.Schema{
+				OneOf: []*jsonschema.Schema{
+					{
+						Type: "string",
+					},
+					{
+						Type: "boolean",
+					},
+					{
+						Type: "integer",
+					},
+				},
+			},
+		},
+	}
+
+	props.Set("matrix", matrix)
 
 	props.Set("with", with)
 
@@ -164,10 +179,10 @@ type TaskGroup []Task
 type Workflow map[string]TaskGroup
 
 func (wf Workflow) Find(call string) (TaskGroup, error) {
-	fmt.Println(":", call)
+	logger.Debug("finding", "task", call)
 	tg, ok := wf[call]
 	if !ok {
-		return nil, fmt.Errorf("not found")
+		return nil, fmt.Errorf("task group %q not found", call)
 	}
 	return tg, nil
 }

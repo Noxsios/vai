@@ -41,6 +41,26 @@
           "type": "string",
           "description": "Call another task"
         },
+        "matrix": {
+          "additionalProperties": {
+            "items": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "type": "object",
+          "description": "Matrix of parameters"
+        },
         "with": {
           "additionalProperties": {
             "oneOf": [
