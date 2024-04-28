@@ -10,8 +10,6 @@ echo:
 
 echo-matrix:
   - uses: ./tasks/echo.yaml#world
-    with:
-      message: ${{ matrix "message" }}
     matrix:
       message: ["Hello, World!", "General Kenobi!"]
 

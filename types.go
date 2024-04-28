@@ -54,18 +54,6 @@ func PeformLookups(parent, child With, mi MatrixInstance) (With, error) {
 				}
 				return v
 			},
-			"matrix": func(m string) string {
-				if mi == nil {
-					logger.Warn("no matrix instance", "key", m)
-					return ""
-				}
-				v, ok := mi[m]
-				if !ok {
-					logger.Warn("no matrix value", "key", m)
-					return ""
-				}
-				return fmt.Sprintf("%v", v)
-			},
 		}
 		tmpl := template.New("withs").Option("missingkey=error").Delims("${{", "}}")
 		tmpl.Funcs(fm)
@@ -80,6 +68,16 @@ func PeformLookups(parent, child With, mi MatrixInstance) (With, error) {
 		result := templated.String()
 		r[k] = result
 	}
+
+	for k, v := range mi {
+		_, ok := r[k]
+		if !ok {
+			r[k] = v
+		} else {
+			return nil, fmt.Errorf("matrix key %q already exists in with", k)
+		}
+	}
+
 	logger.Debug("templated", "result", r)
 	return r, nil
 }
