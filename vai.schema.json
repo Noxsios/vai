@@ -80,16 +80,13 @@
       },
       "additionalProperties": false,
       "type": "object"
-    },
-    "TaskGroup": {
-      "items": {
-        "$ref": "#/$defs/Task"
-      },
-      "type": "array"
     }
   },
   "additionalProperties": {
-    "$ref": "#/$defs/TaskGroup"
+    "items": {
+      "$ref": "#/$defs/Task"
+    },
+    "type": "array"
   },
   "type": "object"
 }

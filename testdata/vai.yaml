@@ -1,0 +1,10 @@
+
+# remote-echo:
+#   - uses: https://raw.githubusercontent.com/Noxsios/vai/main/tasks/echo.yaml#world
+#     with:
+#       message: remote-test
+
+remote-echo-short:
+  - uses: Noxsios/vai/tasks/echo.yaml:world@main
+    with:
+      message: remote-test-short
