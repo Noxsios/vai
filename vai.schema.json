@@ -40,6 +40,10 @@
           "type": "string",
           "description": "Call another task"
         },
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the task"
+        },
         "matrix": {
           "additionalProperties": {
             "items": {
