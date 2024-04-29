@@ -166,9 +166,5 @@ func (u Uses) Run(with With) error {
 		}
 	}
 
-	tasks, err := wf.Find(uri.TaskName)
-	if err != nil {
-		return err
-	}
-	return Run(tasks, with)
+	return Run(wf, uri.TaskName, with)
 }

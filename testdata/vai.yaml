@@ -18,3 +18,8 @@ world:
   - cmd: echo "$message can be grabbed from the previous cmd"
     with:
       message: ${{ from "echo-manual" "another-key" }}
+
+same:
+  - uses: world
+    with:
+      message: same
