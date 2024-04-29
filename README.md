@@ -21,6 +21,11 @@ echo-matrix:
   - cmd: echo "\$message"
     matrix:
       message: ["Hello", "World!"]
+
+remote-echo-short:
+  - uses: Noxsios/vai/tasks/echo.yaml:world@main
+    with:
+      message: hello from main
 EOF
 ```
 
