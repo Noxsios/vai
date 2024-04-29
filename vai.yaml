@@ -7,12 +7,12 @@ gen:
   - cmd: go run gen/main.go
 
 echo:
-  - uses: ./tasks/echo.yaml#world
+  - uses: ./tasks/echo.yaml:simple
     with:
-      message: ${{ input }}
+      message: ${{ input | default "Hello World!" }}
 
 echo-matrix:
-  - uses: ./tasks/echo.yaml:world
+  - uses: ./tasks/echo.yaml:simple
     matrix:
       message: ["Hello, World!", "General Kenobi!"]
 

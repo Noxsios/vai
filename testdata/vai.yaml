@@ -1,4 +1,16 @@
 remote-echo:
-  - uses: Noxsios/vai/tasks/echo.yaml:world@main
+  - uses: Noxsios/vai/tasks/echo.yaml:simple@main
     with:
       message: remote-test
+
+world:
+  - cmd: |
+      echo "$message"
+    with:
+      message: ${{ input | default "fallback" | persist }}
+  - cmd: |
+      echo "$message"
+  - cmd: |
+      echo "$message"
+    with:
+      message: manual

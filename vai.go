@@ -5,6 +5,7 @@ import (
 )
 
 func Run(tasks []Task, outer With) error {
+	global := make(With)
 	for _, t := range tasks {
 		instances := make([]MatrixInstance, 0)
 		for k, v := range t.Matrix {
@@ -21,9 +22,12 @@ func Run(tasks []Task, outer With) error {
 			return fmt.Errorf("task cannot have both cmd and uses")
 		}
 		for _, mi := range instances {
-			w, err := PeformLookups(outer, t.With, mi)
+			w, ng, err := PeformLookups(outer, t.With, global, mi)
 			if err != nil {
 				return err
+			}
+			for k, v := range ng {
+				global[k] = v
 			}
 
 			switch t.Operation() {
