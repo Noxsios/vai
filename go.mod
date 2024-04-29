@@ -3,6 +3,8 @@ module github.com/Noxsios/vai
 go 1.22.2
 
 require (
+	github.com/charmbracelet/bubbletea v0.25.0
+	github.com/charmbracelet/log v0.4.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/spf13/cobra v1.8.0
@@ -13,9 +15,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/charmbracelet/bubbletea v0.25.0 // indirect
 	github.com/charmbracelet/lipgloss v0.10.0 // indirect
-	github.com/charmbracelet/log v0.4.0 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
