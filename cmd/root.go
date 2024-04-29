@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/Noxsios/vai"
 	"github.com/charmbracelet/log"
@@ -11,6 +12,7 @@ import (
 
 var w map[string]string
 var ll string
+var ver bool
 
 var rootCmd = &cobra.Command{
 	Use:   "vai",
@@ -24,6 +26,16 @@ var rootCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(_ *cobra.Command, args []string) error {
+		logger := vai.Logger()
+
+		if ver {
+			bi, ok := debug.ReadBuildInfo()
+			if ok {
+				logger.Printf("%s", bi.Main.Version)
+			}
+			return nil
+		}
+
 		var wf vai.Workflow
 
 		b, err := os.ReadFile("vai.yaml")
@@ -34,8 +46,6 @@ var rootCmd = &cobra.Command{
 		if err := yaml.Unmarshal(b, &wf); err != nil {
 			return err
 		}
-
-		logger := vai.Logger()
 
 		if len(args) == 0 {
 			logger.Print("Available:\n")
@@ -77,4 +87,5 @@ func Execute() {
 func init() {
 	rootCmd.Flags().StringToStringVarP(&w, "with", "w", nil, "variables to pass to tasks")
 	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "info", "log level")
+	rootCmd.Flags().BoolVar(&ver, "version", false, "print version")
 }
