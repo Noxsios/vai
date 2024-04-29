@@ -23,7 +23,7 @@ func (u Uses) String() string {
 	return string(u)
 }
 
-var URIRegex = regexp.MustCompile(`^(?:(?P<Repository>[^/.]+/[^/]+)(?:/))?(?P<FilePath>[^:@]+):(?P<Task>[^@]*)(?:@(?P<Branch>.+))?$`)
+var URIRegex = regexp.MustCompile(`^(?:(?P<Repository>[^/.]+/[^/]+)(?:/))?(?P<FilePath>[^:@]+):(?P<TaskName>[^@]*)(?:@(?P<Ref>.+))?$`)
 
 func (u Uses) Parse() (*URIComponents, error) {
 	matches := URIRegex.FindStringSubmatch(u.String())
@@ -41,8 +41,8 @@ func (u Uses) Parse() (*URIComponents, error) {
 	return &URIComponents{
 		Repository: components["Repository"],
 		FilePath:   components["FilePath"],
-		TaskName:   components["Task"],
-		Ref:        components["Branch"],
+		TaskName:   components["TaskName"],
+		Ref:        components["Ref"],
 	}, nil
 }
 
