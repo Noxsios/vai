@@ -11,11 +11,11 @@ type WithEntry interface{}
 
 type With map[string]interface{}
 
-func PeformLookups(parent, child, global With, mi MatrixInstance) (With, With, error) {
+func PeformLookups(parent, child, global With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
 	logger.Debug("templating", "parent", parent, "child", child, "global", global, "matrix-inst", mi)
 
 	r := make(With)
-	
+
 	ng := maps.Clone(global)
 
 	for k, v := range child {
@@ -42,8 +42,15 @@ func PeformLookups(parent, child, global With, mi MatrixInstance) (With, With, e
 				ng[k] = val
 				return val
 			},
+			"from": func(taskName, name string) string {
+				v, ok := outputs[taskName]
+				if !ok {
+					return ""
+				}
+				return v[name]
+			},
 		}
-		tmpl := template.New("withs").Option("missingkey=error").Delims("${{", "}}")
+		tmpl := template.New("input templating").Option("missingkey=error").Delims("${{", "}}")
 		tmpl.Funcs(fm)
 		tmpl, err := tmpl.Parse(val)
 		if err != nil {

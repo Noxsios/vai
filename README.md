@@ -23,7 +23,7 @@ echo-matrix:
       message: ["Hello", "World!"]
 
 remote-echo-short:
-  - uses: Noxsios/vai/tasks/echo.yaml:world@main
+  - uses: Noxsios/vai/tasks/echo.yaml:simple@main
     with:
       message: hello from main
 EOF
@@ -31,11 +31,17 @@ EOF
 
 ```sh
 $ vai echo --with message="Hello World!"
+echo "$message"
+
 Hello World!
 
 $ vai echo-matrix
-Hello
-World!
+echo "$message"
+
+Hello, World!
+echo "$message"
+
+General Kenobi!
 ```
 
 Learn more w/ `vai --help`

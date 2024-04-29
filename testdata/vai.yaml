@@ -8,9 +8,13 @@ world:
       echo "$message"
     with:
       message: ${{ input | default "fallback" | persist }}
+  - cmd: echo "$message has been persisted"
   - cmd: |
-      echo "$message"
-  - cmd: |
-      echo "$message"
+      echo "$message can still be set on a per-cmd basis"
+      echo "another-key=$message" >> $VAI_OUTPUT
+    id: echo-manual
     with:
       message: manual
+  - cmd: echo "$message can be grabbed from the previous cmd"
+    with:
+      message: ${{ from "echo-manual" "another-key" }}
