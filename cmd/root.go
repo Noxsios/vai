@@ -5,8 +5,8 @@ import (
 
 	"github.com/Noxsios/vai"
 	"github.com/charmbracelet/log"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var w map[string]string
