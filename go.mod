@@ -8,7 +8,6 @@ require (
 	github.com/goccy/go-yaml v1.11.3
 	github.com/invopop/jsonschema v0.12.0
 	github.com/spf13/cobra v1.8.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -39,4 +38,5 @@ require (
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
