@@ -7,9 +7,15 @@ import (
 
 type CommandOutputs map[string]map[string]string
 
-func Run(tasks []Task, outer With) error {
+func Run(wf Workflow, taskName string, outer With) error {
 	global := make(With)
 	outputs := make(CommandOutputs)
+
+	tasks, err := wf.Find(taskName)
+	if err != nil {
+		return err
+	}
+
 	for _, t := range tasks {
 		instances := make([]MatrixInstance, 0)
 		for k, v := range t.Matrix {
@@ -37,8 +43,15 @@ func Run(tasks []Task, outer With) error {
 
 			switch t.Operation() {
 			case OperationUses:
-				if err := t.Uses.Run(w); err != nil {
-					return err
+				_, err := wf.Find(t.Uses.String())
+				if err != nil {
+					if err := t.Uses.Run(w); err != nil {
+						return err
+					}
+				} else {
+					if err := Run(wf, t.Uses.String(), w); err != nil {
+						return err
+					}
 				}
 			case OperationRun:
 				outFile, err := os.CreateTemp("", "vai-output-")
