@@ -51,12 +51,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		for _, call := range args {
-			tg, err := wf.Find(call)
+			tasks, err := wf.Find(call)
 			if err != nil {
 				return err
 			}
 
-			if err := vai.Run(tg, with); err != nil {
+			if err := vai.Run(tasks, with); err != nil {
 				return err
 			}
 		}
