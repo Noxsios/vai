@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
+	"regexp"
 
 	"github.com/goccy/go-yaml"
 )
@@ -23,33 +23,26 @@ func (u Uses) String() string {
 	return string(u)
 }
 
+var URIRegex = regexp.MustCompile(`^(?:(?P<Repository>[^/.]+/[^/]+)(?:/))?(?P<FilePath>[^:@]+):(?P<Task>[^@]*)(?:@(?P<Branch>.+))?$`)
+
 func (u Uses) Parse() (*URIComponents, error) {
-	// Example URI: "Noxsios/vai/tasks/echo.yaml:world@main"
-	atSplit := strings.Split(string(u), "@")
-	if len(atSplit) != 2 {
-		return nil, fmt.Errorf("invalid URI format, expected '@' for branch")
+	matches := URIRegex.FindStringSubmatch(u.String())
+	if matches == nil {
+		return nil, fmt.Errorf("invalid uses URI: %s", u)
 	}
 
-	ref := atSplit[1]
-	colonSplit := strings.Split(atSplit[0], ":")
-	if len(colonSplit) != 2 {
-		return nil, fmt.Errorf("invalid URI format, expected ':' for task")
+	components := make(map[string]string)
+	for i, name := range URIRegex.SubexpNames() {
+		if i != 0 && name != "" {
+			components[name] = matches[i]
+		}
 	}
-
-	task := colonSplit[1]
-	slashSplit := strings.Split(colonSplit[0], "/")
-	if len(slashSplit) < 2 {
-		return nil, fmt.Errorf("invalid URI format, expected '/' for repository and path")
-	}
-
-	repository := strings.Join(slashSplit[:2], "/") // Get "Noxsios/vai"
-	filePath := strings.Join(slashSplit[2:], "/")   // Get "tasks/echo.yaml"
 
 	return &URIComponents{
-		Repository: repository,
-		FilePath:   filePath,
-		TaskName:   task,
-		Ref:        ref,
+		Repository: components["Repository"],
+		FilePath:   components["FilePath"],
+		TaskName:   components["Task"],
+		Ref:        components["Branch"],
 	}, nil
 }
 
@@ -150,6 +143,7 @@ func (u Uses) Run(with With) error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("parsed", "uri", uri)
 	var wf Workflow
 
 	if uri.Repository == "" {
