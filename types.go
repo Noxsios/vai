@@ -6,9 +6,9 @@ import (
 
 type Workflow map[string][]Task
 
-type Matrix map[string][]interface{}
+type Matrix map[string][]any
 
-type MatrixInstance map[string]interface{}
+type MatrixInstance map[string]any
 
 func (wf Workflow) Find(call string) ([]Task, error) {
 	tasks, ok := wf[call]
