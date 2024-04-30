@@ -7,9 +7,9 @@ import (
 	"text/template"
 )
 
-type WithEntry interface{}
+type WithEntry any
 
-type With map[string]interface{}
+type With map[string]any
 
 func PeformLookups(parent, child, global With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
 	logger.Debug("templating", "parent", parent, "child", child, "global", global, "matrix-inst", mi)
