@@ -127,7 +127,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 		if err != nil {
 			return nil, err
 		}
-		logger.Debug("caching", "task", u)
+		logger.Debug("caching", "workflow", u)
 		if err = store.Store(u.String(), tmpFile); err != nil {
 			return nil, err
 		}
