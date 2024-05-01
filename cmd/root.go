@@ -83,5 +83,5 @@ func init() {
 	rootCmd.Flags().StringToStringVarP(&w, "with", "w", nil, "variables to pass to the called task(s)")
 	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "info", "log level")
 	rootCmd.Flags().BoolVar(&ver, "version", false, "print version")
-	rootCmd.Flags().BoolVarP(&vai.Force, "f", "force", false, "bypass SHA256 checksum verification for cached remote files")
+	rootCmd.Flags().BoolVarP(&vai.Force, "force", "f", false, "bypass SHA256 checksum verification for cached remote files")
 }
