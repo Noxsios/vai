@@ -112,8 +112,14 @@ func NewStore(path string) (*Store, error) {
 	}, nil
 }
 
-// DefaultStore creates a new store in the default location ($HOME/.vai/cache).
+// DefaultStore creates a new store in the default location:
+//
+// $VAI_CACHE || $HOME/.vai/cache
 func DefaultStore() (*Store, error) {
+	if cache := os.Getenv(CacheEnvVar); cache != "" {
+		return NewStore(cache)
+	}
+
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err

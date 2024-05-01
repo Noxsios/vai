@@ -9,6 +9,11 @@ import (
 // Force is a global flag to bypass SHA256 checksum verification for cached remote files.
 var Force = false
 
+const (
+	// CacheEnvVar is the environment variable for the cache directory.
+	CacheEnvVar = "VAI_CACHE"
+)
+
 // CommandOutputs is a map of step IDs to their outputs.
 //
 // It is currently NOT goroutine safe.
