@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Noxsios/vai/workflow",
   "$defs": {
-    "Task": {
+    "Step": {
       "oneOf": [
         {
           "properties": {
@@ -42,7 +42,7 @@
         },
         "id": {
           "type": "string",
-          "description": "Unique identifier for the task"
+          "description": "Unique identifier for the step"
         },
         "matrix": {
           "additionalProperties": {
@@ -79,18 +79,21 @@
             ]
           },
           "type": "object",
-          "description": "Additional parameters for the task"
+          "description": "Additional parameters for the step/task call"
         }
       },
       "additionalProperties": false,
       "type": "object"
+    },
+    "Task": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "type": "array"
     }
   },
   "additionalProperties": {
-    "items": {
-      "$ref": "#/$defs/Task"
-    },
-    "type": "array"
+    "$ref": "#/$defs/Task"
   },
   "type": "object"
 }

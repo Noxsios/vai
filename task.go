@@ -17,7 +17,7 @@ const (
 	OperationUses
 )
 
-type Task struct {
+type Step struct {
 	CMD    *string `json:"cmd,omitempty"`
 	Uses   *Uses   `json:"uses,omitempty"`
 	With   `json:"with,omitempty"`
@@ -26,31 +26,31 @@ type Task struct {
 	ID string `json:"id,omitempty"`
 }
 
-func (t Task) Operation() Operation {
-	if t.CMD != nil {
+func (s Step) Operation() Operation {
+	if s.CMD != nil {
 		return OperationRun
 	}
-	if t.Uses != nil {
+	if s.Uses != nil {
 		return OperationUses
 	}
 	return -1
 }
 
-func (t Task) Run(with With, output *os.File) error {
+func (s Step) Run(with With, output *os.File) error {
 	env := os.Environ()
 	for k, v := range with {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 	env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", output.Name()))
-	cmd := exec.Command("sh", "-e", "-c", *t.CMD)
+	cmd := exec.Command("sh", "-e", "-c", *s.CMD)
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	logger.Print(*t.CMD)
+	logger.Print(*s.CMD)
 	return cmd.Run()
 }
 
-func (t Task) JSONSchema() *jsonschema.Schema {
+func (s Step) JSONSchema() *jsonschema.Schema {
 	props := jsonschema.NewProperties()
 	not := &jsonschema.Schema{
 		Not: &jsonschema.Schema{},
@@ -65,12 +65,12 @@ func (t Task) JSONSchema() *jsonschema.Schema {
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
-		Description: "Unique identifier for the task",
+		Description: "Unique identifier for the step",
 	})
 
 	with := &jsonschema.Schema{
 		Type:        "object",
-		Description: "Additional parameters for the task",
+		Description: "Additional parameters for the step/task call",
 		AdditionalProperties: &jsonschema.Schema{
 			OneOf: []*jsonschema.Schema{
 				{
@@ -131,7 +131,7 @@ func (t Task) JSONSchema() *jsonschema.Schema {
 		Properties: usesProps,
 	}
 
-	s := &jsonschema.Schema{
+	return &jsonschema.Schema{
 		Type:                 "object",
 		Properties:           props,
 		AdditionalProperties: jsonschema.FalseSchema,
@@ -140,8 +140,6 @@ func (t Task) JSONSchema() *jsonschema.Schema {
 			oneOfUses,
 		},
 	}
-
-	return s
 }
 
 func ParseOutputFile(f *os.File) (map[string]string, error) {
