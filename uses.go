@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
 
+// Uses is a reference to a remote task.
 type Uses string
 
+// URIComponents contains the components of a URI.
 type URIComponents struct {
 	Repository string
 	FilePath   string
@@ -19,13 +22,29 @@ type URIComponents struct {
 	Ref        string
 }
 
+// String returns the string representation of a Uses.
 func (u Uses) String() string {
 	return string(u)
 }
 
+// URIRegex is a regular expression for parsing URIs.
+//
+// uses := Uses("Noxsios/vai/tasks/echo.yaml:world@main")
+//
+// components, _ := uses.Parse()
+//
+//	components == &URIComponents{
+//		Repository: "Noxsios/vai",
+//		FilePath:   "tasks/echo.yaml",
+//		TaskName:   "world",
+//		Ref:        "main",
+//	}
 var URIRegex = regexp.MustCompile(`^(?:(?P<Repository>[^/.]+/[^/]+)(?:/))?(?P<FilePath>[^:@]+):(?P<TaskName>[^@]*)(?:@(?P<Ref>.+))?$`)
 
+// Parse parses a Uses URI.
 func (u Uses) Parse() (*URIComponents, error) {
+	// TODO: handle HTTPS URIs?
+
 	matches := URIRegex.FindStringSubmatch(u.String())
 	if matches == nil {
 		return nil, fmt.Errorf("invalid uses URI: %s", u)
@@ -46,7 +65,9 @@ func (u Uses) Parse() (*URIComponents, error) {
 	}, nil
 }
 
+// Fetch fetches a remote workflow.
 func (u Uses) Fetch(store *Store) (Workflow, error) {
+	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
 	components, err := u.Parse()
 	if err != nil {
 		return nil, err
@@ -96,7 +117,8 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 		return nil, err
 	}
 
-	ok, err := store.Exists(u.String(), tmpFile)
+	key := strings.Join([]string{components.Repository, components.Ref, components.FilePath}, "/")
+	ok, err := store.Exists(key, tmpFile)
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
 			ok, err := ConfirmSHAOverwrite()
@@ -108,7 +130,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 				return nil, fmt.Errorf("hash mismatch, not overwriting")
 			}
 
-			if err := store.Delete(u.String()); err != nil {
+			if err := store.Delete(key); err != nil {
 				return nil, err
 			}
 
@@ -116,7 +138,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err := store.Store(u.String(), tmpFile); err != nil {
+			if err := store.Store(key, tmpFile); err != nil {
 				return nil, err
 			}
 		} else {
@@ -128,7 +150,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 			return nil, err
 		}
 		logger.Debug("caching", "workflow", u)
-		if err = store.Store(u.String(), tmpFile); err != nil {
+		if err = store.Store(key, tmpFile); err != nil {
 			return nil, err
 		}
 	}
@@ -136,6 +158,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 	return wf, nil
 }
 
+// Run runs a Uses task.
 func (u Uses) Run(with With) error {
 	logger.Debug("using", "task", u)
 
