@@ -11,14 +11,15 @@ import (
 )
 
 var w map[string]string
-var ll string
+var level string
 var ver bool
+var list bool
 
 var rootCmd = &cobra.Command{
 	Use:   "vai",
 	Short: "A simple task runner",
 	PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
-		l, err := log.ParseLevel(ll)
+		l, err := log.ParseLevel(level)
 		if err != nil {
 			return err
 		}
@@ -48,11 +49,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			logger.Print("Available:\n")
-			for k := range wf {
-				logger.Printf("- %s", k)
-			}
-			return nil
+			args = append(args, "default")
 		}
 
 		with := make(vai.With)
@@ -60,6 +57,13 @@ var rootCmd = &cobra.Command{
 			with[k] = v
 		}
 
+		if list {
+			logger.Print("Available:\n")
+			for k := range wf {
+				logger.Printf("- %s", k)
+			}
+			return nil
+		}
 		for _, call := range args {
 			if err := vai.Run(wf, call, with); err != nil {
 				return err
@@ -81,7 +85,8 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringToStringVarP(&w, "with", "w", nil, "variables to pass to the called task(s)")
-	rootCmd.Flags().StringVarP(&ll, "log-level", "l", "info", "log level")
-	rootCmd.Flags().BoolVar(&ver, "version", false, "print version")
-	rootCmd.Flags().BoolVarP(&vai.Force, "force", "f", false, "bypass SHA256 checksum verification for cached remote files")
+	rootCmd.Flags().StringVarP(&level, "log-level", "l", "info", "log level")
+	rootCmd.Flags().BoolVarP(&ver, "version", "V", false, "print version")
+	rootCmd.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
+	rootCmd.Flags().BoolVar(&list, "list", false, "list available tasks")
 }
