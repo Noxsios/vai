@@ -5,6 +5,9 @@ import (
 	"os"
 )
 
+// Force is a global flag to bypass SHA256 checksum verification for cached remote files.
+var Force = false
+
 type CommandOutputs map[string]map[string]string
 
 func Run(wf Workflow, taskName string, outer With) error {
