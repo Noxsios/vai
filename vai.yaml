@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=file:///home/thicc/dd/vai/vai.schema.json
+# yaml-language-server: $schema=./vai.schema.json
 
 build:
   - cmd: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
