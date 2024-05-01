@@ -12,12 +12,15 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+// ErrHashMismatch is returned when the hash of the stored file does not match the hash in the index.
 var ErrHashMismatch = fmt.Errorf("hash mismatch")
 
+// IsHashMismatch returns true if the error is a hash mismatch error.
 func IsHashMismatch(err error) bool {
 	return errors.Is(err, ErrHashMismatch)
 }
 
+// CacheIndex is a list of files and their digests.
 type CacheIndex struct {
 	Files []struct {
 		Name   string `json:"name"`
@@ -25,6 +28,7 @@ type CacheIndex struct {
 	} `json:"files"`
 }
 
+// Find returns the digest of a file by name and a boolean indicating if the file was found.
 func (c CacheIndex) Find(key string) (string, bool) {
 	for _, f := range c.Files {
 		if f.Name == key {
@@ -34,8 +38,15 @@ func (c CacheIndex) Find(key string) (string, bool) {
 	return "", false
 }
 
-func (c *CacheIndex) Add(key, digest string) {
-	if d, ok := c.Find(key); ok && d == digest {
+// Add adds an entry to the index.
+//
+// If the key already exists in the index and the value is the same, nothing will happen.
+//
+// If the key already exists in the index and the value is different, the key will be removed and re-added.
+//
+// If the key does not exist in the index, it will be added.
+func (c *CacheIndex) Add(key, value string) {
+	if d, ok := c.Find(key); ok && d == value {
 		return
 	} else if ok {
 		c.Remove(key)
@@ -45,10 +56,11 @@ func (c *CacheIndex) Add(key, digest string) {
 		Digest string `json:"digest"`
 	}{
 		Name:   key,
-		Digest: digest,
+		Digest: value,
 	})
 }
 
+// Remove removes an entry from the index.
 func (c *CacheIndex) Remove(key string) {
 	for i, f := range c.Files {
 		if f.Name == key {
@@ -58,6 +70,7 @@ func (c *CacheIndex) Remove(key string) {
 	}
 }
 
+// Store is a cache for storing and retrieving remote workflows.
 type Store struct {
 	root  string
 	index CacheIndex
@@ -66,6 +79,7 @@ type Store struct {
 	indexLock sync.Mutex
 }
 
+// NewStore creates a new store at the given path.
 func NewStore(path string) (*Store, error) {
 	index := CacheIndex{}
 	indexPath := filepath.Join(path, "index.yaml")
@@ -79,6 +93,8 @@ func NewStore(path string) (*Store, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else if err != nil {
+		return nil, err
 	}
 
 	b, err := os.ReadFile(indexPath)
@@ -96,6 +112,7 @@ func NewStore(path string) (*Store, error) {
 	}, nil
 }
 
+// DefaultStore creates a new store in the default location ($HOME/.vai/cache).
 func DefaultStore() (*Store, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -107,6 +124,7 @@ func DefaultStore() (*Store, error) {
 	return NewStore(cache)
 }
 
+// Fetch retrieves a workflow from the store by key (SHA256).
 func (s *Store) Fetch(key string) (Workflow, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()

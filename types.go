@@ -6,6 +6,7 @@ import (
 
 type Workflow map[string][]Task
 
+// TODO: schema validation
 type Matrix map[string][]any
 
 type MatrixInstance map[string]any

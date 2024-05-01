@@ -9,7 +9,7 @@ import (
 
 type WithEntry any
 
-type With map[string]any
+type With map[string]WithEntry
 
 func PeformLookups(parent, child, global With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
 	logger.Debug("templating", "parent", parent, "child", child, "global", global, "matrix-inst", mi)
