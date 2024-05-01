@@ -98,7 +98,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 
 	ok, err := store.Exists(u.String(), tmpFile)
 	if err != nil {
-		if IsHashMismatch(err) {
+		if IsHashMismatch(err) && !Force {
 			ok, err := ConfirmSHAOverwrite()
 			if err != nil {
 				return nil, err
