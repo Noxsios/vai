@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./vai.schema.json
 
-build:
+default:
   - cmd: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
 
 gen:
