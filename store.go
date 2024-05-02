@@ -170,6 +170,7 @@ func (s *Store) Fetch(key string) (Workflow, error) {
 	return wf, yaml.Unmarshal(b, &wf)
 }
 
+// Store a workflow in the store.
 func (s *Store) Store(key string, r io.Reader) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
@@ -206,6 +207,7 @@ func (s *Store) Store(key string, r io.Reader) error {
 	return os.WriteFile(indexPath, b, 0644)
 }
 
+// Delete a workflow from the store.
 func (s *Store) Delete(key string) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
@@ -234,6 +236,7 @@ func (s *Store) Delete(key string) error {
 	return os.Remove(path)
 }
 
+// Exists checks if a workflow exists in the store.
 func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()
@@ -272,9 +275,3 @@ func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 	return true, nil
 }
 
-func (s *Store) Index() CacheIndex {
-	s.indexLock.Lock()
-	defer s.indexLock.Unlock()
-
-	return s.index
-}
