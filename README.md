@@ -1,5 +1,10 @@
 # vai
 
+![GitHub Tag](https://img.shields.io/github/v/tag/Noxsios/vai)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/Noxsios/vai)
+![GitHub License](https://img.shields.io/github/license/Noxsios/vai)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Noxsios/vai)
+
 A simple task runner. Imagine GitHub actions and Makefile had a baby.
 
 ## Installation
