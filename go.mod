@@ -3,7 +3,7 @@ module github.com/Noxsios/vai
 go 1.22.2
 
 require (
-	github.com/charmbracelet/bubbletea v0.26.0
+	github.com/charmbracelet/bubbletea v0.26.1
 	github.com/charmbracelet/log v0.4.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/invopop/jsonschema v0.12.0
