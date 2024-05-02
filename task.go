@@ -10,22 +10,43 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+// Operation is an enum for the type of operation a step is performing
 type Operation int
 
 const (
+	// OperationRun is a step that runs a command
 	OperationRun Operation = iota
+	// OperationUses is a step that calls another task
 	OperationUses
 )
 
+// Step is a single step in a task
+//
+// While a step can have both `cmd` and `uses` fields, only one of them can be set
+// at a time.
+//
+// This is enforced by JSON schema validation.
+//
+// TODO:
+// - add `if` and `continue-on-error` fields?
+// - add `timeout` field?
+// - add `description` field?
 type Step struct {
+	// CMD is the command to run
 	CMD    *string `json:"cmd,omitempty"`
+	// Uses is a reference to a remote task
 	Uses   *Uses   `json:"uses,omitempty"`
+	// With is a map of additional parameters for the step/task call
 	With   `json:"with,omitempty"`
+	// Matrix is a matrix of parameters to run the step/task with
 	Matrix `json:"matrix,omitempty"`
+	// ID is a unique identifier for the step
+	//
 	// TODO: ensure this is unique in a given file and that it is a valid identifier
 	ID string `json:"id,omitempty"`
 }
 
+// Operation returns the type of operation the step is performing
 func (s Step) Operation() Operation {
 	if s.CMD != nil {
 		return OperationRun
@@ -36,7 +57,11 @@ func (s Step) Operation() Operation {
 	return -1
 }
 
+// Run executes the CMD field of a step
 func (s Step) Run(with With, output *os.File) error {
+	if s.CMD == nil {
+		return fmt.Errorf("step does not have a command to run")
+	}
 	env := os.Environ()
 	for k, v := range with {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
@@ -50,6 +75,10 @@ func (s Step) Run(with With, output *os.File) error {
 	return cmd.Run()
 }
 
+// JSONSchema returns the JSON schema for a step
+//
+// TODO: 
+// - change this to _extend_ the schema, not provide the full schema
 func (s Step) JSONSchema() *jsonschema.Schema {
 	props := jsonschema.NewProperties()
 	not := &jsonschema.Schema{
@@ -142,6 +171,7 @@ func (s Step) JSONSchema() *jsonschema.Schema {
 	}
 }
 
+// ParseOutputFile parses the output file of a step
 func ParseOutputFile(f *os.File) (map[string]string, error) {
 	_, err := f.Seek(0, 0)
 	if err != nil {

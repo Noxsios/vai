@@ -65,7 +65,7 @@ func (u Uses) Parse() (*URIComponents, error) {
 	}, nil
 }
 
-// Fetch fetches a remote workflow.
+// Fetch a remote workflow and store.
 func (u Uses) Fetch(store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
 	components, err := u.Parse()
@@ -158,7 +158,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 	return wf, nil
 }
 
-// Run runs a Uses task.
+// Run a Uses task.
 func (u Uses) Run(with With) error {
 	logger.Debug("using", "task", u)
 
