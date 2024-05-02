@@ -48,7 +48,7 @@ func Run(wf Workflow, taskName string, outer With) error {
 			return fmt.Errorf("step cannot have both cmd and uses")
 		}
 		for _, mi := range instances {
-			w, ng, err := PeformLookups(outer, step.With, global, outputs, mi)
+			w, ng, err := PerformLookups(outer, step.With, global, outputs, mi)
 			if err != nil {
 				return err
 			}
