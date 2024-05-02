@@ -8,6 +8,7 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+// main is the entry point for the application
 func main() {
 	reflector := jsonschema.Reflector{}
 	reflector.ExpandedStruct = true

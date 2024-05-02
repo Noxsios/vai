@@ -7,22 +7,33 @@ import (
 	"text/template"
 )
 
+// WithEntry is a single entry in a With map
 type WithEntry any
 
+// With is a map of string keys and WithEntry values used to pass parameters to called tasks and within steps
+//
+// Each key will be mapped to an equivalent environment variable
+// when the command is run. eg. `with: {foo: bar}` will be passed
+// as `foo=bar` to the command.
 type With map[string]WithEntry
 
-func PeformLookups(parent, child, global With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
-	logger.Debug("templating", "parent", parent, "child", child, "global", global, "matrix-inst", mi)
+// PerformLookups does the following:
+//
+// 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `outer` and `local` With maps
+// 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
+// 3. MatrixInstance: merges the `mi` MatrixInstance into the result, with `mi` taking precedence
+func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
+	logger.Debug("templating", "outer", outer, "local", local, "global", persisted, "matrix-inst", mi)
 
 	r := make(With)
 
-	ng := maps.Clone(global)
+	np := maps.Clone(persisted)
 
-	for k, v := range child {
+	for k, v := range local {
 		val := fmt.Sprintf("%s", v)
 		fm := template.FuncMap{
 			"input": func() string {
-				v, ok := parent[k]
+				v, ok := outer[k]
 				if !ok || v == "" {
 					logger.Warn("no input", "key", k)
 					return ""
@@ -39,7 +50,7 @@ func PeformLookups(parent, child, global With, outputs CommandOutputs, mi Matrix
 				if val == "" {
 					return ""
 				}
-				ng[k] = val
+				np[k] = val
 				return val
 			},
 			"from": func(taskName, name string) string {
@@ -64,7 +75,7 @@ func PeformLookups(parent, child, global With, outputs CommandOutputs, mi Matrix
 		r[k] = result
 	}
 
-	for k, v := range ng {
+	for k, v := range np {
 		_, ok := r[k]
 		if ok {
 			continue
@@ -81,5 +92,5 @@ func PeformLookups(parent, child, global With, outputs CommandOutputs, mi Matrix
 	}
 
 	logger.Debug("templated", "result", r)
-	return r, ng, nil
+	return r, np, nil
 }

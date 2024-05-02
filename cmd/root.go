@@ -1,3 +1,4 @@
+// Package cmd provides the root command for the vai CLI.
 package cmd
 
 import (
