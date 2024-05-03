@@ -12,7 +12,7 @@ echo:
       message: ${{ input | default "Hello World!" }}
 
 echo-matrix:
-  - uses: ./tasks/echo.yaml:simple
+  - uses: ./tasks/echo.yaml?task=simple
     matrix:
       message: ["Hello, World!", "General Kenobi!"]
 
