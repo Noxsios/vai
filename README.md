@@ -16,7 +16,7 @@ go install github.com/Noxsios/vai/cmd/vai@latest
 To update to the latest version:
 
 ```sh
-go clean -i github.com/Noxsios/vai/cmd/vai
+rm $(which vai)
 go install github.com/Noxsios/vai/cmd/vai@latest
 ```
 
