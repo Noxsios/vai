@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if len(args) == 0 {
-			args = append(args, "default")
+			args = append(args, vai.DefaultTaskName)
 		}
 
 		with := make(vai.With)
