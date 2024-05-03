@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/invopop/jsonschema v0.12.0
+	github.com/package-url/packageurl-go v0.1.2
 	github.com/spf13/cobra v1.8.0
 )
 

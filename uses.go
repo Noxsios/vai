@@ -5,77 +5,40 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
+	"path/filepath"
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/package-url/packageurl-go"
 )
 
 // Uses is a reference to a remote task.
 type Uses string
-
-// URIComponents contains the components of a URI.
-type URIComponents struct {
-	Repository string
-	FilePath   string
-	TaskName   string
-	Ref        string
-}
 
 // String returns the string representation of a Uses.
 func (u Uses) String() string {
 	return string(u)
 }
 
-// URIRegex is a regular expression for parsing URIs.
-//
-// uses := Uses("Noxsios/vai/tasks/echo.yaml:world@main")
-//
-// components, _ := uses.Parse()
-//
-//	components == &URIComponents{
-//		Repository: "Noxsios/vai",
-//		FilePath:   "tasks/echo.yaml",
-//		TaskName:   "world",
-//		Ref:        "main",
-//	}
-var URIRegex = regexp.MustCompile(`^(?:(?P<Repository>[^/.]+/[^/]+)(?:/))?(?P<FilePath>[^:@]+):(?P<TaskName>[^@]*)(?:@(?P<Ref>.+))?$`)
-
-// Parse parses a Uses URI.
-func (u Uses) Parse() (*URIComponents, error) {
-	// TODO: handle HTTPS URIs?
-
-	matches := URIRegex.FindStringSubmatch(u.String())
-	if matches == nil {
-		return nil, fmt.Errorf("invalid uses URI: %s", u)
-	}
-
-	components := make(map[string]string)
-	for i, name := range URIRegex.SubexpNames() {
-		if i != 0 && name != "" {
-			components[name] = matches[i]
-		}
-	}
-
-	return &URIComponents{
-		Repository: components["Repository"],
-		FilePath:   components["FilePath"],
-		TaskName:   components["TaskName"],
-		Ref:        components["Ref"],
-	}, nil
+// Parse a Uses into a package URL.
+func (u Uses) Parse() (packageurl.PackageURL, error) {
+	return packageurl.FromString("pkg:vai/" + u.String())
 }
 
-// Fetch a remote workflow and store.
-func (u Uses) Fetch(store *Store) (Workflow, error) {
+// FetchIntoStore fetches and stores a remote workflow into a given store.
+func FetchIntoStore(u Uses, store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
-	components, err := u.Parse()
+	pURL, err := u.Parse()
 	if err != nil {
 		return nil, err
 	}
 
-	// Example URI: "Noxsios/vai/tasks/echo.yaml:world@main"
 	// Example URL: "https://raw.githubusercontent.com/Noxsios/vai/main/tasks/echo.yaml"
-	raw := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s", components.Repository, components.Ref, components.FilePath)
+	raw := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", pURL.Namespace, pURL.Name, pURL.Version, pURL.Subpath)
+
+	if strings.Contains(raw, "//") {
+		return nil, fmt.Errorf("invalid uses: %q", u)
+	}
 
 	logger.Debug("fetching", "url", raw)
 
@@ -117,7 +80,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 		return nil, err
 	}
 
-	key := strings.Join([]string{components.Repository, components.Ref, components.FilePath}, "/")
+	key := pURL.ToString()
 	ok, err := store.Exists(key, tmpFile)
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
@@ -149,7 +112,7 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 		if err != nil {
 			return nil, err
 		}
-		logger.Debug("caching", "workflow", u)
+		logger.Debug("caching", "workflow", pURL)
 		if err = store.Store(key, tmpFile); err != nil {
 			return nil, err
 		}
@@ -162,15 +125,32 @@ func (u Uses) Fetch(store *Store) (Workflow, error) {
 func (u Uses) Run(with With) error {
 	logger.Debug("using", "task", u)
 
-	uri, err := u.Parse()
+	purl, err := u.Parse()
 	if err != nil {
 		return err
 	}
-	logger.Debug("parsed", "uri", uri)
 	var wf Workflow
 
-	if uri.Repository == "" {
-		b, err := os.ReadFile(uri.FilePath)
+	if purl.Subpath == "" {
+		var loc string
+
+		switch purl.Namespace {
+		case "", ".", "..":
+			loc = purl.Name
+		default:
+			loc = filepath.Join(purl.Namespace, purl.Name)
+		}
+
+		fi, err := os.Stat(loc)
+		if err != nil {
+			return err
+		}
+
+		if fi.IsDir() {
+			loc = filepath.Join(loc, DefaultFileName)
+		}
+
+		b, err := os.ReadFile(loc)
 		if err != nil {
 			return err
 		}
@@ -183,11 +163,13 @@ func (u Uses) Run(with With) error {
 		if err != nil {
 			return err
 		}
-		wf, err = u.Fetch(store)
+		wf, err = FetchIntoStore(u, store)
 		if err != nil {
 			return err
 		}
 	}
 
-	return Run(wf, uri.TaskName, with)
+	taskName := purl.Qualifiers.Map()["task"]
+
+	return Run(wf, taskName, with)
 }

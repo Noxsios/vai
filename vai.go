@@ -26,6 +26,10 @@ func Run(wf Workflow, taskName string, outer With) error {
 	global := make(With)
 	outputs := make(CommandOutputs)
 
+	if taskName == "" {
+		taskName = DefaultTaskName
+	}
+
 	task, err := wf.Find(taskName)
 	if err != nil {
 		return err

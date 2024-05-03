@@ -4,6 +4,12 @@ import (
 	"fmt"
 )
 
+// DefaultTaskName is the default task name
+const DefaultTaskName = "default"
+
+// DefaultFileName is the default file name
+const DefaultFileName = "vai.yaml"
+
 // Task is a list of steps
 type Task []Step
 
