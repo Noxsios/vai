@@ -64,12 +64,12 @@ Enabling schema validation in VSCode:
 
 ```json
     "yaml.schemas": {
-        "https:///raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json": "vai.yaml",
+        "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json": "vai.yaml",
     },
 ```
 
 Per file basis:
 
 ```yaml
-# yaml-language-server: $schema=https:///raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json
 ```
