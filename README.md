@@ -35,7 +35,7 @@ echo-matrix:
       message: ["Hello", "World!"]
 
 remote-echo-short:
-  - uses: Noxsios/vai/tasks/echo.yaml:simple@main
+  - uses: github.com/Noxsios/vai@main?task=simple#tasks/echo.yaml
     with:
       message: hello from main
 EOF
