@@ -51,6 +51,10 @@
           "type": "string",
           "description": "Unique identifier for the step"
         },
+        "description": {
+          "type": "string",
+          "description": "Description of the step"
+        },
         "with": {
           "additionalProperties": {
             "oneOf": [

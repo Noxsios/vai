@@ -30,7 +30,6 @@ const (
 // TODO:
 // - add `if` and `continue-on-error` fields?
 // - add `timeout` field?
-// - add `description` field?
 type Step struct {
 	// CMD is the command to run
 	CMD string `json:"cmd,omitempty"`
@@ -42,6 +41,8 @@ type Step struct {
 	Matrix `json:"matrix,omitempty"`
 	// ID is a unique identifier for the step
 	ID string `json:"id,omitempty"`
+	// Description is a description of the step
+	Description string `json:"description,omitempty"`
 }
 
 // Operation returns the type of operation the step is performing
@@ -91,6 +92,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Unique identifier for the step",
+	})
+	props.Set("description", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Description of the step",
 	})
 
 	oneOfStringIntBool := &jsonschema.Schema{

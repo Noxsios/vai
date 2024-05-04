@@ -7,6 +7,9 @@
 
 A simple task runner. Imagine GitHub actions and Makefile had a baby.
 
+> [!CAUTION]
+> This project is still in its early stages. Expect breaking changes.
+
 ## Installation
 
 ```sh

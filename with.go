@@ -20,7 +20,9 @@ type With map[string]WithEntry
 // PerformLookups does the following:
 //
 // 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `outer` and `local` With maps
+//
 // 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
+//
 // 3. MatrixInstance: merges the `mi` MatrixInstance into the result, with `mi` taking precedence
 func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
 	logger.Debug("templating", "outer", outer, "local", local, "global", persisted, "matrix-inst", mi)
@@ -61,7 +63,7 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 				return v[name]
 			},
 		}
-		tmpl := template.New("input templating").Option("missingkey=error").Delims("${{", "}}")
+		tmpl := template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}")
 		tmpl.Funcs(fm)
 		tmpl, err := tmpl.Parse(val)
 		if err != nil {
