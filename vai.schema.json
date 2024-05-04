@@ -2,6 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Noxsios/vai/workflow",
   "$defs": {
+    "Matrix": {
+      "additionalProperties": {
+        "items": true,
+        "type": "array"
+      },
+      "type": "object"
+    },
     "Step": {
       "oneOf": [
         {
@@ -38,11 +45,29 @@
         },
         "uses": {
           "type": "string",
-          "description": "Call another task"
+          "description": "Location of a remote task to call conforming to the purl spec"
         },
         "id": {
           "type": "string",
           "description": "Unique identifier for the step"
+        },
+        "with": {
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "type": "object",
+          "minItems": 1,
+          "description": "Additional parameters for the step/task call"
         },
         "matrix": {
           "additionalProperties": {
@@ -62,24 +87,8 @@
             "type": "array"
           },
           "type": "object",
+          "minItems": 1,
           "description": "Matrix of parameters"
-        },
-        "with": {
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "integer"
-              }
-            ]
-          },
-          "type": "object",
-          "description": "Additional parameters for the step/task call"
         }
       },
       "additionalProperties": false,
@@ -90,10 +99,17 @@
         "$ref": "#/$defs/Step"
       },
       "type": "array"
+    },
+    "With": {
+      "type": "object"
     }
   },
-  "additionalProperties": {
-    "$ref": "#/$defs/Task"
+  "patternProperties": {
+    "^[_a-zA-Z][a-zA-Z0-9_-]*$": {
+      "$ref": "#/$defs/Task",
+      "description": "Name of the task"
+    }
   },
+  "additionalProperties": false,
   "type": "object"
 }

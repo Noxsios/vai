@@ -7,7 +7,6 @@ import (
 
 	"github.com/Noxsios/vai"
 	"github.com/charmbracelet/log"
-	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -38,14 +37,8 @@ var rootCmd = &cobra.Command{
 			return nil
 		}
 
-		var wf vai.Workflow
-
-		b, err := os.ReadFile("vai.yaml")
+		wf, err := vai.ReadAndValidate(vai.DefaultFileName)
 		if err != nil {
-			return err
-		}
-
-		if err := yaml.Unmarshal(b, &wf); err != nil {
 			return err
 		}
 

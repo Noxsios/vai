@@ -1,3 +1,4 @@
+// Package main provides the entry point for the application.
 package main
 
 import (
@@ -5,14 +6,11 @@ import (
 	"os"
 
 	"github.com/Noxsios/vai"
-	"github.com/invopop/jsonschema"
 )
 
 // main is the entry point for the application
 func main() {
-	reflector := jsonschema.Reflector{}
-	reflector.ExpandedStruct = true
-	schema := reflector.Reflect(&vai.Workflow{})
+	schema := vai.WorkFlowSchema()
 
 	b, err := json.MarshalIndent(schema, "", "  ")
 	if err != nil {

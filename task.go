@@ -33,25 +33,23 @@ const (
 // - add `description` field?
 type Step struct {
 	// CMD is the command to run
-	CMD    *string `json:"cmd,omitempty"`
+	CMD string `json:"cmd,omitempty"`
 	// Uses is a reference to a remote task
-	Uses   *Uses   `json:"uses,omitempty"`
+	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
-	With   `json:"with,omitempty"`
+	With `json:"with,omitempty"`
 	// Matrix is a matrix of parameters to run the step/task with
 	Matrix `json:"matrix,omitempty"`
 	// ID is a unique identifier for the step
-	//
-	// TODO: ensure this is unique in a given file and that it is a valid identifier
 	ID string `json:"id,omitempty"`
 }
 
 // Operation returns the type of operation the step is performing
 func (s Step) Operation() Operation {
-	if s.CMD != nil {
+	if s.CMD != "" {
 		return OperationRun
 	}
-	if s.Uses != nil {
+	if s.Uses != "" {
 		return OperationUses
 	}
 	return -1
@@ -59,7 +57,7 @@ func (s Step) Operation() Operation {
 
 // Run executes the CMD field of a step
 func (s Step) Run(with With, output *os.File) error {
-	if s.CMD == nil {
+	if s.CMD == "" {
 		return fmt.Errorf("step does not have a command to run")
 	}
 	env := os.Environ()
@@ -67,78 +65,70 @@ func (s Step) Run(with With, output *os.File) error {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
 	env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", output.Name()))
-	cmd := exec.Command("sh", "-e", "-c", *s.CMD)
+	cmd := exec.Command("sh", "-e", "-c", s.CMD)
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	logger.Print(*s.CMD)
+	logger.Print(s.CMD)
 	return cmd.Run()
 }
 
-// JSONSchema returns the JSON schema for a step
-//
-// TODO: 
-// - change this to _extend_ the schema, not provide the full schema
-func (s Step) JSONSchema() *jsonschema.Schema {
-	props := jsonschema.NewProperties()
+// JSONSchemaExtend extends the JSON schema for a step
+func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	not := &jsonschema.Schema{
 		Not: &jsonschema.Schema{},
 	}
+
+	props := jsonschema.NewProperties()
 	props.Set("cmd", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Command to run",
 	})
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
-		Description: "Call another task",
+		Description: "Location of a remote task to call conforming to the purl spec",
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Unique identifier for the step",
 	})
 
-	with := &jsonschema.Schema{
-		Type:        "object",
-		Description: "Additional parameters for the step/task call",
-		AdditionalProperties: &jsonschema.Schema{
-			OneOf: []*jsonschema.Schema{
-				{
-					Type: "string",
-				},
-				{
-					Type: "boolean",
-				},
-				{
-					Type: "integer",
-				},
+	oneOfStringIntBool := &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{
+				Type: "string",
+			},
+			{
+				Type: "boolean",
+			},
+			{
+				Type: "integer",
 			},
 		},
 	}
+
+	var single uint64 = 1
+
+	with := &jsonschema.Schema{
+		Type:                 "object",
+		Description:          "Additional parameters for the step/task call",
+		MinItems:             &single,
+		AdditionalProperties: oneOfStringIntBool,
+	}
+
+	props.Set("with", with)
 
 	matrix := &jsonschema.Schema{
 		Type:        "object",
 		Description: "Matrix of parameters",
+		MinItems:    &single,
 		AdditionalProperties: &jsonschema.Schema{
-			Type: "array",
-			Items: &jsonschema.Schema{
-				OneOf: []*jsonschema.Schema{
-					{
-						Type: "string",
-					},
-					{
-						Type: "boolean",
-					},
-					{
-						Type: "integer",
-					},
-				},
-			},
+			Type:  "array",
+			Items: oneOfStringIntBool,
 		},
 	}
 
 	props.Set("matrix", matrix)
-
-	props.Set("with", with)
 
 	cmdProps := jsonschema.NewProperties()
 	cmdProps.Set("cmd", &jsonschema.Schema{
@@ -160,14 +150,10 @@ func (s Step) JSONSchema() *jsonschema.Schema {
 		Properties: usesProps,
 	}
 
-	return &jsonschema.Schema{
-		Type:                 "object",
-		Properties:           props,
-		AdditionalProperties: jsonschema.FalseSchema,
-		OneOf: []*jsonschema.Schema{
-			oneOfCmd,
-			oneOfUses,
-		},
+	schema.Properties = props
+	schema.OneOf = []*jsonschema.Schema{
+		oneOfCmd,
+		oneOfUses,
 	}
 }
 

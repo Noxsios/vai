@@ -2,14 +2,13 @@ package vai
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"github.com/goccy/go-yaml"
 )
 
 // ErrHashMismatch is returned when the hash of the stored file does not match the hash in the index.
@@ -82,7 +81,7 @@ type Store struct {
 // NewStore creates a new store at the given path.
 func NewStore(path string) (*Store, error) {
 	index := CacheIndex{}
-	indexPath := filepath.Join(path, "index.yaml")
+	indexPath := filepath.Join(path, "index.json")
 
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
 		err := os.MkdirAll(path, 0755)
@@ -93,17 +92,20 @@ func NewStore(path string) (*Store, error) {
 		if err != nil {
 			return nil, err
 		}
+		if err := os.WriteFile(indexPath, []byte("{}"), 0644); err != nil {
+			return nil, err
+		}
 	} else if err != nil {
 		return nil, err
-	}
+	} else {
+		b, err := os.ReadFile(indexPath)
+		if err != nil {
+			return nil, err
+		}
 
-	b, err := os.ReadFile(indexPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := yaml.Unmarshal(b, &index); err != nil {
-		return nil, err
+		if err := json.Unmarshal(b, &index); err != nil {
+			return nil, err
+		}
 	}
 
 	return &Store{
@@ -161,13 +163,9 @@ func (s *Store) Fetch(key string) (Workflow, error) {
 		return nil, ErrHashMismatch
 	}
 
-	b, err := io.ReadAll(f)
-	if err != nil {
-		return nil, err
-	}
+	f.Close()
 
-	var wf Workflow
-	return wf, yaml.Unmarshal(b, &wf)
+	return ReadAndValidate(path)
 }
 
 // Store a workflow in the store.
@@ -198,8 +196,8 @@ func (s *Store) Store(key string, r io.Reader) error {
 
 	s.index.Add(key, hash)
 
-	indexPath := filepath.Join(s.root, "index.yaml")
-	b, err = yaml.Marshal(s.index)
+	indexPath := filepath.Join(s.root, "index.json")
+	b, err = json.Marshal(s.index)
 	if err != nil {
 		return err
 	}
@@ -222,8 +220,8 @@ func (s *Store) Delete(key string) error {
 
 	s.index.Remove(key)
 
-	indexPath := filepath.Join(s.root, "index.yaml")
-	b, err := yaml.Marshal(s.index)
+	indexPath := filepath.Join(s.root, "index.json")
+	b, err := json.Marshal(s.index)
 	if err != nil {
 		return err
 	}
@@ -264,14 +262,13 @@ func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 		return false, err
 	}
 
-	new := fmt.Sprintf("%x", hasher.Sum(nil))
+	n := fmt.Sprintf("%x", hasher.Sum(nil))
 
-	logger.Debug("hashes", "new", new, "old", sha)
+	logger.Debug("hashes", "new", n, "old", sha)
 
-	if new != sha {
+	if n != sha {
 		return false, ErrHashMismatch
 	}
 
 	return true, nil
 }
-
