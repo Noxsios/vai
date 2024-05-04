@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 	"github.com/invopop/jsonschema"
 )
 
@@ -57,7 +59,7 @@ func (s Step) Operation() Operation {
 }
 
 // Run executes the CMD field of a step
-func (s Step) Run(with With, output *os.File) error {
+func (s Step) Run(with With, outputFilePath string) error {
 	if s.CMD == "" {
 		return fmt.Errorf("step does not have a command to run")
 	}
@@ -65,12 +67,25 @@ func (s Step) Run(with With, output *os.File) error {
 	for k, v := range with {
 		env = append(env, fmt.Sprintf("%s=%s", k, v))
 	}
-	env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", output.Name()))
+	env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outputFilePath))
 	cmd := exec.Command("sh", "-e", "-c", s.CMD)
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	logger.Print(s.CMD)
+	lines := strings.Split(s.CMD, "\n")
+	fmt.Println()
+	customStyles := log.DefaultStyles()
+	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
+	logger.SetStyles(customStyles)
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		logger.Printf("$ %s", trimmed)
+	}
+	logger.SetStyles(log.DefaultStyles())
+	fmt.Println()
 	return cmd.Run()
 }
 
@@ -163,8 +178,8 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 }
 
 // ParseOutputFile parses the output file of a step
-func ParseOutputFile(f *os.File) (map[string]string, error) {
-	_, err := f.Seek(0, 0)
+func ParseOutputFile(outFilePath string) (map[string]string, error) {
+	f, err := os.Open(outFilePath)
 	if err != nil {
 		return nil, err
 	}

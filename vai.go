@@ -69,19 +69,22 @@ func Run(wf Workflow, taskName string, outer With) error {
 					}
 				}
 			case OperationRun:
-				outFile, err := os.CreateTemp("", "vai-output-")
+				outFile, err := os.CreateTemp("", "vai-output-*")
 				if err != nil {
 					return err
 				}
-				defer func() {
-					outFile.Close()
-					os.Remove(outFile.Name())
-				}()
-				if err := step.Run(w, outFile); err != nil {
+				outFile.Close()
+				defer os.Remove(outFile.Name())
+				if err := step.Run(w, outFile.Name()); err != nil {
 					return err
 				}
 
 				if step.ID != "" {
+					outFile, err := os.Open(outFile.Name())
+					if err != nil {
+						return err
+					}
+
 					fi, err := outFile.Stat()
 					if err != nil {
 						return err
@@ -89,10 +92,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 
 					if fi.Size() > 0 {
 						outputs[step.ID] = make(map[string]string)
-						out, err := ParseOutputFile(outFile)
+						out, err := ParseOutputFile(outFile.Name())
 						if err != nil {
 							return err
 						}
+						// TODO: conflicted about whether to save the contents of the file or the file path
 						outputs[step.ID] = out
 					}
 				}
