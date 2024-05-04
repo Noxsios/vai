@@ -47,10 +47,6 @@ func Run(wf Workflow, taskName string, outer With) error {
 		if len(instances) == 0 {
 			instances = append(instances, MatrixInstance{})
 		}
-		// TODO: this will be handled by schema validation on read
-		if step.Uses != nil && step.CMD != nil {
-			return fmt.Errorf("step cannot have both cmd and uses")
-		}
 		for _, mi := range instances {
 			w, ng, err := PerformLookups(outer, step.With, global, outputs, mi)
 			if err != nil {
@@ -62,13 +58,13 @@ func Run(wf Workflow, taskName string, outer With) error {
 
 			switch step.Operation() {
 			case OperationUses:
-				_, err := wf.Find(step.Uses.String())
+				_, err := wf.Find(step.Uses)
 				if err != nil {
-					if err := step.Uses.Run(w); err != nil {
+					if err := RunUses(step.Uses, w); err != nil {
 						return err
 					}
 				} else {
-					if err := Run(wf, step.Uses.String(), w); err != nil {
+					if err := Run(wf, step.Uses, w); err != nil {
 						return err
 					}
 				}

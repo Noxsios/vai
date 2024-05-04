@@ -12,32 +12,35 @@ import (
 	"github.com/package-url/packageurl-go"
 )
 
-// Uses is a reference to a remote task.
-type Uses string
-
-// String returns the string representation of a Uses.
-func (u Uses) String() string {
-	return string(u)
-}
-
-// Parse a Uses into a package URL.
-func (u Uses) Parse() (packageurl.PackageURL, error) {
-	return packageurl.FromString("pkg:vai/" + u.String())
-}
+// UsesPrefix is the prefix for remote tasks.
+const UsesPrefix = "pkg:vai/"
 
 // FetchIntoStore fetches and stores a remote workflow into a given store.
-func FetchIntoStore(u Uses, store *Store) (Workflow, error) {
+func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
-	pURL, err := u.Parse()
-	if err != nil {
-		return nil, err
+
+	if pURL.Subpath == "" {
+		pURL.Subpath = DefaultFileName
 	}
 
-	// Example URL: "https://raw.githubusercontent.com/Noxsios/vai/main/tasks/echo.yaml"
-	raw := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", pURL.Namespace, pURL.Name, pURL.Version, pURL.Subpath)
+	var raw string
 
-	if strings.Contains(raw, "//") {
-		return nil, fmt.Errorf("invalid uses: %q", u)
+	switch ns := pURL.Namespace; {
+	case strings.HasPrefix(ns, "github.com"):
+		if pURL.Name == "" || pURL.Version == "" {
+			return nil, fmt.Errorf("invalid uses: %#+v", pURL)
+		}
+		_, owner, ok := strings.Cut(ns, "github.com/")
+		if !ok {
+			return nil, fmt.Errorf("invalid uses: %q", pURL)
+		}
+		raw = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, pURL.Name, pURL.Version, pURL.Subpath)
+	default:
+		return nil, fmt.Errorf("unsupported namespace: %q", pURL.Namespace)
+	}
+
+	if strings.Contains(strings.TrimPrefix(raw, "https://"), "//") {
+		return nil, fmt.Errorf("invalid uses: %#+v", pURL)
 	}
 
 	logger.Debug("fetching", "url", raw)
@@ -80,7 +83,7 @@ func FetchIntoStore(u Uses, store *Store) (Workflow, error) {
 		return nil, err
 	}
 
-	key := pURL.ToString()
+	key := pURL.String()
 	ok, err := store.Exists(key, tmpFile)
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
@@ -121,24 +124,25 @@ func FetchIntoStore(u Uses, store *Store) (Workflow, error) {
 	return wf, nil
 }
 
-// Run a Uses task.
-func (u Uses) Run(with With) error {
-	logger.Debug("using", "task", u)
+// RunUses runs a task from a remote workflow source.
+func RunUses(uses string, with With) error {
+	logger.Debug("using", "task", uses)
 
-	purl, err := u.Parse()
+	pURL, err := packageurl.FromString(UsesPrefix + uses)
 	if err != nil {
 		return err
 	}
+
 	var wf Workflow
 
-	if purl.Subpath == "" {
+	if pURL.Subpath == "" {
 		var loc string
 
-		switch purl.Namespace {
+		switch pURL.Namespace {
 		case "", ".", "..":
-			loc = purl.Name
+			loc = pURL.Name
 		default:
-			loc = filepath.Join(purl.Namespace, purl.Name)
+			loc = filepath.Join(pURL.Namespace, pURL.Name)
 		}
 
 		fi, err := os.Stat(loc)
@@ -150,12 +154,8 @@ func (u Uses) Run(with With) error {
 			loc = filepath.Join(loc, DefaultFileName)
 		}
 
-		b, err := os.ReadFile(loc)
+		wf, err = ReadAndValidate(loc)
 		if err != nil {
-			return err
-		}
-
-		if err := yaml.Unmarshal(b, &wf); err != nil {
 			return err
 		}
 	} else {
@@ -163,13 +163,13 @@ func (u Uses) Run(with With) error {
 		if err != nil {
 			return err
 		}
-		wf, err = FetchIntoStore(u, store)
+		wf, err = FetchIntoStore(pURL, store)
 		if err != nil {
 			return err
 		}
 	}
 
-	taskName := purl.Qualifiers.Map()["task"]
+	taskName := pURL.Qualifiers.Map()["task"]
 
 	return Run(wf, taskName, with)
 }
