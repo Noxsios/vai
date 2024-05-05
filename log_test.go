@@ -13,7 +13,11 @@ func TestLogger(t *testing.T) {
 	require.NotNil(t, l)
 	require.Equal(t, l, logger)
 
+	defaultLevel := l.GetLevel()
+
 	SetLogLevel(log.DebugLevel)
 
 	require.Equal(t, log.DebugLevel, l.GetLevel())
+
+	SetLogLevel(defaultLevel)
 }
