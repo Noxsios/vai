@@ -72,6 +72,7 @@ func (s Step) Run(with With, outputFilePath string) error {
 	cmd.Env = env
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 	lines := strings.Split(s.CMD, "\n")
 	fmt.Println()
 	customStyles := log.DefaultStyles()

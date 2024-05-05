@@ -97,6 +97,7 @@ func Run(wf Workflow, taskName string, outer With) error {
 							return err
 						}
 						// TODO: conflicted about whether to save the contents of the file or the file path
+						// TODO: how does this interact w/ matrix instances?
 						outputs[step.ID] = out
 					}
 				}

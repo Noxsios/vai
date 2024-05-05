@@ -135,7 +135,8 @@ func RunUses(uses string, with With) error {
 
 	var wf Workflow
 
-	if pURL.Subpath == "" {
+	// If the pURL has no subpath or version, we assume it's a local file.
+	if pURL.Subpath == "" && pURL.Version == "" {
 		var loc string
 
 		switch pURL.Namespace {
