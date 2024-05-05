@@ -1,9 +1,9 @@
 # vai
 
-![GitHub Tag](https://img.shields.io/github/v/tag/Noxsios/vai)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/Noxsios/vai)
-![GitHub License](https://img.shields.io/github/license/Noxsios/vai)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Noxsios/vai)
+![GitHub Tag](https://img.shields.io/github/v/tag/noxsios/vai)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/noxsios/vai)
+![GitHub License](https://img.shields.io/github/license/noxsios/vai)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/noxsios/vai)
 
 A simple task runner. Imagine GitHub actions and Makefile had a baby.
 
@@ -13,14 +13,14 @@ A simple task runner. Imagine GitHub actions and Makefile had a baby.
 ## Installation
 
 ```sh
-go install github.com/Noxsios/vai/cmd/vai@latest
+go install github.com/noxsios/vai/cmd/vai@latest
 ```
 
 To update to the latest version:
 
 ```sh
 rm $(which vai)
-go install github.com/Noxsios/vai/cmd/vai@latest
+go install github.com/noxsios/vai/cmd/vai@latest
 ```
 
 ## Example
@@ -38,7 +38,7 @@ echo-matrix:
       message: ["Hello", "World!"]
 
 remote-echo-short:
-  - uses: github.com/Noxsios/vai@main?task=simple#tasks/echo.yaml
+  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
     with:
       message: hello from main
 EOF
@@ -59,12 +59,12 @@ Enabling schema validation in VSCode:
 
 ```json
     "yaml.schemas": {
-        "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json": "vai.yaml",
+        "https://raw.githubusercontent.com/noxsios/vai/main/vai.schema.json": "vai.yaml",
     },
 ```
 
 Per file basis:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/noxsios/vai/main/vai.schema.json
 ```
