@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Noxsios/vai/workflow",
+  "$id": "https://github.com/noxsios/vai/workflow",
   "$defs": {
     "Matrix": {
       "additionalProperties": {
@@ -20,9 +20,7 @@
               "not": true
             }
           },
-          "required": [
-            "cmd"
-          ]
+          "required": ["cmd"]
         },
         {
           "properties": {
@@ -33,9 +31,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "uses"
-          ]
+          "required": ["uses"]
         }
       ],
       "properties": {

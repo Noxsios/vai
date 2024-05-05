@@ -5,8 +5,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/Noxsios/vai"
 	"github.com/charmbracelet/log"
+	"github.com/noxsios/vai"
 	"github.com/spf13/cobra"
 )
 

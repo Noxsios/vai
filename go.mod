@@ -1,4 +1,4 @@
-module github.com/Noxsios/vai
+module github.com/noxsios/vai
 
 go 1.22.2
 

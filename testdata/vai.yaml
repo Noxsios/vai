@@ -1,5 +1,5 @@
 remote-echo:
-  - uses: github.com/Noxsios/vai@main?task=simple#tasks/echo.yaml
+  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
     with:
       message: remote-test
 

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/Noxsios/vai"
+	"github.com/noxsios/vai"
 )
 
 // main is the entry point for the application
