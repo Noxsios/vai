@@ -49,14 +49,6 @@ $ vai echo --with message="Hello World!"
 echo "$message"
 
 Hello World!
-
-$ vai echo-matrix
-echo "$message"
-
-Hello, World!
-echo "$message"
-
-General Kenobi!
 ```
 
 Learn more w/ `vai --help`
