@@ -102,7 +102,6 @@ func TestStore(t *testing.T) {
 	require.False(t, ok)
 
 	// store and retrieve a workflow
-	helloWorldWorkflow := Workflow{"default": {Step{CMD: "echo 'Hello World!'"}}}
 	b, err = yaml.Marshal(helloWorldWorkflow)
 	require.NoError(t, err)
 	key := packageurl.PackageURL{
