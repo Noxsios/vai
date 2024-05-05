@@ -1,9 +1,16 @@
 // Package main is the entry point for the application
 package main
 
-import "github.com/noxsios/vai/cmd"
+import (
+	"os"
+
+	"github.com/noxsios/vai/cmd"
+)
 
 // main executes the root command.
 func main() {
-	cmd.Execute()
+	cli := cmd.NewRootCmd()
+	if err := cli.Execute(); err != nil {
+		os.Exit(1)
+	}
 }
