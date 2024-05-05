@@ -7,7 +7,7 @@ gen:
   - cmd: go run gen/main.go
 
 echo:
-  - uses: tasks/echo.yaml?task=simple#hello
+  - uses: tasks/echo.yaml?task=simple
     with:
       message: ${{ input | default "Hello World!" }}
 
