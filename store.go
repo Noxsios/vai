@@ -27,8 +27,17 @@ type CacheIndex struct {
 	} `json:"files"`
 }
 
+func NewCacheIndex() *CacheIndex {
+	return &CacheIndex{
+		Files: []struct {
+			Name   string `json:"name"`
+			Digest string `json:"digest"`
+		}{},
+	}
+}
+
 // Find returns the digest of a file by name and a boolean indicating if the file was found.
-func (c CacheIndex) Find(key string) (string, bool) {
+func (c *CacheIndex) Find(key string) (string, bool) {
 	for _, f := range c.Files {
 		if f.Name == key {
 			return f.Digest, true
@@ -72,15 +81,14 @@ func (c *CacheIndex) Remove(key string) {
 // Store is a cache for storing and retrieving remote workflows.
 type Store struct {
 	root  string
-	index CacheIndex
+	index *CacheIndex
 
-	sync      sync.RWMutex
-	indexLock sync.Mutex
+	sync sync.RWMutex
 }
 
 // NewStore creates a new store at the given path.
 func NewStore(path string) (*Store, error) {
-	index := CacheIndex{}
+	index := NewCacheIndex()
 	indexPath := filepath.Join(path, "index.json")
 
 	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
@@ -103,7 +111,7 @@ func NewStore(path string) (*Store, error) {
 			return nil, err
 		}
 
-		if err := json.Unmarshal(b, &index); err != nil {
+		if err := json.Unmarshal(b, index); err != nil {
 			return nil, err
 		}
 	}
@@ -137,9 +145,6 @@ func (s *Store) Fetch(key string) (Workflow, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()
 
-	s.indexLock.Lock()
-	defer s.indexLock.Unlock()
-
 	sha, ok := s.index.Find(key)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
@@ -172,9 +177,6 @@ func (s *Store) Fetch(key string) (Workflow, error) {
 func (s *Store) Store(key string, r io.Reader) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
-
-	s.indexLock.Lock()
-	defer s.indexLock.Unlock()
 
 	sha := sha256.New()
 
@@ -210,9 +212,6 @@ func (s *Store) Delete(key string) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
 
-	s.indexLock.Lock()
-	defer s.indexLock.Unlock()
-
 	sha, ok := s.index.Find(key)
 	if !ok {
 		return fmt.Errorf("key not found")
@@ -238,9 +237,6 @@ func (s *Store) Delete(key string) error {
 func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()
-
-	s.indexLock.Lock()
-	defer s.indexLock.Unlock()
 
 	sha, ok := s.index.Find(key)
 	if !ok {
