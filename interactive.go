@@ -2,6 +2,8 @@ package vai
 
 import tea "github.com/charmbracelet/bubbletea"
 
+// TODO: not really sure how to unit test this
+
 type model struct {
 	yes bool
 }
