@@ -48,9 +48,9 @@ func TestCacheIndex(t *testing.T) {
 }
 
 var shaMap = map[string]string{
-	"a": "87428fc522803d31065e7bce3cf03fe475096631e5e07bbd7a0fde60c4cf25c7",
-	"b": "0263829989b6fd954f72baaf2fc64bc2e2f01d692d4de72986ea808f6e99813f",
-	"c": "a3a5e715f0cc574a73c3f9bebb6bc24f32ffd5b67b387244c2c909da779a1478",
+	"a": "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
+	"b": "3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d",
+	"c": "2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6",
 }
 
 func TestStore(t *testing.T) {
@@ -77,11 +77,17 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.ElementsMatch(t, index.Files, store.index.Files)
 
-	// all keys exist (sha checking is done in store)
-	for k := range shaMap {
+	// all keys exist at the correct sha
+	for k, v := range shaMap {
 		ok, err := store.Exists(k, bytes.NewReader([]byte(k)))
 		require.NoError(t, err)
 		require.True(t, ok)
+
+		for _, f := range store.index.Files {
+			if f.Name == k {
+				require.Equal(t, v, f.Digest)
+			}
+		}
 	}
 
 	// delete

@@ -178,18 +178,19 @@ func (s *Store) Store(key string, r io.Reader) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
 
-	sha := sha256.New()
+	hasher := sha256.New()
 
 	b, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}
 
-	if _, err := sha.Write(b); err != nil {
+	if _, err := hasher.Write(b); err != nil {
 		return err
 	}
 
-	hash := fmt.Sprintf("%x", sha.Sum(nil))
+	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+
 	path := filepath.Join(s.root, hash)
 
 	if err := os.WriteFile(path, b, 0644); err != nil {
