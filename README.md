@@ -2,6 +2,7 @@
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/noxsios/vai)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/noxsios/vai)
+[![codecov](https://codecov.io/gh/Noxsios/vai/graph/badge.svg?token=P7E9QC2RB9)](https://codecov.io/gh/Noxsios/vai)
 ![GitHub License](https://img.shields.io/github/license/noxsios/vai)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/noxsios/vai)
 
