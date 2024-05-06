@@ -16,8 +16,10 @@ import (
 type Operation int
 
 const (
+	// OperationUnknown is an unknown operation
+	OperationUnknown Operation = iota
 	// OperationRun is a step that runs a command
-	OperationRun Operation = iota
+	OperationRun
 	// OperationUses is a step that calls another task
 	OperationUses
 )
@@ -55,7 +57,7 @@ func (s Step) Operation() Operation {
 	if s.Uses != "" {
 		return OperationUses
 	}
-	return -1
+	return OperationUnknown
 }
 
 // Run executes the CMD field of a step
