@@ -96,7 +96,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type:                 "object",
 		Description:          "Additional parameters for the step/task call",
 		MinItems:             &single,
-		AdditionalProperties: oneOfStringIntBool,
+		PatternProperties:   map[string]*jsonschema.Schema{
+			"^[a-zA-Z_]+[a-zA-Z0-9_]*$": oneOfStringIntBool,
+		},
+		AdditionalProperties: jsonschema.FalseSchema,
 	}
 
 	props.Set("with", with)

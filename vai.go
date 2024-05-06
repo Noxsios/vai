@@ -84,7 +84,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 
 				env := os.Environ()
 				for k, v := range templated {
-					env = append(env, fmt.Sprintf("%s=%s", k, v))
+					toEnvVar := func(s string) string {
+						return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+					}
+
+					env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
 				}
 				env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 				// TODO: handle other shells
