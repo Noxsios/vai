@@ -26,26 +26,7 @@ go install github.com/noxsios/vai/cmd/vai@latest
 
 ## Example
 
-```bash
-cat <<EOF > vai.yaml
-echo:
-  - cmd: echo "\$MESSAGE"
-    with:
-      message: \${{ input }}
-
-remote-echo:
-  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
-    with:
-      message: hello from main
-EOF
-```
-
-```sh
-$ vai echo --with message="Hello World!"
-echo "$MESSAGE"
-
-Hello World!
-```
+![demo](https://github.com/Noxsios/vai/assets/50058333/c0c1e906-deb1-4601-814b-8e36a4e8b322)
 
 Learn more w/ `vai --help`
 
