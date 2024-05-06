@@ -2,6 +2,6 @@
 
 simple:
   - cmd: |
-      echo "$message"
+      echo "$MESSAGE"
     with:
       message: ${{ input }}

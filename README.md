@@ -29,7 +29,7 @@ go install github.com/noxsios/vai/cmd/vai@latest
 ```bash
 cat <<EOF > vai.yaml
 echo:
-  - cmd: echo "\$message"
+  - cmd: echo "\$MESSAGE"
     with:
       message: \${{ input }}
 
@@ -42,7 +42,7 @@ EOF
 
 ```sh
 $ vai echo --with message="Hello World!"
-echo "$message"
+echo "$MESSAGE"
 
 Hello World!
 ```

@@ -20,7 +20,9 @@
               "not": true
             }
           },
-          "required": ["cmd"]
+          "required": [
+            "cmd"
+          ]
         },
         {
           "properties": {
@@ -31,7 +33,9 @@
               "type": "string"
             }
           },
-          "required": ["uses"]
+          "required": [
+            "uses"
+          ]
         }
       ],
       "properties": {
@@ -52,19 +56,22 @@
           "description": "Description of the step"
         },
         "with": {
-          "additionalProperties": {
-            "oneOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "integer"
-              }
-            ]
+          "patternProperties": {
+            "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            }
           },
+          "additionalProperties": false,
           "type": "object",
           "minItems": 1,
           "description": "Additional parameters for the step/task call"
