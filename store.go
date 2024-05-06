@@ -27,6 +27,7 @@ type CacheIndex struct {
 	} `json:"files"`
 }
 
+// NewCacheIndex creates a new cache index.
 func NewCacheIndex() *CacheIndex {
 	return &CacheIndex{
 		Files: []struct {

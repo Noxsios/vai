@@ -1,0 +1,11 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+
+ignore:
+  - gen/main.go
+  - cmd/vai/main.go
+  - cmd/root.go
