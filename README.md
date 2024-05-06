@@ -33,12 +33,7 @@ echo:
     with:
       message: \${{ input }}
 
-echo-matrix:
-  - cmd: echo "\$message"
-    matrix:
-      message: ["Hello", "World!"]
-
-remote-echo-short:
+remote-echo:
   - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
     with:
       message: hello from main
