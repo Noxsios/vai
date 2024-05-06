@@ -1,14 +1,6 @@
 package vai
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"os/exec"
-	"strings"
-
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/invopop/jsonschema"
 )
 
@@ -58,38 +50,6 @@ func (s Step) Operation() Operation {
 		return OperationUses
 	}
 	return OperationUnknown
-}
-
-// Run executes the CMD field of a step
-func (s Step) Run(with With, outputFilePath string) error {
-	if s.CMD == "" {
-		return fmt.Errorf("step does not have a command to run")
-	}
-	env := os.Environ()
-	for k, v := range with {
-		env = append(env, fmt.Sprintf("%s=%s", k, v))
-	}
-	env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outputFilePath))
-	cmd := exec.Command("sh", "-e", "-c", s.CMD)
-	cmd.Env = env
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	lines := strings.Split(s.CMD, "\n")
-	fmt.Println()
-	customStyles := log.DefaultStyles()
-	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
-	logger.SetStyles(customStyles)
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-		logger.Printf("$ %s", trimmed)
-	}
-	logger.SetStyles(log.DefaultStyles())
-	fmt.Println()
-	return cmd.Run()
 }
 
 // JSONSchemaExtend extends the JSON schema for a step
@@ -180,72 +140,3 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	}
 }
 
-// ParseOutputFile parses the output file of a step
-func ParseOutputFile(outFilePath string) (map[string]string, error) {
-	f, err := os.Open(outFilePath)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	// error if larger than 50MB, same limits as GitHub Actions
-	if fi.Size() > 50*1024*1024 {
-		return nil, fmt.Errorf("output file too large")
-	}
-
-	scanner := bufio.NewScanner(f)
-	result := make(map[string]string)
-	var currentKey string
-	var currentDelimiter string
-	var multiLineValue []string
-	var collecting bool
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if collecting {
-			if line == currentDelimiter {
-				// End of multiline value
-				value := strings.Join(multiLineValue, "\n")
-				result[currentKey] = value
-				collecting = false
-				multiLineValue = []string{}
-				currentKey = ""
-				currentDelimiter = ""
-			} else {
-				multiLineValue = append(multiLineValue, line)
-			}
-			continue
-		}
-
-		if idx := strings.Index(line, "="); idx != -1 {
-			// Split the line at the first '=' to handle the key-value pair
-			key := line[:idx]
-			value := line[idx+1:]
-			// Check if the value is a potential start of a multiline value
-			if strings.HasSuffix(value, "<<") {
-				currentKey = key
-				currentDelimiter = strings.TrimSpace(value[2:])
-				collecting = true
-			} else {
-				result[key] = value
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	// Handle case where file ends but multiline was being collected
-	if collecting && len(multiLineValue) > 0 {
-		value := strings.Join(multiLineValue, "\n")
-		result[currentKey] = value
-	}
-
-	return result, nil
-}
