@@ -2,8 +2,14 @@
 package vai
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 // Force is a global flag to bypass SHA256 checksum verification for cached remote files.
@@ -48,11 +54,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 			instances = append(instances, MatrixInstance{})
 		}
 		for _, mi := range instances {
-			w, ng, err := PerformLookups(outer, step.With, global, outputs, mi)
+			templated, persisted, err := PerformLookups(outer, step.With, global, outputs, mi)
 			if err != nil {
 				return err
 			}
-			for k, v := range ng {
+			for k, v := range persisted {
 				global[k] = v
 			}
 
@@ -60,11 +66,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 			case OperationUses:
 				_, err := wf.Find(step.Uses)
 				if err != nil {
-					if err := RunUses(step.Uses, w); err != nil {
+					if err := ExecuteUses(step.Uses, templated); err != nil {
 						return err
 					}
 				} else {
-					if err := Run(wf, step.Uses, w); err != nil {
+					if err := Run(wf, step.Uses, templated); err != nil {
 						return err
 					}
 				}
@@ -75,7 +81,36 @@ func Run(wf Workflow, taskName string, outer With) error {
 				}
 				outFile.Close()
 				defer os.Remove(outFile.Name())
-				if err := step.Run(w, outFile.Name()); err != nil {
+
+				env := os.Environ()
+				for k, v := range templated {
+					env = append(env, fmt.Sprintf("%s=%s", k, v))
+				}
+				env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
+				// TODO: handle other shells
+				cmd := exec.Command("sh", "-e", "-c", step.CMD)
+				cmd.Env = env
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				cmd.Stdin = os.Stdin
+
+				customStyles := log.DefaultStyles()
+				customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
+				logger.SetStyles(customStyles)
+
+				fmt.Println()
+				lines := strings.Split(step.CMD, "\n")
+				for _, line := range lines {
+					trimmed := strings.TrimSpace(line)
+					if trimmed == "" {
+						continue
+					}
+					logger.Printf("$ %s", trimmed)
+				}
+				fmt.Println()
+				logger.SetStyles(log.DefaultStyles())
+
+				if err := cmd.Run(); err != nil {
 					return err
 				}
 
@@ -109,4 +144,74 @@ func Run(wf Workflow, taskName string, outer With) error {
 	}
 
 	return nil
+}
+
+// ParseOutputFile parses the output file of a step
+func ParseOutputFile(loc string) (map[string]string, error) {
+	f, err := os.Open(loc)
+	if err != nil {
+		return nil, err
+	}
+
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	// error if larger than 50MB, same limits as GitHub Actions
+	if fi.Size() > 50*1024*1024 {
+		return nil, fmt.Errorf("output file too large")
+	}
+
+	scanner := bufio.NewScanner(f)
+	result := make(map[string]string)
+	var currentKey string
+	var currentDelimiter string
+	var multiLineValue []string
+	var collecting bool
+
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		if collecting {
+			if line == currentDelimiter {
+				// End of multiline value
+				value := strings.Join(multiLineValue, "\n")
+				result[currentKey] = value
+				collecting = false
+				multiLineValue = []string{}
+				currentKey = ""
+				currentDelimiter = ""
+			} else {
+				multiLineValue = append(multiLineValue, line)
+			}
+			continue
+		}
+
+		if idx := strings.Index(line, "="); idx != -1 {
+			// Split the line at the first '=' to handle the key-value pair
+			key := line[:idx]
+			value := line[idx+1:]
+			// Check if the value is a potential start of a multiline value
+			if strings.HasSuffix(value, "<<") {
+				currentKey = key
+				currentDelimiter = strings.TrimSpace(value[2:])
+				collecting = true
+			} else {
+				result[key] = value
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	// Handle case where file ends but multiline was being collected
+	if collecting && len(multiLineValue) > 0 {
+		value := strings.Join(multiLineValue, "\n")
+		result[currentKey] = value
+	}
+
+	return result, nil
 }

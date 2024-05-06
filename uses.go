@@ -124,8 +124,8 @@ func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) 
 	return wf, nil
 }
 
-// RunUses runs a task from a remote workflow source.
-func RunUses(uses string, with With) error {
+// ExecuteUses runs a task from a remote workflow source.
+func ExecuteUses(uses string, with With) error {
 	logger.Debug("using", "task", uses)
 
 	pURL, err := packageurl.FromString(UsesPrefix + uses)

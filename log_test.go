@@ -15,9 +15,9 @@ func TestLogger(t *testing.T) {
 
 	defaultLevel := l.GetLevel()
 
+	defer SetLogLevel(defaultLevel)
+
 	SetLogLevel(log.DebugLevel)
 
 	require.Equal(t, log.DebugLevel, l.GetLevel())
-
-	SetLogLevel(defaultLevel)
 }
