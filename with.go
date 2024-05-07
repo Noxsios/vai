@@ -3,6 +3,7 @@ package vai
 import (
 	"fmt"
 	"maps"
+	"runtime"
 	"strings"
 	"text/template"
 )
@@ -70,7 +71,16 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 			return nil, nil, err
 		}
 		var templated strings.Builder
-		if err := tmpl.Execute(&templated, nil); err != nil {
+
+		if err := tmpl.Execute(&templated, struct {
+			OS   string
+			ARCH string
+			PLATFORM string
+		}{
+			OS:   runtime.GOOS,
+			ARCH: runtime.GOARCH,
+			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		}); err != nil {
 			return nil, nil, err
 		}
 		result := templated.String()
