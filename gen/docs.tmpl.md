@@ -16,6 +16,8 @@ vai [task(s)] [flags]
 
 ### List available tasks
 
+> Task names must follow the following regex: `{%range $key, $value := .Schema.PatternProperties%}{% $key %}{%end%}`
+
 ```sh
 # in a directory with a vai.yaml file
 vai --list
@@ -142,7 +144,7 @@ driving:
   - cmd: |
       DESTINATION="Home"
       echo "Arrived at $DESTINATION"
-      echo "destination:$DESTINATION" >> $VAI_OUTPUT
+      echo "destination=$DESTINATION" >> $VAI_OUTPUT
     id: history    
   - cmd: |
       echo "Done driving"
@@ -154,14 +156,3 @@ driving:
 ```sh
 vai driving
 ```
-
-<!-- ## Task Schema
-
-> Task name regex: `{%range $key, $value := .Schema.PatternProperties%}{% $key %}{%end%}`
-
-<details>
-<summary>View schema</summary>
-```json
-{%.SchemaJSON%}
-```
-</details> -->
