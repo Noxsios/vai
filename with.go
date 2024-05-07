@@ -73,12 +73,12 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 		var templated strings.Builder
 
 		if err := tmpl.Execute(&templated, struct {
-			OS   string
-			ARCH string
+			OS       string
+			ARCH     string
 			PLATFORM string
 		}{
-			OS:   runtime.GOOS,
-			ARCH: runtime.GOARCH,
+			OS:       runtime.GOOS,
+			ARCH:     runtime.GOARCH,
 			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 		}); err != nil {
 			return nil, nil, err

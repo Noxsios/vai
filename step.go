@@ -93,10 +93,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	var single uint64 = 1
 
 	with := &jsonschema.Schema{
-		Type:                 "object",
-		Description:          "Additional parameters for the step/task call",
-		MinItems:             &single,
-		PatternProperties:   map[string]*jsonschema.Schema{
+		Type:        "object",
+		Description: "Additional parameters for the step/task call",
+		MinItems:    &single,
+		PatternProperties: map[string]*jsonschema.Schema{
 			"^[a-zA-Z_]+[a-zA-Z0-9_]*$": oneOfStringIntBool,
 		},
 		AdditionalProperties: jsonschema.FalseSchema,
@@ -142,4 +142,3 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		oneOfUses,
 	}
 }
-
