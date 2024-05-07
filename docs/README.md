@@ -21,6 +21,8 @@ vai [task(s)] [flags]
 
 ### List available tasks
 
+> Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`
+
 ```sh
 # in a directory with a vai.yaml file
 vai --list
@@ -147,7 +149,7 @@ driving:
   - cmd: |
       DESTINATION="Home"
       echo "Arrived at $DESTINATION"
-      echo "destination:$DESTINATION" >> $VAI_OUTPUT
+      echo "destination=$DESTINATION" >> $VAI_OUTPUT
     id: history    
   - cmd: |
       echo "Done driving"
@@ -159,135 +161,3 @@ driving:
 ```sh
 vai driving
 ```
-
-<!-- ## Task Schema
-
-> Task name regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`
-
-<details>
-<summary>View schema</summary>
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/noxsios/vai/workflow",
-  "$defs": {
-    "Matrix": {
-      "additionalProperties": {
-        "items": true,
-        "type": "array"
-      },
-      "type": "object"
-    },
-    "Step": {
-      "oneOf": [
-        {
-          "properties": {
-            "cmd": {
-              "type": "string"
-            },
-            "uses": {
-              "not": true
-            }
-          },
-          "required": [
-            "cmd"
-          ]
-        },
-        {
-          "properties": {
-            "cmd": {
-              "not": true
-            },
-            "uses": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "uses"
-          ]
-        }
-      ],
-      "properties": {
-        "cmd": {
-          "type": "string",
-          "description": "Command to run"
-        },
-        "uses": {
-          "type": "string",
-          "description": "Location of a remote task to call conforming to the purl spec"
-        },
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the step"
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the step"
-        },
-        "with": {
-          "patternProperties": {
-            "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "minItems": 1,
-          "description": "Additional parameters for the step/task call"
-        },
-        "matrix": {
-          "additionalProperties": {
-            "items": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array"
-          },
-          "type": "object",
-          "minItems": 1,
-          "description": "Matrix of parameters"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    },
-    "Task": {
-      "items": {
-        "$ref": "#/$defs/Step"
-      },
-      "type": "array"
-    },
-    "With": {
-      "type": "object"
-    }
-  },
-  "patternProperties": {
-    "^[_a-zA-Z][a-zA-Z0-9_-]*$": {
-      "$ref": "#/$defs/Task",
-      "description": "Name of the task"
-    }
-  },
-  "additionalProperties": false,
-  "type": "object"
-}
-```
-</details> -->
