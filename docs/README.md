@@ -96,11 +96,15 @@ vai echo --with message="Hello, World!"
 
 ### Run a task from a remote file
 
-> `uses` syntax is an implementation of the package-url spec: `{url}@{version}?task={task}#{path}`
+> [!WARNING]
+> Currently only supports GitHub repos.
+>
+> `uses` syntax leverages the package-url spec: `{url}@{version}?task={task}#{path}`
 
 ```yaml
 # vai.yaml
 remote-echo:
+  # run the "simple" task from the "tasks/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
   uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
   with:
     message: "Hello, World!"
