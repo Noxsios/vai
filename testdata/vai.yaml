@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=../vai.schema.json
+
 remote-echo:
   - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
     with:
@@ -23,3 +25,19 @@ same:
   - uses: world
     with:
       message: same
+
+default:
+  - cmd: echo "default"
+
+echo:
+  - uses: tasks/echo.yaml?task=simple
+    with:
+      message: ${{ input | default "Hello World!" }}
+
+echo-matrix:
+  - uses: ../tasks/echo.yaml?task=simple
+    matrix:
+      message: ["Hello, World!", "General Kenobi!"]
+
+hello-world:
+  - cmd: echo "Hello, World!"
