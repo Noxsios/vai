@@ -41,11 +41,50 @@ echo:
   cmd: echo "Hello, $NAME, today is $DATE"
   with:
     name: ${{ input }}
-    date: ${{ input | fallback "now }}
+    # default to "now" if not provided
+    date: ${{ input | default "now" }}
 ```
 
 ```sh
 vai echo --with name=$(whoami) --with date=$(date)
+```
+
+### Run another task as a step
+
+```yaml
+# vai.yaml
+general-kenobi:
+    cmd: echo "General Kenobi"
+
+hello:
+  cmd: echo "Hello There!"
+  uses: general-kenobi
+```
+
+```sh
+vai hello
+```
+
+### Run a task from a local file
+
+```yaml
+# tasks/echo.yaml
+simple:
+  cmd: echo $MESSAGE
+  with:
+    message: ${{ input }}
+```
+
+```yaml
+# vai.yaml
+echo:
+  - uses: tasks/echo.yaml?task=simple
+    with:
+      message: ${{ input }}
+```
+
+```sh
+vai echo --with message="Hello, World!"
 ```
 
 ### Run a task from a remote file
@@ -62,6 +101,58 @@ remote-echo:
 
 ```sh
 vai remote-echo
+```
+
+### Persist variables between steps
+
+> NOTE: setting a variable with `persist` will persist it for the entire task
+> and can be overridden per-task.
+>
+> This is not persistent between tasks. For that, pass the variable using `with`.
+
+```yaml
+# vai.yaml
+set-name:
+  cmd: echo "Setting name to $NAME"
+  with:
+    name: ${{ input | persist }}
+  cmd: echo "Hello, $NAME"
+  cmd: echo "$NAME can be overridden per-task, but will persist between tasks"
+  with:
+    name: "World"
+  cmd: echo "See? $NAME"
+```
+
+```sh
+vai set-name --with name="Universe"
+```
+
+### Passing outputs between steps
+
+> This leverages the same mechanism as GitHub Actions.
+>
+> The `id` field is used to reference the output in subsequent steps.
+>
+> The `from` function is used to reference the output from a previous step.
+
+```yaml
+# vai.yaml
+driving:
+  - cmd: echo "Driving..."
+  - cmd: |
+      DESTINATION="Home"
+      echo "Arrived at $DESTINATION"
+      echo "destination:$DESTINATION" >> $VAI_OUTPUT
+    id: history    
+  - cmd: |
+      echo "Done driving"
+      echo "I arrived at $LOCATION"
+    with:
+      location: ${{ from "history" "destination" }}
+```
+
+```sh
+vai driving
 ```
 
 <!-- ## Task Schema
