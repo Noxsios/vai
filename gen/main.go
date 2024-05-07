@@ -54,12 +54,12 @@ func main() {
 	flags.PrintDefaults()
 
 	meta := struct {
-		Schema *jsonschema.Schema
+		Schema     *jsonschema.Schema
 		SchemaJSON string
-		Flags string
+		Flags      string
 	}{
-		Schema: schema,
-		Flags: buf.String(),
+		Schema:     schema,
+		Flags:      buf.String(),
 		SchemaJSON: string(b),
 	}
 
