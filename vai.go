@@ -42,29 +42,33 @@ func Run(wf Workflow, taskName string, outer With) error {
 	}
 
 	for _, step := range task {
-		instances := make([]MatrixInstance, 0)
-		for k, v := range step.Matrix {
-			for _, i := range v {
-				mi := make(MatrixInstance)
-				mi[k] = i
-				instances = append(instances, mi)
-			}
+		templated, persisted, err := PerformLookups(outer, step.With, global, outputs)
+		if err != nil {
+			return err
 		}
-		if len(instances) == 0 {
-			instances = append(instances, MatrixInstance{})
+		for k, v := range persisted {
+			global[k] = v
 		}
-		for _, mi := range instances {
-			templated, persisted, err := PerformLookups(outer, step.With, global, outputs, mi)
-			if err != nil {
-				return err
-			}
-			for k, v := range persisted {
-				global[k] = v
-			}
 
-			switch step.Operation() {
-			case OperationUses:
-				_, err := wf.Find(step.Uses)
+		switch step.Operation() {
+		case OperationUses:
+			instances := make([]MatrixInstance, 0)
+			for k, v := range step.Matrix {
+				for _, i := range v {
+					mi := make(MatrixInstance)
+					mi[k] = i
+					instances = append(instances, mi)
+				}
+			}
+			if len(instances) == 0 {
+				instances = append(instances, MatrixInstance{})
+			}
+			for _, mi := range instances {
+				templated, err := templated.MergeMatrixInstance(mi)
+				if err != nil {
+					return err
+				}
+				_, err = wf.Find(step.Uses)
 				if err != nil {
 					if err := ExecuteUses(step.Uses, templated); err != nil {
 						return err
@@ -74,76 +78,75 @@ func Run(wf Workflow, taskName string, outer With) error {
 						return err
 					}
 				}
-			case OperationRun:
-				outFile, err := os.CreateTemp("", "vai-output-*")
+			}
+		case OperationRun:
+			outFile, err := os.CreateTemp("", "vai-output-*")
+			if err != nil {
+				return err
+			}
+			outFile.Close()
+			defer os.Remove(outFile.Name())
+
+			env := os.Environ()
+			for k, v := range templated {
+				toEnvVar := func(s string) string {
+					return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+				}
+
+				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
+			}
+			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
+			// TODO: handle other shells
+			cmd := exec.Command("sh", "-e", "-c", step.CMD)
+			cmd.Env = env
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdin = os.Stdin
+
+			customStyles := log.DefaultStyles()
+			customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
+			logger.SetStyles(customStyles)
+
+			fmt.Println()
+			lines := strings.Split(step.CMD, "\n")
+			for _, line := range lines {
+				trimmed := strings.TrimSpace(line)
+				if trimmed == "" {
+					continue
+				}
+				logger.Printf("$ %s", trimmed)
+			}
+			fmt.Println()
+			logger.SetStyles(log.DefaultStyles())
+
+			if err := cmd.Run(); err != nil {
+				return err
+			}
+
+			if step.ID != "" {
+				outFile, err := os.Open(outFile.Name())
 				if err != nil {
 					return err
 				}
-				outFile.Close()
-				defer os.Remove(outFile.Name())
 
-				env := os.Environ()
-				for k, v := range templated {
-					toEnvVar := func(s string) string {
-						return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
-					}
-
-					env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
-				}
-				env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
-				// TODO: handle other shells
-				cmd := exec.Command("sh", "-e", "-c", step.CMD)
-				cmd.Env = env
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				cmd.Stdin = os.Stdin
-
-				customStyles := log.DefaultStyles()
-				customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
-				logger.SetStyles(customStyles)
-
-				fmt.Println()
-				lines := strings.Split(step.CMD, "\n")
-				for _, line := range lines {
-					trimmed := strings.TrimSpace(line)
-					if trimmed == "" {
-						continue
-					}
-					logger.Printf("$ %s", trimmed)
-				}
-				fmt.Println()
-				logger.SetStyles(log.DefaultStyles())
-
-				if err := cmd.Run(); err != nil {
+				fi, err := outFile.Stat()
+				if err != nil {
 					return err
 				}
 
-				if step.ID != "" {
-					outFile, err := os.Open(outFile.Name())
+				if fi.Size() > 0 {
+					outputs[step.ID] = make(map[string]string)
+					out, err := ParseOutputFile(outFile.Name())
 					if err != nil {
 						return err
 					}
-
-					fi, err := outFile.Stat()
-					if err != nil {
-						return err
-					}
-
-					if fi.Size() > 0 {
-						outputs[step.ID] = make(map[string]string)
-						out, err := ParseOutputFile(outFile.Name())
-						if err != nil {
-							return err
-						}
-						// TODO: conflicted about whether to save the contents of the file or the file path
-						// TODO: how does this interact w/ matrix instances?
-						outputs[step.ID] = out
-					}
+					// TODO: conflicted about whether to save the contents of the file or the file path
+					outputs[step.ID] = out
 				}
-
-			default:
-				return fmt.Errorf("unknown operation")
 			}
+
+		default:
+			return fmt.Errorf("unknown operation")
 		}
 	}
 
