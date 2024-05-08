@@ -65,7 +65,7 @@ general-kenobi:
 
 hello:
   - cmd: echo "Hello There!"
-    uses: general-kenobi
+  - uses: general-kenobi
 ```
 
 ```sh
@@ -129,7 +129,7 @@ set-name:
       name: ${{ input | persist }}
   - cmd: echo "Hello, $NAME"
   - cmd: echo "$NAME can be overridden per-task, but will persist between tasks"
-  - with:
+    with:
       name: "World"
   - cmd: echo "See? $NAME"
 ```
