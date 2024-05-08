@@ -1,0 +1,33 @@
+exec vai hello-world default echo --with name=Jeff
+cmp stderr stderr.txt
+cmp stdout stdout.txt
+
+-- vai.yaml --
+default:
+  - cmd: echo "default"
+
+hello-world:
+  - cmd: echo "Hello, World!"
+
+echo:
+  - cmd: echo "Hello, $NAME, today is $DATE"
+    with:
+      name: ${{ input }}
+      # default to "now" if not provided
+      date: ${{ input | default "now" }}
+
+-- stderr.txt --
+$ echo "Hello, World!"
+$ echo "default"
+WARN no input key=date
+$ echo "Hello, $NAME, today is $DATE"
+-- stdout.txt --
+
+
+Hello, World!
+
+
+default
+
+
+Hello, Jeff, today is now
