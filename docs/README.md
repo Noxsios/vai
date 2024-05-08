@@ -45,11 +45,11 @@ vai task1 task2
 ```yaml
 # vai.yaml
 echo:
-  cmd: echo "Hello, $NAME, today is $DATE"
-  with:
-    name: ${{ input }}
-    # default to "now" if not provided
-    date: ${{ input | default "now" }}
+  - cmd: echo "Hello, $NAME, today is $DATE"
+    with:
+      name: ${{ input }}
+      # default to "now" if not provided
+      date: ${{ input | default "now" }}
 ```
 
 ```sh
@@ -61,11 +61,11 @@ vai echo --with name=$(whoami) --with date=$(date)
 ```yaml
 # vai.yaml
 general-kenobi:
-    cmd: echo "General Kenobi"
+  - cmd: echo "General Kenobi"
 
 hello:
-  cmd: echo "Hello There!"
-  uses: general-kenobi
+  - cmd: echo "Hello There!"
+    uses: general-kenobi
 ```
 
 ```sh
@@ -77,9 +77,9 @@ vai hello
 ```yaml
 # tasks/echo.yaml
 simple:
-  cmd: echo $MESSAGE
-  with:
-    message: ${{ input }}
+  - cmd: echo "$MESSAGE"
+    with:
+      message: ${{ input }}
 ```
 
 ```yaml
@@ -104,10 +104,10 @@ vai echo --with message="Hello, World!"
 ```yaml
 # vai.yaml
 remote-echo:
-  # run the "simple" task from the "tasks/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
-  uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
-  with:
-    message: "Hello, World!"
+    # run the "simple" task from the "tasks/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
+  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
+    with:
+      message: "Hello, World!"
 ```
 
 ```sh
@@ -124,14 +124,14 @@ vai remote-echo
 ```yaml
 # vai.yaml
 set-name:
-  cmd: echo "Setting name to $NAME"
-  with:
-    name: ${{ input | persist }}
-  cmd: echo "Hello, $NAME"
-  cmd: echo "$NAME can be overridden per-task, but will persist between tasks"
-  with:
-    name: "World"
-  cmd: echo "See? $NAME"
+  - cmd: echo "Setting name to $NAME"
+    with:
+      name: ${{ input | persist }}
+  - cmd: echo "Hello, $NAME"
+  - cmd: echo "$NAME can be overridden per-task, but will persist between tasks"
+  - with:
+      name: "World"
+  - cmd: echo "See? $NAME"
 ```
 
 ```sh
