@@ -2,7 +2,9 @@
 package cmd
 
 import (
+	"cmp"
 	"runtime/debug"
+	"slices"
 
 	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai"
@@ -54,9 +56,21 @@ func NewRootCmd() *cobra.Command {
 
 			if list {
 				logger.Print("Available:\n")
+				names := []string{}
 				for k := range wf {
-					logger.Printf("- %s", k)
+					names = append(names, k)
 				}
+				slices.SortStableFunc(names, func(a, b string) int {
+					if a == vai.DefaultTaskName {
+						return -1
+					}
+					return cmp.Compare(a, b)
+				})
+
+				for _, n := range names {
+					logger.Printf("- %s", n)
+				}
+
 				return nil
 			}
 			for _, call := range args {

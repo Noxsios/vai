@@ -1,0 +1,22 @@
+exec vai hello
+cmp stderr stderr.txt
+cmp stdout stdout.txt
+
+-- vai.yaml --
+general-kenobi:
+  - cmd: echo "General Kenobi"
+
+hello:
+  - cmd: echo "Hello There!"
+  - uses: general-kenobi
+
+-- stderr.txt --
+$ echo "Hello There!"
+$ echo "General Kenobi"
+-- stdout.txt --
+
+
+Hello There!
+
+
+General Kenobi
