@@ -18,6 +18,18 @@ type WithEntry any
 // as `foo=bar` to the command.
 type With map[string]WithEntry
 
+// MergeMatrixInstance merges a MatrixInstance into a With map
+func (w With) MergeMatrixInstance(mi MatrixInstance) (With, error) {
+	for k, v := range mi {
+		_, ok := w[k]
+		if ok {
+			return nil, fmt.Errorf("matrix key %q already exists in with", k)
+		}
+		w[k] = v
+	}
+	return w, nil
+}
+
 // PerformLookups does the following:
 //
 // 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `outer` and `local` With maps
@@ -25,12 +37,12 @@ type With map[string]WithEntry
 // 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
 //
 // 3. MatrixInstance: merges the `mi` MatrixInstance into the result, with `mi` taking precedence
-func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi MatrixInstance) (With, With, error) {
-	logger.Debug("templating", "outer", outer, "local", local, "global", persisted, "matrix-inst", mi)
+func PerformLookups(outer, local, persisted With, previousOutputs CommandOutputs) (With, With, error) {
+	logger.Debug("templating", "outer", outer, "local", local, "global", persisted)
 
 	r := make(With)
 
-	np := maps.Clone(persisted)
+	persist := maps.Clone(persisted)
 
 	for k, v := range local {
 		val := fmt.Sprintf("%s", v)
@@ -53,11 +65,11 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 				if val == "" {
 					return ""
 				}
-				np[k] = val
+				persist[k] = val
 				return val
 			},
 			"from": func(taskName, name string) string {
-				v, ok := outputs[taskName]
+				v, ok := previousOutputs[taskName]
 				if !ok {
 					return ""
 				}
@@ -87,7 +99,7 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 		r[k] = result
 	}
 
-	for k, v := range np {
+	for k, v := range persist {
 		_, ok := r[k]
 		if ok {
 			continue
@@ -95,14 +107,6 @@ func PerformLookups(outer, local, persisted With, outputs CommandOutputs, mi Mat
 		r[k] = v
 	}
 
-	for k, v := range mi {
-		_, ok := r[k]
-		if ok {
-			return nil, nil, fmt.Errorf("matrix key %q already exists in with", k)
-		}
-		r[k] = v
-	}
-
 	logger.Debug("templated", "result", r)
-	return r, np, nil
+	return r, persist, nil
 }
