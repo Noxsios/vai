@@ -1,8 +1,6 @@
 +++
 title = 'Introduction'
 linkTitle = 'Documentation'
-date = 2024-05-10T15:29:19-05:00
-draft = true
 +++
 
 👋 Hello! Welcome to the Vai documentation!
