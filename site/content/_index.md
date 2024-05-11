@@ -1,14 +1,23 @@
 ---
 title: ''
+toc: false
 ---
+
+Vai: a simple task runner.
+
+## Installation
 
 ```sh
 go install github.com/noxsios/vai/cmd/vai@latest
 ```
 
+## Usage
+
 ```bash
 {{< usage >}}
 ```
+
+## Next
 
 {{< cards >}}
   {{< card link="docs/schema" title="Schema" icon="document-duplicate" >}}

@@ -22,7 +22,7 @@ go install github.com/noxsios/vai/cmd/vai@latest
 
 ![demo](https://github.com/Noxsios/vai/assets/50058333/c0c1e906-deb1-4601-814b-8e36a4e8b322)
 
-Checkout more examples in the [docs](docs/README.md).
+Checkout more examples in the [docs](https://noxsios.github.io/vai/docs/).
 
 View CLI usage w/ `vai --help`
 

@@ -1,6 +1,15 @@
-baseURL: https://vai.razzle.cloud
 languageCode: en-us
 title: Vai
+
+markup:
+  # allow raw html
+  goldmark:
+    renderer:
+      unsafe: true
+
+  # enable hextra syntax highlight
+  highlight:
+    noClasses: false
 
 module:
   imports:
@@ -26,11 +35,19 @@ menu:
       url: "https://github.com/noxsios/vai"
       params:
         icon: github
+    - name: razzle
+      weight: 6
+      url: "https://razzle.cloud"
+      params:
+        icon: razzle
 
 params:
   navbar:
     displayTitle: true
     displayLogo: false
+
+  footer:
+    displayCopyright: true
 
   editURL:
     enable: true
