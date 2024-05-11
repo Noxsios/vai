@@ -43,8 +43,13 @@ menu:
 
 params:
   navbar:
-    displayTitle: true
-    displayLogo: false
+    displayTitle: false
+    displayLogo: true
+    logo:
+      path: favicon.svg
+      dark: favicon-dark.svg
+      width: 40
+      height: 40
 
   footer:
     displayCopyright: true

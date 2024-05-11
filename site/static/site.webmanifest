@@ -1,0 +1,7 @@
+{
+  "name": "vai",
+  "short_name": "vai",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}
