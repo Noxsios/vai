@@ -1,25 +1,10 @@
-# vai
+---
+title: 'Examples'
+---
 
-## Usage
+## List available tasks
 
-```sh
-vai [task(s)] [flags]
-```
-
-```plaintext
-  -F, --force                 ignore checksum mismatch for cached remote files
-      --list                  list available tasks
-  -l, --log-level string      log level (default "info")
-  -V, --version               print version
-  -w, --with stringToString   variables to pass to the called task(s) (default [])
-
-```
-
-## Examples
-
-<!-- TODO: auto gen this from tests -->
-
-### List available tasks
+<!-- TODO: get regex dynamically -->
 
 > Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`
 
@@ -28,22 +13,21 @@ vai [task(s)] [flags]
 vai --list
 ```
 
-### Run the "default" task
+## Run the "default" task
 
 ```sh
 vai
 ```
 
-### Run multiple tasks
+## Run multiple tasks
 
 ```sh
 vai task1 task2
 ```
 
-### Run a task with variables
+## Run a task with variables
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 echo:
   - cmd: echo "Hello, $NAME, today is $DATE"
     with:
@@ -56,10 +40,9 @@ echo:
 vai echo --with name=$(whoami) --with date=$(date)
 ```
 
-### Run another task as a step
+## Run another task as a step
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 general-kenobi:
   - cmd: echo "General Kenobi"
 
@@ -72,18 +55,16 @@ hello:
 vai hello
 ```
 
-### Run a task from a local file
+## Run a task from a local file
 
-```yaml
-# tasks/echo.yaml
+```yaml {filename="tasks/echo.yaml"}
 simple:
   - cmd: echo "$MESSAGE"
     with:
       message: ${{ input }}
 ```
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 echo:
   - uses: tasks/echo.yaml?task=simple
     with:
@@ -94,15 +75,14 @@ echo:
 vai echo --with message="Hello, World!"
 ```
 
-### Run a task from a remote file
+## Run a task from a remote file
 
 > [!WARNING]
 > Currently only supports GitHub repos.
 >
 > `uses` syntax leverages the package-url spec: `{url}@{version}?task={task}#{path}`
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 remote-echo:
     # run the "simple" task from the "tasks/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
   - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
@@ -114,15 +94,14 @@ remote-echo:
 vai remote-echo
 ```
 
-### Persist variables between steps
+## Persist variables between steps
 
 > NOTE: setting a variable with `persist` will persist it for the entire task
 > and can be overridden per-task.
 >
 > This is not persistent between tasks. For that, pass the variable using `with`.
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 set-name:
   - cmd: echo "Setting name to $NAME"
     with:
@@ -138,7 +117,7 @@ set-name:
 vai set-name --with name="Universe"
 ```
 
-### Passing outputs between steps
+## Passing outputs between steps
 
 > This leverages the same mechanism as GitHub Actions.
 >
@@ -146,8 +125,7 @@ vai set-name --with name="Universe"
 >
 > The `from` function is used to reference the output from a previous step.
 
-```yaml
-# vai.yaml
+```yaml {filename="vai.yaml"}
 driving:
   - cmd: echo "Driving..."
   - cmd: |

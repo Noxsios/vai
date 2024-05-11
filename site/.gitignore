@@ -1,0 +1,5 @@
+.hugo_build.lock
+
+data/usage.json
+data/vai.schema.json
+public
