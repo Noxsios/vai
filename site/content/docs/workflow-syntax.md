@@ -1,25 +1,98 @@
 ---
-title: 'Examples'
+title: 'Workflow Syntax'
 ---
 
-## List available tasks
+A Vai workflow is any YAML file that conforms to the [`vai` schema](./schema-validation.md#raw-schema).
 
-<!-- TODO: get regex dynamically -->
+Unless specified, the default file name is `vai.yaml`.
 
-> Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`
+## Structure
+
+Similar to `Makefile`s, a Vai workflow is a map of tasks, where tasks are a list of steps. Checkout the comparison below:
+
+{{< tabs items="Makefile,Vai" >}}
+
+  {{< tab >}}
+  
+```makefile {filename="Makefile"}
+.DEFAULT_GOAL := build
+
+build:
+	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+
+test:
+	go test -v -race -cover -failfast -timeout 3m ./...
+
+clean:
+	rm -rf bin/
+```
+
+  {{< /tab >}}
+  {{< tab >}}
+  
+```yaml {filename="vai.yaml"}
+default:
+    - uses: build
+
+build:
+    - cmd: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+
+test:
+    - cmd: go test -v -race -cover -failfast -timeout 3m ./...
+
+clean:
+    - cmd: rm -rf bin/
+```
+
+  {{< /tab >}}
+
+{{< /tabs >}}
+
+## Task names
+
+Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`.
+
+### Examples of valid task names
+
+```yaml
+build: ...
+another-task: ...
+UPPERCASE: ...
+mIxEdCaSe: ...
+WithNumbers123: ...
+```
+
+## `--list` flag
+
+The `--list` flag can be used to list all the tasks in a Vai workflow.
+
+If defined, the `default` task will be listed first. Otherwise, tasks will be listed in alphabetical order.
+
+### Example of listing tasks
 
 ```sh
-# in a directory with a vai.yaml file
-vai --list
+$ vai --list
+
+Available:
+
+- default
+- build
+- test
 ```
 
 ## Run the "default" task
 
+The task named `default` in a Vai workflow is the default task that will be run when no task is specified.
+
 ```sh
-vai
+$ vai
+# is equivalent to
+$ vai default
 ```
 
 ## Run multiple tasks
+
+Like `Makefile`, you can run multiple tasks in a single command.
 
 ```sh
 vai task1 task2

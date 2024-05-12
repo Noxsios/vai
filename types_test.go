@@ -29,6 +29,17 @@ func TestOrderedTaskNames(t *testing.T) {
 	names := helloWorldWorkflow.OrderedTaskNames()
 	expected := []string{"default", "a-task", "task-b"}
 	require.ElementsMatch(t, expected, names)
+
+	wf := Workflow{"foo": nil, "bar": nil, "baz": nil, "default": nil}
+	names = wf.OrderedTaskNames()
+	expected = []string{"default", "bar", "baz", "foo"}
+	require.ElementsMatch(t, expected, names)
+
+	wf["default"] = nil
+
+	names = wf.OrderedTaskNames()
+	expected = []string{"default", "bar", "baz", "foo"}
+	require.ElementsMatch(t, expected, names)
 }
 
 func TestWorkflowSchemaGen(t *testing.T) {
