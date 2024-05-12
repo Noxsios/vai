@@ -16,6 +16,7 @@ var level string
 var ver bool
 var list bool
 
+// NewRootCmd creates the root command for the vai CLI.
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vai",
