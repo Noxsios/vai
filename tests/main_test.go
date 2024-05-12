@@ -16,6 +16,6 @@ func TestMain(m *testing.M) {
 
 func TestSimple(t *testing.T) {
 	testscript.Run(t, testscript.Params{
-		Dir: "testdata/simple",
+		Dir: "testdata",
 	})
 }
