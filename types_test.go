@@ -9,8 +9,8 @@ import (
 )
 
 // helloWorldWorkflow is a simple workflow that prints "Hello World!"
-// do not make changes to this variable
-var helloWorldWorkflow = Workflow{"default": {Step{CMD: "echo 'Hello World!'"}}}
+// do not make changes to this variable within tests
+var helloWorldWorkflow = Workflow{"default": {Step{CMD: "echo 'Hello World!'"}}, "a-task": {Step{CMD: "echo 'task a'"}}, "task-b": {Step{CMD: "echo 'task b'"}}}
 
 func TestWorkflowFind(t *testing.T) {
 	task, err := helloWorldWorkflow.Find(DefaultTaskName)
@@ -23,6 +23,12 @@ func TestWorkflowFind(t *testing.T) {
 	require.Error(t, err)
 	require.Nil(t, task)
 	require.EqualError(t, err, `task "foo" not found`)
+}
+
+func TestOrderedTaskNames(t *testing.T) {
+	names := helloWorldWorkflow.OrderedTaskNames()
+	expected := []string{"default", "a-task", "task-b"}
+	require.ElementsMatch(t, expected, names)
 }
 
 func TestWorkflowSchemaGen(t *testing.T) {

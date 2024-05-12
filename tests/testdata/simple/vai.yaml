@@ -38,3 +38,6 @@ echo-matrix:
   - uses: ../../../tasks/echo.yaml?task=simple
     matrix:
       message: ["Hello, World!", "General Kenobi!"]
+
+help:
+  - cmd: echo "help"

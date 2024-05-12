@@ -18,7 +18,4 @@ func Logger() *log.Logger {
 // SetLogLevel sets the global log level.
 func SetLogLevel(level log.Level) {
 	logger.SetLevel(level)
-	if level == log.DebugLevel {
-		logger.SetReportCaller(true)
-	}
 }
