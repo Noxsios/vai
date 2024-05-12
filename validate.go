@@ -15,6 +15,9 @@ import (
 // TaskNamePattern is a regular expression for valid task names, it is also used for step IDs
 var TaskNamePattern = regexp.MustCompile("^[_a-zA-Z][a-zA-Z0-9_-]*$")
 
+// EnvVariablePattern is a regular expression for valid environment variable names
+var EnvVariablePattern = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
+
 // Read reads a workflow from a file
 func Read(filename string) (Workflow, error) {
 	b, err := os.ReadFile(filename)

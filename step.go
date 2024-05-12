@@ -97,7 +97,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Description: "Additional parameters for the step/task call",
 		MinItems:    &single,
 		PatternProperties: map[string]*jsonschema.Schema{
-			"^[a-zA-Z_]+[a-zA-Z0-9_]*$": oneOfStringIntBool,
+			EnvVariablePattern.String(): oneOfStringIntBool,
 		},
 		AdditionalProperties: jsonschema.FalseSchema,
 	}
@@ -108,10 +108,13 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type:        "object",
 		Description: "Matrix of parameters",
 		MinItems:    &single,
-		AdditionalProperties: &jsonschema.Schema{
-			Type:  "array",
-			Items: oneOfStringIntBool,
+		PatternProperties: map[string]*jsonschema.Schema{
+			EnvVariablePattern.String(): {
+				Type:  "array",
+				Items: oneOfStringIntBool,
+			},
 		},
+		AdditionalProperties: jsonschema.FalseSchema,
 	}
 
 	props.Set("matrix", matrix)

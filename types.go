@@ -91,6 +91,8 @@ func WorkFlowSchema() *jsonschema.Schema {
 		},
 	}
 
+	schema.ID = "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json"
+
 	schema.AdditionalProperties = jsonschema.FalseSchema
 
 	return schema
