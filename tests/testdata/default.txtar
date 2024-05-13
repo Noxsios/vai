@@ -13,4 +13,4 @@ stderr '\$\ echo "default"'
 
 -- vai-other.yaml --
 default:
-  - cmd: echo "default"
+  - run: echo "default"

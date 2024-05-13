@@ -4,13 +4,13 @@ cmp stdout stdout.txt
 
 -- vai.yaml --
 default:
-  - cmd: echo "default"
+  - run: echo "default"
 
 hello-world:
-  - cmd: echo "Hello, World!"
+  - run: echo "Hello, World!"
 
 echo:
-  - cmd: echo "Hello, $NAME, today is $DATE"
+  - run: echo "Hello, $NAME, today is $DATE"
     with:
       name: ${{ input }}
       # default to "now" if not provided

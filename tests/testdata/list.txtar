@@ -8,13 +8,13 @@ stderr 'ERRO no tasks available'
 
 -- vai.yaml --
 default:
-  - cmd: echo "default"
+  - run: echo "default"
 
 hello-world:
-  - cmd: echo "Hello, World!"
+  - run: echo "Hello, World!"
 
 another-task:
-  - cmd: echo "Another task"
+  - run: echo "Another task"
 -- stderr.txt --
 Available:
 

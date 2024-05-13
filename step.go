@@ -18,7 +18,7 @@ const (
 
 // Step is a single step in a task
 //
-// While a step can have both `cmd` and `uses` fields, only one of them can be set
+// While a step can have both `run` and `uses` fields, only one of them can be set
 // at a time.
 //
 // This is enforced by JSON schema validation.
@@ -27,8 +27,8 @@ const (
 // - add `if` and `continue-on-error` fields?
 // - add `timeout` field?
 type Step struct {
-	// CMD is the command to run
-	CMD string `json:"cmd,omitempty"`
+	// Run is the command/script to run
+	Run string `json:"run,omitempty"`
 	// Uses is a reference to a remote task
 	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
@@ -43,7 +43,7 @@ type Step struct {
 
 // Operation returns the type of operation the step is performing
 func (s Step) Operation() Operation {
-	if s.CMD != "" {
+	if s.Run != "" {
 		return OperationRun
 	}
 	if s.Uses != "" {
@@ -59,9 +59,9 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	}
 
 	props := jsonschema.NewProperties()
-	props.Set("cmd", &jsonschema.Schema{
+	props.Set("run", &jsonschema.Schema{
 		Type:        "string",
-		Description: "Command to run",
+		Description: "Command/script to run",
 	})
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
@@ -119,18 +119,18 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 	props.Set("matrix", matrix)
 
-	cmdProps := jsonschema.NewProperties()
-	cmdProps.Set("cmd", &jsonschema.Schema{
+	runProps := jsonschema.NewProperties()
+	runProps.Set("run", &jsonschema.Schema{
 		Type: "string",
 	})
-	cmdProps.Set("uses", not)
-	oneOfCmd := &jsonschema.Schema{
-		Required:   []string{"cmd"},
-		Properties: cmdProps,
+	runProps.Set("uses", not)
+	oneOfRun := &jsonschema.Schema{
+		Required:   []string{"run"},
+		Properties: runProps,
 	}
 
 	usesProps := jsonschema.NewProperties()
-	usesProps.Set("cmd", not)
+	usesProps.Set("run", not)
 	usesProps.Set("uses", &jsonschema.Schema{
 		Type: "string",
 	})
@@ -141,7 +141,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 	schema.Properties = props
 	schema.OneOf = []*jsonschema.Schema{
-		oneOfCmd,
+		oneOfRun,
 		oneOfUses,
 	}
 }

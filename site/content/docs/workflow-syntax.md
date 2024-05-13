@@ -37,13 +37,13 @@ default:
     - uses: build
 
 build:
-    - cmd: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+    - run: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
 
 test:
-    - cmd: go test -v -race -cover -failfast -timeout 3m ./...
+    - run: go test -v -race -cover -failfast -timeout 3m ./...
 
 clean:
-    - cmd: rm -rf bin/
+    - run: rm -rf bin/
 ```
 
   {{< /tab >}}
@@ -115,7 +115,7 @@ The `with` map is then mapped to the steps's environment variables, with key nam
 
 ```yaml {filename="vai.yaml"}
 echo:
-  - cmd: echo "Hello, $NAME, today is $DATE"
+  - run: echo "Hello, $NAME, today is $DATE"
     with:
       name: ${{ input }}
       # default to "now" if not provided
@@ -132,10 +132,10 @@ Calling another task within the same file is as simple as using the task name.
 
 ```yaml {filename="vai.yaml"}
 general-kenobi:
-  - cmd: echo "General Kenobi"
+  - run: echo "General Kenobi"
 
 hello:
-  - cmd: echo "Hello There!"
+  - run: echo "Hello There!"
   - uses: general-kenobi
 ```
 
@@ -155,7 +155,7 @@ If the task name is not provided, the `default` task is run.
 
 ```yaml {filename="tasks/echo.yaml"}
 simple:
-  - cmd: echo "$MESSAGE"
+  - run: echo "$MESSAGE"
     with:
       message: ${{ input }}
 ```
@@ -195,16 +195,16 @@ vai remote-echo
 Setting a variable with `persist` will persist it for the remaining steps in the task
 and can be overridden per-step.
 
-```yaml {filename="vai.yaml"}
+```yaml {filename="vai.yaml",hl_lines=[4]}
 set-name:
-  - cmd: echo "Setting name to $NAME"
+  - run: echo "Setting name to $NAME"
     with:
       name: ${{ input | persist }}
-  - cmd: echo "Hello, $NAME"
-  - cmd: echo "$NAME can be overridden per-step, but will persist between steps"
+  - run: echo "Hello, $NAME"
+  - run: echo "$NAME can be overridden per-step, but will persist between steps"
     with:
       name: "World"
-  - cmd: echo "See? $NAME"
+  - run: echo "See? $NAME"
 ```
 
 ```sh
@@ -219,15 +219,15 @@ vai set-name --with name="Universe"
 >
 > The `from` function is used to reference the output from a previous step.
 
-```yaml {filename="vai.yaml"}
+```yaml {filename="vai.yaml",hl_lines=[6,7,12]}
 driving:
-  - cmd: echo "Driving..."
-  - cmd: |
+  - run: echo "Driving..."
+  - run: |
       DESTINATION="Home"
       echo "Arrived at $DESTINATION"
       echo "destination=$DESTINATION" >> $VAI_OUTPUT
-    id: history    
-  - cmd: |
+    id: history
+  - run: |
       echo "Done driving"
       echo "I arrived at $LOCATION"
     with:

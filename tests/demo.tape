@@ -12,7 +12,7 @@ Type "alias vai=../bin/vai" Enter
 
 Type "cat <<EOF > vai.yaml" Enter
 Type "echo:" Enter
-Type '  - cmd: echo "\$MESSAGE"' Enter
+Type '  - run: echo "\$MESSAGE"' Enter
 Type "    with:" Enter
 Type "      message: \${{ input }}" Enter
 Type "" Enter

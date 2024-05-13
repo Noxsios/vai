@@ -10,14 +10,14 @@ import (
 
 // helloWorldWorkflow is a simple workflow that prints "Hello World!"
 // do not make changes to this variable within tests
-var helloWorldWorkflow = Workflow{"default": {Step{CMD: "echo 'Hello World!'"}}, "a-task": {Step{CMD: "echo 'task a'"}}, "task-b": {Step{CMD: "echo 'task b'"}}}
+var helloWorldWorkflow = Workflow{"default": {Step{Run: "echo 'Hello World!'"}}, "a-task": {Step{Run: "echo 'task a'"}}, "task-b": {Step{Run: "echo 'task b'"}}}
 
 func TestWorkflowFind(t *testing.T) {
 	task, err := helloWorldWorkflow.Find(DefaultTaskName)
 	require.NoError(t, err)
 
 	require.Len(t, task, 1)
-	require.Equal(t, "echo 'Hello World!'", task[0].CMD)
+	require.Equal(t, "echo 'Hello World!'", task[0].Run)
 
 	task, err = helloWorldWorkflow.Find("foo")
 	require.Error(t, err)

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../vai.schema.json
+# yaml-language-server: $schema=../../vai.schema.json
 
 remote-echo:
   - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
@@ -6,18 +6,17 @@ remote-echo:
       message: remote-test
 
 world:
-  - cmd: |
+  - run: |
       echo "$message"
     with:
       message: ${{ input | default "fallback" | persist }}
-  - cmd: echo "$message has been persisted"
-  - cmd: |
-      echo "$message can still be set on a per-cmd basis"
+  - run: echo "$message has been persisted"
+  - run: |
       echo "another-key=$message" >> $VAI_OUTPUT
     id: echo-manual
     with:
       message: manual
-  - cmd: echo "$message can be grabbed from the previous cmd"
+  - run: echo "$message can be grabbed from the previous step"
     with:
       message: ${{ from "echo-manual" "another-key" }}
 
@@ -27,7 +26,7 @@ same:
       message: same
 
 default:
-  - cmd: echo "default"
+  - run: echo "default"
 
 echo:
   - uses: ../../../tasks/echo.yaml?task=simple
@@ -40,4 +39,4 @@ echo-matrix:
       message: ["Hello, World!", "General Kenobi!"]
 
 help:
-  - cmd: echo "help"
+  - run: echo "help"

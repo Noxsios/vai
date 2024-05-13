@@ -61,8 +61,8 @@ func Validate(wf Workflow) error {
 				}
 			}
 
-			if step.Uses != "" && step.CMD != "" {
-				return fmt.Errorf(".%s[%d] has both cmd and uses fields set", name, idx)
+			if step.Uses != "" && step.Run != "" {
+				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
 			}
 		}
 	}

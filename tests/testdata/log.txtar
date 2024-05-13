@@ -15,4 +15,4 @@ $ echo "default"
 default
 -- vai.yaml --
 default:
-  - cmd: echo "default"
+  - run: echo "default"

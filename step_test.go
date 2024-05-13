@@ -7,7 +7,7 @@ import (
 )
 
 func TestStepOpteration(t *testing.T) {
-	s1 := Step{CMD: "echo hello"}
+	s1 := Step{Run: "echo hello"}
 	s2 := Step{Uses: "other"}
 	bad := Step{}
 
