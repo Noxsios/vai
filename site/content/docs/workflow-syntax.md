@@ -8,12 +8,14 @@ Unless specified, the default file name is `vai.yaml`.
 
 ## Structure
 
-Similar to `Makefile`s, a Vai workflow is a map of tasks, where tasks are a list of steps. Checkout the comparison below:
+Similar to `Makefile`s, a Vai workflow is a map of tasks, where each task is a series of steps.
+
+Checkout the comparison below:
 
 {{< tabs items="Makefile,Vai" >}}
 
   {{< tab >}}
-  
+
 ```makefile {filename="Makefile"}
 .DEFAULT_GOAL := build
 
@@ -29,7 +31,7 @@ clean:
 
   {{< /tab >}}
   {{< tab >}}
-  
+
 ```yaml {filename="vai.yaml"}
 default:
     - uses: build

@@ -16,3 +16,10 @@ TODO:
 - figure out shell completions
 - SBOMing?
 - tab completion
+- CONTRIBUTING.md
+- CODE_OF_CONDUCT.md
+- SECURITY.md
+- ISSUE_TEMPLATE.md
+- PULL_REQUEST_TEMPLATE.md
+- CHANGELOG.md
+- Add SPDX?
