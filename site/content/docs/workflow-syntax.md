@@ -102,6 +102,17 @@ vai task1 task2
 
 ## Run a task with variables
 
+`with` follows a syntax similar to GitHub Actions expressions.
+
+There are a few built-in functions that can be used in `with`, two shown below are:
+
+- `input`: grabs the value passed to the task
+  - If the task is top-level (called via CLI), `with` values are received from the `--with` flag.
+  - If the task is called from another task, `with` values are passed from the parent task.
+- `default`: sets a default value if the input is not provided
+
+The `with` map is then mapped to the steps's environment variables, with key names being transformed to standard environment variable names (uppercase, with underscores).
+
 ```yaml {filename="vai.yaml"}
 echo:
   - cmd: echo "Hello, $NAME, today is $DATE"
@@ -117,6 +128,8 @@ vai echo --with name=$(whoami) --with date=$(date)
 
 ## Run another task as a step
 
+Calling another task within the same file is as simple as using the task name.
+
 ```yaml {filename="vai.yaml"}
 general-kenobi:
   - cmd: echo "General Kenobi"
@@ -131,6 +144,14 @@ vai hello
 ```
 
 ## Run a task from a local file
+
+Calling a task from a local file requires two arguments: the file path and the task name.
+
+`<filepath>?task=<taskname>`
+
+If the filepath is a directory, `vai.yaml` is appended to the path.
+
+If the task name is not provided, the `default` task is run.
 
 ```yaml {filename="tasks/echo.yaml"}
 simple:
