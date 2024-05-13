@@ -180,8 +180,8 @@ vai echo --with message="Hello, World!"
 
 ```yaml {filename="vai.yaml"}
 remote-echo:
-    # run the "simple" task from the "tests/testdata/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
-  - uses: github.com/noxsios/vai@main?task=simple#tests/testdata/echo.yaml
+    # run the "simple" task from the "tests/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
+  - uses: github.com/noxsios/vai@main?task=simple#tests/echo.yaml
     with:
       message: "Hello, World!"
 ```

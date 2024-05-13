@@ -24,3 +24,4 @@ TODO:
 - CHANGELOG.md
 - Add SPDX?
 - outputs from a "uses" task
+- directory traversal outside of repo using relative path in a remote task
