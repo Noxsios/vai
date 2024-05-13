@@ -9,20 +9,37 @@ import (
 )
 
 // helloWorldWorkflow is a simple workflow that prints "Hello World!"
-// do not make changes to this variable
-var helloWorldWorkflow = Workflow{"default": {Step{CMD: "echo 'Hello World!'"}}}
+// do not make changes to this variable within tests
+var helloWorldWorkflow = Workflow{"default": {Step{Run: "echo 'Hello World!'"}}, "a-task": {Step{Run: "echo 'task a'"}}, "task-b": {Step{Run: "echo 'task b'"}}}
 
 func TestWorkflowFind(t *testing.T) {
 	task, err := helloWorldWorkflow.Find(DefaultTaskName)
 	require.NoError(t, err)
 
 	require.Len(t, task, 1)
-	require.Equal(t, "echo 'Hello World!'", task[0].CMD)
+	require.Equal(t, "echo 'Hello World!'", task[0].Run)
 
 	task, err = helloWorldWorkflow.Find("foo")
 	require.Error(t, err)
 	require.Nil(t, task)
 	require.EqualError(t, err, `task "foo" not found`)
+}
+
+func TestOrderedTaskNames(t *testing.T) {
+	names := helloWorldWorkflow.OrderedTaskNames()
+	expected := []string{"default", "a-task", "task-b"}
+	require.ElementsMatch(t, expected, names)
+
+	wf := Workflow{"foo": nil, "bar": nil, "baz": nil, "default": nil}
+	names = wf.OrderedTaskNames()
+	expected = []string{"default", "bar", "baz", "foo"}
+	require.ElementsMatch(t, expected, names)
+
+	wf["default"] = nil
+
+	names = wf.OrderedTaskNames()
+	expected = []string{"default", "bar", "baz", "foo"}
+	require.ElementsMatch(t, expected, names)
 }
 
 func TestWorkflowSchemaGen(t *testing.T) {

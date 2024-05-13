@@ -8,16 +8,16 @@ Set Width 1600
 Set Height 1200
 
 Hide
-Type "alias vai=../bin/vai" Enter
+Type "alias vai=bin/vai" Enter
 
 Type "cat <<EOF > vai.yaml" Enter
 Type "echo:" Enter
-Type '  - cmd: echo "\$MESSAGE"' Enter
+Type '  - run: echo "\$MESSAGE"' Enter
 Type "    with:" Enter
 Type "      message: \${{ input }}" Enter
 Type "" Enter
 Type "remote-echo:" Enter
-Type "  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml" Enter
+Type "  - uses: github.com/noxsios/vai@main?task=simple#tests/testdata/echo.yaml" Enter
 Type "    with:" Enter
 Type "      message: hello from main" Enter
 Type "EOF" Enter

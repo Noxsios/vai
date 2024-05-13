@@ -97,7 +97,7 @@ func Run(wf Workflow, taskName string, outer With) error {
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 			// TODO: handle other shells
-			cmd := exec.Command("sh", "-e", "-c", step.CMD)
+			cmd := exec.Command("sh", "-e", "-c", step.Run)
 			cmd.Env = env
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -108,7 +108,7 @@ func Run(wf Workflow, taskName string, outer With) error {
 			logger.SetStyles(customStyles)
 
 			fmt.Println()
-			lines := strings.Split(step.CMD, "\n")
+			lines := strings.Split(step.Run, "\n")
 			for _, line := range lines {
 				trimmed := strings.TrimSpace(line)
 				if trimmed == "" {

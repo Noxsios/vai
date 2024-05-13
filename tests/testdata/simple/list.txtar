@@ -1,9 +1,0 @@
-exec vai --list
-stderr 'Available:\n\n- default\n- hello-world\n'
-
--- vai.yaml --
-default:
-  - cmd: echo "default"
-
-hello-world:
-  - cmd: echo "Hello, World!"

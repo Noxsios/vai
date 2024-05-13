@@ -4,10 +4,10 @@ cmp stdout stdout.txt
 
 -- vai.yaml --
 general-kenobi:
-  - cmd: echo "General Kenobi"
+  - run: echo "General Kenobi"
 
 hello:
-  - cmd: echo "Hello There!"
+  - run: echo "Hello There!"
   - uses: general-kenobi
 
 -- stderr.txt --

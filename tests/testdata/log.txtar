@@ -1,0 +1,18 @@
+! exec vai -l dne
+stderr 'ERRO invalid level: "dne"'
+
+exec vai --log-level debug
+cmp stderr stderr.txt
+cmp stdout stdout.txt
+
+-- stderr.txt --
+DEBU templating outer=map[] local=map[] global=map[]
+DEBU templated result=map[]
+$ echo "default"
+-- stdout.txt --
+
+
+default
+-- vai.yaml --
+default:
+  - run: echo "default"

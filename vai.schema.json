@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/noxsios/vai/workflow",
+  "$id": "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json",
   "$defs": {
     "Matrix": {
       "additionalProperties": {
@@ -13,7 +13,7 @@
       "oneOf": [
         {
           "properties": {
-            "cmd": {
+            "run": {
               "type": "string"
             },
             "uses": {
@@ -21,12 +21,12 @@
             }
           },
           "required": [
-            "cmd"
+            "run"
           ]
         },
         {
           "properties": {
-            "cmd": {
+            "run": {
               "not": true
             },
             "uses": {
@@ -39,9 +39,9 @@
         }
       ],
       "properties": {
-        "cmd": {
+        "run": {
           "type": "string",
-          "description": "Command to run"
+          "description": "Command/script to run"
         },
         "uses": {
           "type": "string",
@@ -77,22 +77,25 @@
           "description": "Additional parameters for the step/task call"
         },
         "matrix": {
-          "additionalProperties": {
-            "items": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array"
+          "patternProperties": {
+            "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            }
           },
+          "additionalProperties": false,
           "type": "object",
           "minItems": 1,
           "description": "Matrix of parameters"

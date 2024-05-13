@@ -1,0 +1,16 @@
+! exec vai
+stderr 'ERRO open vai.yaml: no such file or directory'
+
+mv vai-other.yaml vai.yaml
+
+exec vai
+stdout default
+stderr '\$\ echo "default"'
+
+exec vai default
+stdout default
+stderr '\$\ echo "default"'
+
+-- vai-other.yaml --
+default:
+  - run: echo "default"

@@ -1,0 +1,23 @@
+exec vai --list
+cmp stderr stderr.txt
+
+exec rm vai.yaml
+exec touch vai.yaml
+! exec vai --list
+stderr 'ERRO no tasks available'
+
+-- vai.yaml --
+default:
+  - run: echo "default"
+
+hello-world:
+  - run: echo "Hello, World!"
+
+another-task:
+  - run: echo "Another task"
+-- stderr.txt --
+Available:
+
+- default
+- another-task
+- hello-world
