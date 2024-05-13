@@ -108,7 +108,7 @@ There are a few built-in functions that can be used in `with`, two shown below a
 
 - `input`: grabs the value passed to the task
   - If the task is top-level (called via CLI), `with` values are received from the `--with` flag.
-  - If the task is called from another task, `with` values are passed from the parent task.
+  - If the task is called from another task, `with` values are passed from the calling step.
 - `default`: sets a default value if the input is not provided
 
 The `with` map is then mapped to the steps's environment variables, with key names being transformed to standard environment variable names (uppercase, with underscores).
@@ -145,7 +145,7 @@ vai hello
 
 ## Run a task from a local file
 
-Calling a task from a local file requires two arguments: the file path and the task name.
+Calling a task from a local file takes two arguments: the file path (required) and the task name (optional).
 
 `<filepath>?task=<taskname>`
 
@@ -192,10 +192,8 @@ vai remote-echo
 
 ## Persist variables between steps
 
-> NOTE: setting a variable with `persist` will persist it for the entire task
-> and can be overridden per-task.
->
-> This is not persistent between tasks. For that, pass the variable using `with`.
+Setting a variable with `persist` will persist it for the remaining steps in the task
+and can be overridden per-step.
 
 ```yaml {filename="vai.yaml"}
 set-name:
@@ -203,7 +201,7 @@ set-name:
     with:
       name: ${{ input | persist }}
   - cmd: echo "Hello, $NAME"
-  - cmd: echo "$NAME can be overridden per-task, but will persist between tasks"
+  - cmd: echo "$NAME can be overridden per-step, but will persist between steps"
     with:
       name: "World"
   - cmd: echo "See? $NAME"

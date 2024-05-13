@@ -23,3 +23,4 @@ TODO:
 - PULL_REQUEST_TEMPLATE.md
 - CHANGELOG.md
 - Add SPDX?
+- outputs from a "uses" task
