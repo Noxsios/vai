@@ -81,42 +81,6 @@ mIxEdCaSe: ...
 WithNumbers123: ...
 ```
 
-## `--list` flag
-
-The `--list` flag can be used to list all the tasks in a Vai workflow.
-
-If defined, the `default` task will be listed first. Otherwise, tasks will be listed in alphabetical order.
-
-### Example of listing tasks
-
-```sh
-$ vai --list
-
-Available:
-
-- default
-- build
-- test
-```
-
-## Run the "default" task
-
-The task named `default` in a Vai workflow is the default task that will be run when no task is specified.
-
-```sh
-$ vai
-# is equivalent to
-$ vai default
-```
-
-## Run multiple tasks
-
-Like `Makefile`, you can run multiple tasks in a single command.
-
-```sh
-vai task1 task2
-```
-
 ## Run a task with variables
 
 `with` follows a syntax similar to GitHub Actions expressions.
