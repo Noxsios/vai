@@ -17,6 +17,8 @@ go install github.com/noxsios/vai/cmd/vai@latest
 {{< usage >}}
 ```
 
+![demo](https://github.com/Noxsios/vai/assets/50058333/89a8ffcd-cb56-4664-b23c-69609ed34bac)
+
 ## Next
 
 {{< cards >}}

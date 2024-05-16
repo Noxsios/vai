@@ -52,7 +52,24 @@ clean:
 
 ## Task names
 
-Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`.
+Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`. Try it out below:
+
+<input class="border rounded-md px-3 py-2 mt-2" spellcheck="false" placeholder="some-task" id="task-name-regex" />
+<span id="regex-result" class="ml-2"></span>
+
+<script type="module" defer>
+  const input = document.getElementById('task-name-regex');
+  const result = document.getElementById('regex-result');
+  input.addEventListener('input', () => {
+    const regex = /^[_a-zA-Z][a-zA-Z0-9_-]*$/;
+    if (input.value === '') {
+      result.textContent = '';
+      return;
+    }
+    const valid = regex.test(input.value);
+    result.textContent = valid ? '✅' : '❌';
+  });
+</script>
 
 ### Examples of valid task names
 
