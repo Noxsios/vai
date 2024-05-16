@@ -14,13 +14,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var w map[string]string
-var level string
-var ver bool
-var list bool
-
 // NewRootCmd creates the root command for the vai CLI.
 func NewRootCmd() *cobra.Command {
+	var w map[string]string
+	var level string
+	var ver bool
+	var list bool
+	var f string
+
 	root := &cobra.Command{
 		Use:   "vai",
 		Short: "A simple task runner",
@@ -69,7 +70,11 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
-			wf, err := vai.ReadAndValidate(vai.DefaultFileName)
+			if f == "" {
+				f = vai.DefaultFileName
+			}
+
+			wf, err := vai.ReadAndValidate(f)
 			if err != nil {
 				return err
 			}
@@ -112,6 +117,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
 	root.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
+	root.Flags().StringVarP(&f, "file", "f", "", "read file as workflow definition")
 
 	return root
 }
