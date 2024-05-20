@@ -1,5 +1,5 @@
 ---
-title: 'CLI'
+title: "CLI"
 ---
 
 ## Usage
@@ -8,7 +8,7 @@ title: 'CLI'
 {{< usage >}}
 ```
 
-## `--list` flag
+## Discover available tasks
 
 The `--list` flag can be used to list all the tasks in a Vai workflow.
 
@@ -44,7 +44,7 @@ Like `make`, you can run multiple tasks in a single command.
 $ vai task1 task2
 ```
 
-## `--file|-f` flag
+## Specify a workflow file
 
 By default, Vai will look for a file named `vai.yaml` in the current directory. You can specify a different file to use with the `--file` or `-f` flag.
 
@@ -52,7 +52,7 @@ By default, Vai will look for a file named `vai.yaml` in the current directory. 
 $ vai --file path/to/other.yaml
 ```
 
-## Shell Completions
+## Shell completions
 
 Like `make`, `vai` only has a single command. As such, shell completions are not generated in the normal way most Cobra CLI applications are (i.e. `vai completion bash`). Instead, you can use the following snippet to generate completions for your shell:
 

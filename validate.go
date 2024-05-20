@@ -30,8 +30,8 @@ func Read(filename string) (Workflow, error) {
 	return wf, yaml.Unmarshal(b, &wf)
 }
 
-var schema string
-var schemaOnce sync.Once
+var _schema string
+var _schemaOnce sync.Once
 
 // Validate validates a workflow
 func Validate(wf Workflow) error {
@@ -67,16 +67,16 @@ func Validate(wf Workflow) error {
 		}
 	}
 
-	schemaOnce.Do(func() {
+	_schemaOnce.Do(func() {
 		s := WorkFlowSchema()
 		b, err := json.Marshal(s)
 		if err != nil {
 			panic(err)
 		}
-		schema = string(b)
+		_schema = string(b)
 	})
 
-	schemaLoader := gojsonschema.NewStringLoader(schema)
+	schemaLoader := gojsonschema.NewStringLoader(_schema)
 
 	result, err := gojsonschema.Validate(schemaLoader, gojsonschema.NewGoLoader(wf))
 	if err != nil {

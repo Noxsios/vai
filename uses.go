@@ -12,8 +12,15 @@ import (
 	"github.com/package-url/packageurl-go"
 )
 
-// UsesPrefix is the prefix for remote tasks.
-const UsesPrefix = "pkg:vai/"
+const (
+	// CacheEnvVar is the environment variable for the cache directory.
+	CacheEnvVar = "VAI_CACHE"
+	// UsesPrefix is the prefix for remote tasks.
+	UsesPrefix = "pkg:vai/"
+)
+
+// Force is a global flag to bypass SHA256 checksum verification for cached remote files.
+var Force = false
 
 // FetchIntoStore fetches and stores a remote workflow into a given store.
 func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) {
