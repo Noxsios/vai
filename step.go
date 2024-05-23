@@ -22,10 +22,6 @@ const (
 // at a time.
 //
 // This is enforced by JSON schema validation.
-//
-// TODO:
-// - add `if` and `continue-on-error` fields?
-// - add `timeout` field?
 type Step struct {
 	// Run is the command/script to run
 	Run string `json:"run,omitempty"`
