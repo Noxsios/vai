@@ -1,16 +1,4 @@
 # yaml-language-server: $schema=vai.schema.json
 
-default:
-  - uses: build
-
-build:
-  - run: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
-
-test:
-  - run: go test -race -cover -failfast -timeout 3m ./...
-
-clean:
-  - run: rm -rf bin/
-
 hello-world:
   - run: echo "Hello, World!"
