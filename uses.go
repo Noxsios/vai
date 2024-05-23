@@ -24,7 +24,7 @@ const (
 var Force = false
 
 // FetchIntoStore fetches and stores a remote workflow into a given store.
-func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
+func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
 
 	if pURL.Subpath == "" {
@@ -95,7 +95,7 @@ func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Stor
 	ok, err := store.Exists(key, tmpFile)
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
-			ok, err := ConfirmSHAOverwrite(ctx)
+			ok, err := ConfirmSHAOverwrite()
 			if err != nil {
 				return nil, err
 			}
