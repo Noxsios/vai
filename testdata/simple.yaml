@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../vai.schema.json
 
-simple:
+echo:
   - run: |
       echo "$MESSAGE"
     with:
