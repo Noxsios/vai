@@ -1,0 +1,6 @@
+! exec vai sleep --timeout 2s
+stderr 'ERRO task "sleep" timed out'
+
+-- vai.yaml --
+sleep:
+  - run: sleep 10
