@@ -37,3 +37,8 @@ jobs:
         uses: codecov/codecov-action@v4.4.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Fuzz testing
+        run: |
+          go test -fuzz=FuzzTaskNamePattern -fuzztime=15s
+          go test -fuzz=FuzzEnvVariablePattern -fuzztime=15s
