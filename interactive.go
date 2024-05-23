@@ -1,6 +1,10 @@
 package vai
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"context"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 // TODO: not really sure how to unit test this
 
@@ -15,6 +19,9 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC {
+			return m, tea.Quit
+		}
 		switch msg.String() {
 		case "y":
 			m.yes = true
@@ -24,9 +31,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "q", "esc":
 			return m, tea.Quit
-		}
-		if msg.Type == tea.KeyCtrlC {
-			return m, tea.Quit
+		default:
+			return m, nil
 		}
 	}
 	return m, nil
@@ -42,8 +48,8 @@ func (m model) Value() bool {
 
 // ConfirmSHAOverwrite asks the user if they want to overwrite the SHA
 // and bypass the check.
-func ConfirmSHAOverwrite() (bool, error) {
-	p := tea.NewProgram(model{})
+func ConfirmSHAOverwrite(ctx context.Context) (bool, error) {
+	p := tea.NewProgram(model{}, tea.WithContext(ctx))
 	m, err := p.Run()
 	if err != nil {
 		return false, err

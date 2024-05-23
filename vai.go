@@ -2,6 +2,7 @@
 package vai
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,7 +15,7 @@ import (
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(wf Workflow, taskName string, outer With) error {
+func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 	persist := make(With)
 	outputs := make(CommandOutputs)
 
@@ -56,11 +57,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 				}
 				_, err = wf.Find(step.Uses)
 				if err != nil {
-					if err := ExecuteUses(step.Uses, templated); err != nil {
+					if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
 						return err
 					}
 				} else {
-					if err := Run(wf, step.Uses, templated); err != nil {
+					if err := Run(ctx, wf, step.Uses, templated); err != nil {
 						return err
 					}
 				}

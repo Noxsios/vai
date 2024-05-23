@@ -107,7 +107,7 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			for _, call := range args {
-				if err := vai.Run(wf, call, with); err != nil {
+				if err := vai.Run(cmd.Context(), wf, call, with); err != nil {
 					return err
 				}
 			}
