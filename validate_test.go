@@ -36,7 +36,9 @@ func TestTaskNamePattern(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			ok := TaskNamePattern.MatchString(tc.name)
 			if ok != tc.expected {
 				t.Errorf("TaskNamePattern.MatchString(%q) = %v, want %v", tc.name, ok, tc.expected)
@@ -123,7 +125,9 @@ func TestEnvVariablePattern(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			ok := EnvVariablePattern.MatchString(tc.name)
 			if ok != tc.expected {
 				t.Errorf("EnvVariablePattern.MatchString(%q) = %v, want %v", tc.name, ok, tc.expected)
