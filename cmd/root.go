@@ -26,7 +26,10 @@ func NewRootCmd() *cobra.Command {
 		Use:   "vai",
 		Short: "A simple task runner",
 		ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-			wf, err := vai.ReadAndValidate(vai.DefaultFileName)
+			if f == "" {
+				f = vai.DefaultFileName
+			}
+			wf, err := vai.ReadAndValidate(f)
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
@@ -62,7 +65,7 @@ func NewRootCmd() *cobra.Command {
 				case "zsh":
 					return cmd.GenZshCompletion(os.Stdout)
 				case "fish":
-					return cmd.GenFishCompletion(os.Stdout, true)
+					return cmd.GenFishCompletion(os.Stdout, false)
 				case "powershell":
 					return cmd.GenPowerShellCompletionWithDesc(os.Stdout)
 				default:
