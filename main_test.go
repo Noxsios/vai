@@ -1,4 +1,4 @@
-package tests
+package vai_test
 
 import (
 	"os"

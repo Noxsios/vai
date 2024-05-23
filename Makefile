@@ -12,3 +12,6 @@ clean:
 
 hello-world:
 	echo "Hello, World!"
+
+benchmark:
+	hyperfine './bin/vai hello-world' 'make hello-world' -N --warmup 10
