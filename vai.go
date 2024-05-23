@@ -84,7 +84,7 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 			// TODO: handle other shells
-			cmd := exec.Command("sh", "-e", "-c", step.Run)
+			cmd := exec.CommandContext(ctx, "sh", "-e", "-c", step.Run)
 			cmd.Env = env
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr

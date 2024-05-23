@@ -53,6 +53,7 @@ func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store)
 
 	logger.Debug("fetching", "url", raw)
 
+	// TODO: add context usage
 	resp, err := http.Get(raw)
 	if err != nil {
 		return nil, err

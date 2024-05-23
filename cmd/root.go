@@ -3,11 +3,13 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
+	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai"
@@ -21,6 +23,7 @@ func NewRootCmd() *cobra.Command {
 	var ver bool
 	var list bool
 	var f string
+	var timeout time.Duration
 
 	root := &cobra.Command{
 		Use:   "vai",
@@ -106,8 +109,19 @@ func NewRootCmd() *cobra.Command {
 				args = append(args, vai.DefaultTaskName)
 			}
 
+			ctx := cmd.Context()
+
+			if timeout > 0 {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, timeout)
+				defer cancel()
+			}
+
 			for _, call := range args {
-				if err := vai.Run(cmd.Context(), wf, call, with); err != nil {
+				if err := vai.Run(ctx, wf, call, with); err != nil {
+					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+						return fmt.Errorf("task %q timed out", call)
+					}
 					return err
 				}
 			}
@@ -121,6 +135,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
 	root.Flags().StringVarP(&f, "file", "f", "", "read file as workflow definition")
+	root.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout for task execution")
 
 	return root
 }
