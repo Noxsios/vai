@@ -33,10 +33,5 @@ echo:
     with:
       message: ${{ input | default "Hello World!" }}
 
-echo-matrix:
-  - uses: ./simple.yaml?task=echo
-    matrix:
-      message: ["Hello, World!", "General Kenobi!"]
-
 help:
   - run: echo "help"

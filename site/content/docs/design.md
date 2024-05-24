@@ -1,11 +1,11 @@
 ---
-title: "Design"
+title: Design
 draft: true
 ---
 
 - syntax
 - import system
-- inspriration from makefiles and github actions
+- inspiration from Makefiles and GitHub Actions
 - CLI UX
 - notes about complexity due to indentation
 - limitations of Go's type system when it comes to external structured data

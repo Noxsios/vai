@@ -1,16 +1,15 @@
 ---
-title: "Roadmap"
+title: Roadmap
 draft: true
 ---
 
 TODO:
 
-- handle local paths for imports better
-- fix matrix support
+- handle local paths for imports
+- add matrix support
 - add more examples
 - get coverage to ~80%
 - get E2E tests covering all the golden paths
-- fuzz testing?
 - import / publish to OCI?
 - run a docker container as a task
 - SBOMing?
@@ -24,5 +23,4 @@ TODO:
 - outputs from a "uses" task
 - directory traversal outside of repo using relative path in a remote task
 - add `if` and `continue-on-error` fields?
-- add `timeout` field + add context to `vai.Run`?
-- dry run flag
+- `--dry-run` flag

@@ -1,6 +1,6 @@
 ---
-title: 'Introduction'
-linkTitle: 'Documentation'
+title: Introduction
+linkTitle: Documentation
 ---
 
 👋 Hello! Welcome to the Vai documentation!

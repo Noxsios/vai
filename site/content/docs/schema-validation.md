@@ -1,5 +1,5 @@
 ---
-title: 'Schema Validation'
+title: Schema Validation
 ---
 
 Enabling schema validation in VSCode:

@@ -1,5 +1,5 @@
 ---
-title: 'Workflow Syntax'
+title: Workflow Syntax
 ---
 
 A Vai workflow is any YAML file that conforms to the [`vai` schema](./schema-validation.md#raw-schema).
