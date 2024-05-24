@@ -4,7 +4,7 @@ go 1.22.2
 
 require (
 	github.com/charmbracelet/huh v0.3.0
-	github.com/charmbracelet/lipgloss v0.10.0
+	github.com/charmbracelet/lipgloss v0.11.0
 	github.com/charmbracelet/log v0.4.0
 	github.com/goccy/go-yaml v1.11.3
 	github.com/invopop/jsonschema v0.12.0
@@ -23,6 +23,7 @@ require (
 	github.com/catppuccin/go v0.2.0 // indirect
 	github.com/charmbracelet/bubbles v0.18.0 // indirect
 	github.com/charmbracelet/bubbletea v0.26.2 // indirect
+	github.com/charmbracelet/x/ansi v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fatih/color v1.16.0 // indirect
