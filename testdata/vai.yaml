@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../vai.schema.json
+# yaml-language-server: $schema=../vai.schema.json
 
 remote-echo:
   - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml

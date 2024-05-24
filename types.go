@@ -17,31 +17,6 @@ const DefaultFileName = "vai.yaml"
 // Task is a list of steps
 type Task []Step
 
-// Matrix is a map[]{string|int|bool}
-//
-// Type safety cannot currently be enforced at compile time,
-// and is instead enforced at runtime using JSON schema validation
-//
-// example (YAML):
-//
-//	matrix:
-//	  os: [linux, darwin]
-//	  arch: [amd64, arm64]
-type Matrix map[string][]any
-
-// MatrixInstance is a map[string]{string|int|bool}
-//
-// Type safety cannot currently be enforced at compile time,
-// and is instead enforced at runtime using JSON schema validation
-//
-// example:
-//
-//	mi := MatrixInstance{
-//	  "os": "linux",
-//	  "latest": true,
-//	}
-type MatrixInstance map[string]any
-
 // Workflow is a map of tasks, where the key is the task name
 //
 // This is the main structure that represents `vai.yaml` and other vai workflow files

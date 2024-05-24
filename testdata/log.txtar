@@ -6,7 +6,7 @@ cmp stderr stderr.txt
 cmp stdout stdout.txt
 
 -- stderr.txt --
-DEBU templating outer=map[] local=map[] global=map[]
+DEBU templating input=map[] local=map[] persisted=map[]
 DEBU templated result=map[]
 $ echo "default"
 -- stdout.txt --

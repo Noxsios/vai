@@ -58,9 +58,11 @@ multiline<<EOF
 1
 2
 3
-EOF`),
+EOF
+c=d`),
 			expected: map[string]string{
 				"a":         "b",
+				"c":         "d",
 				"multiline": "1\n2\n3",
 			},
 			expectedErr: "",
