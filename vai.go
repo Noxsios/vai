@@ -39,31 +39,14 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 
 		switch step.Operation() {
 		case OperationUses:
-			instances := make([]MatrixInstance, 0)
-			for k, v := range step.Matrix {
-				for _, i := range v {
-					mi := make(MatrixInstance)
-					mi[k] = i
-					instances = append(instances, mi)
-				}
-			}
-			if len(instances) == 0 {
-				instances = append(instances, MatrixInstance{})
-			}
-			for _, mi := range instances {
-				templated, err := templated.MergeMatrixInstance(mi)
-				if err != nil {
+			_, err = wf.Find(step.Uses)
+			if err != nil {
+				if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
 					return err
 				}
-				_, err = wf.Find(step.Uses)
-				if err != nil {
-					if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
-						return err
-					}
-				} else {
-					if err := Run(ctx, wf, step.Uses, templated); err != nil {
-						return err
-					}
+			} else {
+				if err := Run(ctx, wf, step.Uses, templated); err != nil {
+					return err
 				}
 			}
 		case OperationRun:

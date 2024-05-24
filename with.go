@@ -18,27 +18,13 @@ type WithEntry any
 // as `foo=bar` to the command.
 type With map[string]WithEntry
 
-// MergeMatrixInstance merges a MatrixInstance into a With map
-func (w With) MergeMatrixInstance(mi MatrixInstance) (With, error) {
-	for k, v := range mi {
-		_, ok := w[k]
-		if ok {
-			return nil, fmt.Errorf("matrix key %q already exists in with", k)
-		}
-		w[k] = v
-	}
-	return w, nil
-}
-
-// PerformLookups does the following:
+// PerformLookups performs the following:
 //
 // 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `outer` and `local` With maps
 //
 // 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
-//
-// 3. MatrixInstance: merges the `mi` MatrixInstance into the result, with `mi` taking precedence
-func PerformLookups(outer, local, persisted With, previousOutputs CommandOutputs) (With, With, error) {
-	logger.Debug("templating", "outer", outer, "local", local, "global", persisted)
+func PerformLookups(input, local, persisted With, previousOutputs CommandOutputs) (With, With, error) {
+	logger.Debug("templating", "input", input, "local", local, "persisted", persisted)
 
 	r := make(With)
 
@@ -48,7 +34,7 @@ func PerformLookups(outer, local, persisted With, previousOutputs CommandOutputs
 		val := fmt.Sprintf("%s", v)
 		fm := template.FuncMap{
 			"input": func() string {
-				v, ok := outer[k]
+				v, ok := input[k]
 				if !ok || v == "" {
 					logger.Warn("no input", "key", k)
 					return ""

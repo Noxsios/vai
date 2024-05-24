@@ -29,12 +29,10 @@ type Step struct {
 	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
 	With `json:"with,omitempty"`
-	// Matrix is a matrix of parameters to run the step/task with
-	Matrix `json:"matrix,omitempty"`
 	// ID is a unique identifier for the step
 	ID string `json:"id,omitempty"`
-	// Description is a description of the step
-	Description string `json:"description,omitempty"`
+	// Name is a human-readable name for the step
+	Name string `json:"name,omitempty"`
 }
 
 // Operation returns the type of operation the step is performing
@@ -67,9 +65,9 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type:        "string",
 		Description: "Unique identifier for the step",
 	})
-	props.Set("description", &jsonschema.Schema{
+	props.Set("name", &jsonschema.Schema{
 		Type:        "string",
-		Description: "Description of the step",
+		Description: "Human-readable name for the step",
 	})
 
 	oneOfStringIntBool := &jsonschema.Schema{
@@ -99,21 +97,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	}
 
 	props.Set("with", with)
-
-	matrix := &jsonschema.Schema{
-		Type:        "object",
-		Description: "Matrix of parameters",
-		MinItems:    &single,
-		PatternProperties: map[string]*jsonschema.Schema{
-			EnvVariablePattern.String(): {
-				Type:  "array",
-				Items: oneOfStringIntBool,
-			},
-		},
-		AdditionalProperties: jsonschema.FalseSchema,
-	}
-
-	props.Set("matrix", matrix)
 
 	runProps := jsonschema.NewProperties()
 	runProps.Set("run", &jsonschema.Schema{

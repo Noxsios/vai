@@ -5,7 +5,6 @@
 [![codecov](https://codecov.io/gh/Noxsios/vai/graph/badge.svg?token=P7E9QC2RB9)](https://codecov.io/gh/Noxsios/vai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/noxsios/vai)](https://goreportcard.com/report/github.com/noxsios/vai)
 ![GitHub License](https://img.shields.io/github/license/noxsios/vai)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/noxsios/vai)
 
 A simple task runner. Imagine GitHub actions and Makefile had a baby.
 

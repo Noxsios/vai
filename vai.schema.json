@@ -2,13 +2,6 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json",
   "$defs": {
-    "Matrix": {
-      "additionalProperties": {
-        "items": true,
-        "type": "array"
-      },
-      "type": "object"
-    },
     "Step": {
       "oneOf": [
         {
@@ -51,9 +44,9 @@
           "type": "string",
           "description": "Unique identifier for the step"
         },
-        "description": {
+        "name": {
           "type": "string",
-          "description": "Description of the step"
+          "description": "Human-readable name for the step"
         },
         "with": {
           "patternProperties": {
@@ -75,30 +68,6 @@
           "type": "object",
           "minItems": 1,
           "description": "Additional parameters for the step/task call"
-        },
-        "matrix": {
-          "patternProperties": {
-            "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
-              "items": {
-                "oneOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "boolean"
-                  },
-                  {
-                    "type": "integer"
-                  }
-                ]
-              },
-              "type": "array"
-            }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "minItems": 1,
-          "description": "Matrix of parameters"
         }
       },
       "additionalProperties": false,
