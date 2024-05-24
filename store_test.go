@@ -3,6 +3,8 @@ package vai
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,6 +13,11 @@ import (
 	"github.com/package-url/packageurl-go"
 	"github.com/stretchr/testify/require"
 )
+
+func TestIsHashMismatch(t *testing.T) {
+	require.True(t, IsHashMismatch(fmt.Errorf("additional context: %w", ErrHashMismatch)))
+	require.False(t, IsHashMismatch(errors.New("some other error")))
+}
 
 func TestCacheIndex(t *testing.T) {
 	index := NewCacheIndex()
@@ -116,4 +123,13 @@ func TestStore(t *testing.T) {
 	wf, err := store.Fetch(key.String())
 	require.NoError(t, err)
 	require.Equal(t, helloWorldWorkflow, wf)
+}
+
+func TestDefaultStore(t *testing.T) {
+	defer os.Unsetenv(CacheEnvVar)
+	tmp := t.TempDir()
+	os.Setenv(CacheEnvVar, tmp)
+	store, err := DefaultStore()
+	require.NoError(t, err)
+	require.Equal(t, store.root, tmp)
 }

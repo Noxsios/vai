@@ -1,3 +1,4 @@
 bin
 .vscode
 *.gif
+coverage.out

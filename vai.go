@@ -2,6 +2,7 @@
 package vai
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,7 +15,7 @@ import (
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(wf Workflow, taskName string, outer With) error {
+func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 	persist := make(With)
 	outputs := make(CommandOutputs)
 
@@ -56,11 +57,11 @@ func Run(wf Workflow, taskName string, outer With) error {
 				}
 				_, err = wf.Find(step.Uses)
 				if err != nil {
-					if err := ExecuteUses(step.Uses, templated); err != nil {
+					if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
 						return err
 					}
 				} else {
-					if err := Run(wf, step.Uses, templated); err != nil {
+					if err := Run(ctx, wf, step.Uses, templated); err != nil {
 						return err
 					}
 				}
@@ -70,8 +71,8 @@ func Run(wf Workflow, taskName string, outer With) error {
 			if err != nil {
 				return err
 			}
-			outFile.Close()
 			defer os.Remove(outFile.Name())
+			defer outFile.Close()
 
 			env := os.Environ()
 			for k, v := range templated {
@@ -83,7 +84,7 @@ func Run(wf Workflow, taskName string, outer With) error {
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 			// TODO: handle other shells
-			cmd := exec.Command("sh", "-e", "-c", step.Run)
+			cmd := exec.CommandContext(ctx, "sh", "-e", "-c", step.Run)
 			cmd.Env = env
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -111,26 +112,15 @@ func Run(wf Workflow, taskName string, outer With) error {
 			}
 
 			if step.ID != "" {
-				outFile, err := os.Open(outFile.Name())
+				out, err := ParseOutput(outFile)
 				if err != nil {
 					return err
 				}
-				defer outFile.Close()
-
-				fi, err := outFile.Stat()
-				if err != nil {
-					return err
+				if len(out) == 0 {
+					continue
 				}
-
-				if fi.Size() > 0 {
-					outputs[step.ID] = make(map[string]string)
-					out, err := ParseOutputFile(outFile.Name())
-					if err != nil {
-						return err
-					}
-					// TODO: conflicted about whether to save the contents of the file or the file path
-					outputs[step.ID] = out
-				}
+				// TODO: conflicted about whether to save the contents of the file or just the file path
+				outputs[step.ID] = out
 			}
 
 		default:

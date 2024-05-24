@@ -3,36 +3,39 @@ package vai
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
 
 // CommandOutputs is a map of step IDs to their outputs.
-//
-// It is currently NOT goroutine safe.
 type CommandOutputs map[string]map[string]string
 
-// ParseOutputFile parses the output file of a step
-func ParseOutputFile(loc string) (map[string]string, error) {
-	f, err := os.Open(loc)
-	if err != nil {
+// ParseOutput parses the output file of a step
+//
+// Matches behavior of GitHub Actions.
+//
+// https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+func ParseOutput(r io.ReadSeeker) (map[string]string, error) {
+	if f, ok := r.(*os.File); ok {
+		fi, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+
+		// error if larger than 50MB, same limits as GitHub Actions
+		if fi.Size() > 50*1024*1024 {
+			return nil, fmt.Errorf("output file too large")
+		}
+	}
+
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
 
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	// error if larger than 50MB, same limits as GitHub Actions
-	if fi.Size() > 50*1024*1024 {
-		return nil, fmt.Errorf("output file too large")
-	}
-
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	result := make(map[string]string)
-	var currentKey string
-	var currentDelimiter string
+	var currentKey, currentDelimiter string
 	var multiLineValue []string
 	var collecting bool
 
@@ -58,14 +61,21 @@ func ParseOutputFile(loc string) (map[string]string, error) {
 			// Split the line at the first '=' to handle the key-value pair
 			key := line[:idx]
 			value := line[idx+1:]
-			// Check if the value is a potential start of a multiline value
-			if strings.HasSuffix(value, "<<") {
-				currentKey = key
-				currentDelimiter = strings.TrimSpace(value[2:])
-				collecting = true
-			} else {
-				result[key] = value
+			result[key] = value
+		} else if idx := strings.Index(line, "<<"); idx != -1 {
+			// Split the line at the first '<<' to handle the key-value pair
+			key := line[:idx]
+			delimiter := strings.TrimSpace(line[idx+2:])
+
+			if delimiter == "" {
+				return nil, fmt.Errorf("invalid syntax: missing delimiter after '<<'")
 			}
+			currentKey = key
+			currentDelimiter = delimiter
+			collecting = true
+		} else if strings.TrimSpace(line) != "" {
+			// Non-empty line without '=' while not collecting a multiline value
+			return nil, fmt.Errorf("invalid syntax: non-delimited multiline value")
 		}
 	}
 
@@ -74,9 +84,8 @@ func ParseOutputFile(loc string) (map[string]string, error) {
 	}
 
 	// Handle case where file ends but multiline was being collected
-	if collecting && len(multiLineValue) > 0 {
-		value := strings.Join(multiLineValue, "\n")
-		result[currentKey] = value
+	if collecting {
+		return nil, fmt.Errorf("invalid syntax: multiline value not terminated")
 	}
 
 	return result, nil

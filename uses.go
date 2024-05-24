@@ -1,6 +1,7 @@
 package vai
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,7 +24,7 @@ const (
 var Force = false
 
 // FetchIntoStore fetches and stores a remote workflow into a given store.
-func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) {
+func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
 
 	if pURL.Subpath == "" {
@@ -52,6 +53,7 @@ func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) 
 
 	logger.Debug("fetching", "url", raw)
 
+	// TODO: add context usage
 	resp, err := http.Get(raw)
 	if err != nil {
 		return nil, err
@@ -132,7 +134,7 @@ func FetchIntoStore(pURL packageurl.PackageURL, store *Store) (Workflow, error) 
 }
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(uses string, with With) error {
+func ExecuteUses(ctx context.Context, uses string, with With) error {
 	logger.Debug("using", "task", uses)
 
 	pURL, err := packageurl.FromString(UsesPrefix + uses)
@@ -171,7 +173,7 @@ func ExecuteUses(uses string, with With) error {
 		if err != nil {
 			return err
 		}
-		wf, err = FetchIntoStore(pURL, store)
+		wf, err = FetchIntoStore(ctx, pURL, store)
 		if err != nil {
 			return err
 		}
@@ -179,5 +181,5 @@ func ExecuteUses(uses string, with With) error {
 
 	taskName := pURL.Qualifiers.Map()["task"]
 
-	return Run(wf, taskName, with)
+	return Run(ctx, wf, taskName, with)
 }
