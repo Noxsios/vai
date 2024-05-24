@@ -154,15 +154,16 @@ vai echo --with message="Hello, World!"
 
 ## Run a task from a remote file
 
-> [!WARNING]
-> Currently only supports GitHub repos.
->
-> `uses` syntax leverages the package-url spec: `{url}@{version}?task={task}#{path}`
+{{< callout emoji="⚠️" >}}
+Currently only supports GitHub repos.
+
+`uses` syntax leverages the package-url spec: `{url}@{version}?task={task}#{path}`
+{{< /callout >}}
 
 ```yaml {filename="vai.yaml"}
 remote-echo:
-    # run the "simple" task from the "tests/echo.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
-  - uses: github.com/noxsios/vai@main?task=simple#tests/echo.yaml
+    # run the "echo" task from the "testdata/simple.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
+  - uses: github.com/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
       message: "Hello, World!"
 ```
@@ -173,8 +174,7 @@ vai remote-echo
 
 ## Persist variables between steps
 
-Setting a variable with `persist` will persist it for the remaining steps in the task
-and can be overridden per-step.
+Setting a variable with `persist` will persist it for the remaining steps in the task and can be overridden per-step.
 
 ```yaml {filename="vai.yaml",hl_lines=[4]}
 set-name:
@@ -201,20 +201,15 @@ vai set-name --with name="Universe"
 > The `from` function is used to reference the output from a previous step.
 
 ```yaml {filename="vai.yaml",hl_lines=[6,7,12]}
-driving:
-  - run: echo "Driving..."
+color:
   - run: |
-      DESTINATION="Home"
-      echo "Arrived at $DESTINATION"
-      echo "destination=$DESTINATION" >> $VAI_OUTPUT
-    id: history
-  - run: |
-      echo "Done driving"
-      echo "I arrived at $LOCATION"
+      echo "selected-color=green" >> $VAI_OUTPUT
+    id: color-selector
+  - run: echo "The selected color is $SELECTED"
     with:
-      location: ${{ from "history" "destination" }}
+      selected: ${{ from "color-selector" "selected-color" }}
 ```
 
 ```sh
-vai driving
+vai color
 ```
