@@ -25,3 +25,4 @@ TODO:
 - directory traversal outside of repo using relative path in a remote task
 - add `if` and `continue-on-error` fields?
 - add `timeout` field + add context to `vai.Run`?
+- dry run flag
