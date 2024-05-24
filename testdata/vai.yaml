@@ -29,12 +29,12 @@ default:
   - run: echo "default"
 
 echo:
-  - uses: ../../tasks/echo.yaml?task=simple
+  - uses: ./simple.yaml?task=echo
     with:
       message: ${{ input | default "Hello World!" }}
 
 echo-matrix:
-  - uses: ../../tasks/echo.yaml?task=simple
+  - uses: ./simple.yaml?task=echo
     matrix:
       message: ["Hello, World!", "General Kenobi!"]
 

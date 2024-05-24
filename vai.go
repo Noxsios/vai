@@ -71,8 +71,8 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 			if err != nil {
 				return err
 			}
-			outFile.Close()
 			defer os.Remove(outFile.Name())
+			defer outFile.Close()
 
 			env := os.Environ()
 			for k, v := range templated {
@@ -112,26 +112,15 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 			}
 
 			if step.ID != "" {
-				outFile, err := os.Open(outFile.Name())
+				out, err := ParseOutput(outFile)
 				if err != nil {
 					return err
 				}
-				defer outFile.Close()
-
-				fi, err := outFile.Stat()
-				if err != nil {
-					return err
+				if len(out) == 0 {
+					continue
 				}
-
-				if fi.Size() > 0 {
-					outputs[step.ID] = make(map[string]string)
-					out, err := ParseOutputFile(outFile.Name())
-					if err != nil {
-						return err
-					}
-					// TODO: conflicted about whether to save the contents of the file or the file path
-					outputs[step.ID] = out
-				}
+				// TODO: conflicted about whether to save the contents of the file or just the file path
+				outputs[step.ID] = out
 			}
 
 		default:
