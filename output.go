@@ -3,6 +3,7 @@ package vai
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -12,27 +13,27 @@ import (
 // It is currently NOT goroutine safe.
 type CommandOutputs map[string]map[string]string
 
-// ParseOutputFile parses the output file of a step
-func ParseOutputFile(loc string) (map[string]string, error) {
-	f, err := os.Open(loc)
-	if err != nil {
+// ParseOutput parses the output file of a step
+func ParseOutput(r io.ReadSeeker) (map[string]string, error) {
+	if f, ok := r.(*os.File); ok {
+		fi, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+
+		// error if larger than 50MB, same limits as GitHub Actions
+		if fi.Size() > 50*1024*1024 {
+			return nil, fmt.Errorf("output file too large")
+		}
+	}
+
+	if _, err := r.Seek(0, io.SeekStart); err != nil {
 		return nil, err
 	}
 
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	// error if larger than 50MB, same limits as GitHub Actions
-	if fi.Size() > 50*1024*1024 {
-		return nil, fmt.Errorf("output file too large")
-	}
-
-	scanner := bufio.NewScanner(f)
+	scanner := bufio.NewScanner(r)
 	result := make(map[string]string)
-	var currentKey string
-	var currentDelimiter string
+	var currentKey, currentDelimiter string
 	var multiLineValue []string
 	var collecting bool
 
