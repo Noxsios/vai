@@ -6,12 +6,8 @@ cmp stderr stderr.txt
 cmp stdout stdout.txt
 
 -- stderr.txt --
-DEBU templating input=map[] local=map[] persisted=map[]
-DEBU templated result=map[]
 $ echo "default"
 -- stdout.txt --
-
-
 default
 -- vai.yaml --
 default:

@@ -14,9 +14,5 @@ hello:
 $ echo "Hello There!"
 $ echo "General Kenobi"
 -- stdout.txt --
-
-
 Hello There!
-
-
 General Kenobi

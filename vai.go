@@ -16,38 +16,38 @@ import (
 //
 // For all `uses` steps, this function will be called recursively.
 func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
-	persist := make(With)
-	outputs := make(CommandOutputs)
-
 	if taskName == "" {
 		taskName = DefaultTaskName
 	}
 
-	task, err := wf.Find(taskName)
-	if err != nil {
-		return err
+	task, ok := wf.Find(taskName)
+	if !ok {
+		return fmt.Errorf("task %q not found", taskName)
 	}
 
+	persist := make(With)
+	outputs := make(CommandOutputs)
+
 	for _, step := range task {
-		templated, persisted, err := PerformLookups(outer, step.With, persist, outputs)
+		templated, toPersist, err := PerformLookups(outer, step.With, outputs)
 		if err != nil {
 			return err
 		}
-		for k, v := range persisted {
-			persist[k] = v
+		for _, k := range toPersist {
+			persist[k] = templated[k]
 		}
 
 		if step.Uses != "" {
-			_, err = wf.Find(step.Uses)
-			if err != nil {
-				if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
-					return err
-				}
-			} else {
+			if _, ok := wf.Find(step.Uses); ok {
 				if err := Run(ctx, wf, step.Uses, templated); err != nil {
 					return err
 				}
+				continue
 			}
+			if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
+				return err
+			}
+			continue
 		}
 
 		if step.Run != "" {
@@ -78,7 +78,6 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 			customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
 			logger.SetStyles(customStyles)
 
-			fmt.Println()
 			lines := strings.Split(step.Run, "\n")
 			for _, line := range lines {
 				trimmed := strings.TrimSpace(line)
@@ -87,7 +86,6 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 				}
 				logger.Printf("$ %s", trimmed)
 			}
-			fmt.Println()
 
 			logger.SetStyles(log.DefaultStyles())
 
