@@ -71,33 +71,30 @@ func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Stor
 	}
 
 	key := pURL.String()
-	ok, err := store.Exists(key, bytes.NewReader(b))
-	if err != nil {
-		if IsHashMismatch(err) && !Force {
-			ok, err := ConfirmSHAOverwrite()
-			if err != nil {
-				return nil, err
-			}
-
-			if !ok {
-				return nil, fmt.Errorf("hash mismatch, not overwriting")
-			}
-
-			if err := store.Delete(key); err != nil {
-				return nil, err
-			}
-
-			if err := store.Store(key, bytes.NewReader(b)); err != nil {
-				return nil, err
-			}
-		} else {
+	exists, err := store.Exists(key, bytes.NewReader(b))
+	if err != nil && !IsHashMismatch(err) {
+		return nil, err
+	}
+	if err != nil && IsHashMismatch(err) && !Force {
+		yes, err := ConfirmSHAOverwrite()
+		if err != nil {
 			return nil, err
 		}
-	} else if !ok {
-		logger.Debug("caching", "workflow", pURL)
-		if err = store.Store(key, bytes.NewReader(b)); err != nil {
-			return nil, err
+
+		if !yes {
+			return nil, fmt.Errorf("hash mismatch, not overwriting")
 		}
+	}
+	if exists {
+		return store.Fetch(key)
+	}
+
+	if err := store.Delete(key); err != nil {
+		return nil, err
+	}
+
+	if err := store.Store(key, bytes.NewReader(b)); err != nil {
+		return nil, err
 	}
 
 	return store.Fetch(key)
