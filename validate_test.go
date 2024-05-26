@@ -1,7 +1,9 @@
 package vai
 
 import (
+	"io"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -187,16 +189,24 @@ func FuzzEnvVariablePattern(f *testing.F) {
 
 func TestRead(t *testing.T) {
 	testCases := []struct {
-		filename    string
+		name        string
+		r           io.Reader
 		expectedErr string
 	}{
-		{"testdata/simple.yaml", ""},
-		{"testdata/does-not-exist.yaml", "open testdata/does-not-exist.yaml: no such file or directory"},
+		{
+			"simple good read",
+			strings.NewReader(`
+echo:
+  - run: |
+      echo "$MESSAGE"
+    with:
+      message: ${{ input }}
+			`), ""},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.filename, func(t *testing.T) {
-			wf, err := Read(tc.filename)
+		t.Run(tc.name, func(t *testing.T) {
+			wf, err := Read(tc.r)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedErr)
 			}

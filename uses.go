@@ -3,13 +3,11 @@ package vai
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/goccy/go-yaml"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -24,7 +22,7 @@ const (
 var Force = false
 
 // FetchIntoStore fetches and stores a remote workflow into a given store.
-func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
+func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
 	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
 
 	if pURL.Subpath == "" {
@@ -53,47 +51,20 @@ func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store)
 
 	logger.Debug("fetching", "url", raw)
 
-	// TODO: add context usage
-	resp, err := http.Get(raw)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "vai")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	tmpFile, err := os.CreateTemp("", "vai-")
-	if err != nil {
-		return nil, err
-	}
-	defer tmpFile.Close()
-
-	_, err = io.Copy(tmpFile, resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = tmpFile.Seek(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	var wf Workflow
-
-	b, err := io.ReadAll(tmpFile)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := yaml.Unmarshal(b, &wf); err != nil {
-		return nil, err
-	}
-
-	_, err = tmpFile.Seek(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
 	key := pURL.String()
-	ok, err := store.Exists(key, tmpFile)
+	ok, err := store.Exists(key, resp.Body)
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
 			ok, err := ConfirmSHAOverwrite()
@@ -109,28 +80,20 @@ func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store)
 				return nil, err
 			}
 
-			_, err = tmpFile.Seek(0, 0)
-			if err != nil {
-				return nil, err
-			}
-			if err := store.Store(key, tmpFile); err != nil {
+			if err := store.Store(key, resp.Body); err != nil {
 				return nil, err
 			}
 		} else {
 			return nil, err
 		}
 	} else if !ok {
-		_, err = tmpFile.Seek(0, 0)
-		if err != nil {
-			return nil, err
-		}
 		logger.Debug("caching", "workflow", pURL)
-		if err = store.Store(key, tmpFile); err != nil {
+		if err = store.Store(key, resp.Body); err != nil {
 			return nil, err
 		}
 	}
 
-	return wf, nil
+	return store.Fetch(key)
 }
 
 // ExecuteUses runs a task from a remote workflow source.
@@ -164,7 +127,13 @@ func ExecuteUses(ctx context.Context, uses string, with With) error {
 			loc = filepath.Join(loc, DefaultFileName)
 		}
 
-		wf, err = ReadAndValidate(loc)
+		f, err := os.Open(loc)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		wf, err = ReadAndValidate(f)
 		if err != nil {
 			return err
 		}

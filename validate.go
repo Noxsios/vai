@@ -3,7 +3,7 @@ package vai
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"regexp"
 	"sync"
 
@@ -19,8 +19,8 @@ var TaskNamePattern = regexp.MustCompile("^[_a-zA-Z][a-zA-Z0-9_-]*$")
 var EnvVariablePattern = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
 // Read reads a workflow from a file
-func Read(filename string) (Workflow, error) {
-	b, err := os.ReadFile(filename)
+func Read(r io.Reader) (Workflow, error) {
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +95,12 @@ func Validate(wf Workflow) error {
 }
 
 // ReadAndValidate reads and validates a workflow
-func ReadAndValidate(filename string) (Workflow, error) {
-	wf, err := Read(filename)
+func ReadAndValidate(r io.ReadSeeker) (Workflow, error) {
+	_, err := r.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, err
+	}
+	wf, err := Read(r)
 	if err != nil {
 		return nil, err
 	}

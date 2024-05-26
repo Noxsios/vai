@@ -22,16 +22,22 @@ func NewRootCmd() *cobra.Command {
 	var level string
 	var ver bool
 	var list bool
-	var f string
+	var filename string
 	var timeout time.Duration
 
 	root := &cobra.Command{
 		Use:   "vai",
 		Short: "A simple task runner",
 		ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-			if f == "" {
-				f = vai.DefaultFileName
+			if filename == "" {
+				filename = vai.DefaultFileName
 			}
+			f, err := os.Open(filename)
+			if err != nil {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			defer f.Close()
+
 			wf, err := vai.ReadAndValidate(f)
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -76,9 +82,15 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
-			if f == "" {
-				f = vai.DefaultFileName
+			if filename == "" {
+				filename = vai.DefaultFileName
 			}
+
+			f, err := os.Open(filename)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
 
 			wf, err := vai.ReadAndValidate(f)
 			if err != nil {
@@ -134,7 +146,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
 	root.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
-	root.Flags().StringVarP(&f, "file", "f", "", "read file as workflow definition")
+	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
 	root.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout for task execution")
 
 	return root

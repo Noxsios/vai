@@ -1,0 +1,15 @@
+exec vai color
+cmp stderr stderr.txt
+stdout 'The selected color is green'
+
+-- vai.yaml --
+color:
+  - run: |
+      echo "selected-color=green" >> $VAI_OUTPUT
+    id: color-selector
+  - run: echo "The selected color is $SELECTED"
+    with:
+      selected: ${{ from "color-selector" "selected-color" }}
+-- stderr.txt --
+$ echo "selected-color=green" >> $VAI_OUTPUT
+$ echo "The selected color is $SELECTED"
