@@ -13,8 +13,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-type Fetcher func(string) (Workflow, error)
-
 const IndexFileName = "index.json"
 
 // ErrHashMismatch is returned when the hash of the stored file does not match the hash in the index.

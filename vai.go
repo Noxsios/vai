@@ -37,8 +37,7 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 			persist[k] = v
 		}
 
-		switch step.Operation() {
-		case OperationUses:
+		if step.Uses != "" {
 			_, err = wf.Find(step.Uses)
 			if err != nil {
 				if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
@@ -49,7 +48,9 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 					return err
 				}
 			}
-		case OperationRun:
+		}
+
+		if step.Run != "" {
 			outFile, err := os.CreateTemp("", "vai-output-*")
 			if err != nil {
 				return err
@@ -105,9 +106,6 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 				// TODO: conflicted about whether to save the contents of the file or just the file path
 				outputs[step.ID] = out
 			}
-
-		default:
-			return fmt.Errorf("unknown operation")
 		}
 	}
 
