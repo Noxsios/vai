@@ -1,8 +1,10 @@
 package vai
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,8 +65,13 @@ func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Stor
 	}
 	defer resp.Body.Close()
 
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	key := pURL.String()
-	ok, err := store.Exists(key, resp.Body)
+	ok, err := store.Exists(key, bytes.NewReader(b))
 	if err != nil {
 		if IsHashMismatch(err) && !Force {
 			ok, err := ConfirmSHAOverwrite()
@@ -80,7 +87,7 @@ func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Stor
 				return nil, err
 			}
 
-			if err := store.Store(key, resp.Body); err != nil {
+			if err := store.Store(key, bytes.NewReader(b)); err != nil {
 				return nil, err
 			}
 		} else {
@@ -88,7 +95,7 @@ func FetchIntoStore(ctx context.Context, pURL packageurl.PackageURL, store *Stor
 		}
 	} else if !ok {
 		logger.Debug("caching", "workflow", pURL)
-		if err = store.Store(key, resp.Body); err != nil {
+		if err = store.Store(key, bytes.NewReader(b)); err != nil {
 			return nil, err
 		}
 	}
