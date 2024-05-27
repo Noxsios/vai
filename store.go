@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/afero"
 )
 
+// IndexFileName is the name of the index file.
 const IndexFileName = "index.json"
 
 // ErrHashMismatch is returned when the hash of the stored file does not match the hash in the index.
