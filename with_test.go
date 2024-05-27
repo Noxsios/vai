@@ -59,15 +59,50 @@ func TestPerformLookups(t *testing.T) {
 			},
 			local: With{
 				"foo": "${{ input | persist }}",
-				"a":   "dash-${{ \"b\" | persist }}",
+				"a":   "b${{ persist }}",
 				"c":   "d",
+				"e":   "${{ persist }}",
 			},
-			expectedPersisted: []string{"foo", "a"},
+			expectedPersisted: []string{"foo", "a", "e"},
 			expectedTemplated: With{
 				"foo": "bar",
-				"a":   "dash-b",
+				"a":   "b",
 				"c":   "d",
+				"e":   "",
 			},
+		},
+		{
+			name: "lookup from previous outputs",
+			previous: CommandOutputs{
+				"step-1": map[string]string{
+					"bar": "baz",
+				},
+			},
+			local: With{
+				"foo": `${{ from "step-1" "bar" }}`,
+			},
+			expectedTemplated: With{
+				"foo": "baz",
+			},
+		},
+		{
+			name: "lookup from previous outputs - no outputs from step",
+			local: With{
+				"foo": `${{ from "step-1" "bar" }}`,
+			},
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+		},
+		{
+			name: "lookup from previous outputs - output from step not found",
+			previous: CommandOutputs{
+				"step-1": map[string]string{
+					"bar": "baz",
+				},
+			},
+			local: With{
+				"foo": `${{ from "step-1" "dne" }}`,
+			},
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
 		},
 	}
 

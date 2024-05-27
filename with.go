@@ -48,14 +48,17 @@ func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []
 				}
 				return curr
 			},
-			"persist": func(s string) string {
+			"persist": func(s ...string) string {
 				toPersist = append(toPersist, k)
-				return s
+				if len(s) == 0 {
+					return ""
+				}
+				return s[0]
 			},
 			"from": func(stepName, id string) (string, error) {
 				stepOutputs, ok := previousOutputs[stepName]
 				if !ok {
-					return "", fmt.Errorf("no output for step %q", stepName)
+					return "", fmt.Errorf("no outputs for step %q", stepName)
 				}
 
 				v, ok := stepOutputs[id]
