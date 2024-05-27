@@ -48,9 +48,9 @@ func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []
 				}
 				return curr
 			},
-			"persist": func() error {
+			"persist": func(s string) string {
 				toPersist = append(toPersist, k)
-				return nil
+				return s
 			},
 			"from": func(stepName, id string) (string, error) {
 				stepOutputs, ok := previousOutputs[stepName]

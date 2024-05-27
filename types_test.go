@@ -34,10 +34,10 @@ func TestOrderedTaskNames(t *testing.T) {
 	expected = []string{"default", "bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 
-	wf["default"] = nil
+	delete(wf, "default")
 
 	names = wf.OrderedTaskNames()
-	expected = []string{"default", "bar", "baz", "foo"}
+	expected = []string{"bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 }
 
