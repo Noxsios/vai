@@ -3,7 +3,6 @@ package vai
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -77,7 +76,7 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 	}
 
 	if uri.Scheme == "" {
-		return errors.New("must contain a scheme")
+		return fmt.Errorf("must contain a scheme: %s", uses)
 	}
 
 	var rc io.ReadCloser

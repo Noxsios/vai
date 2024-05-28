@@ -2,6 +2,7 @@ package vai
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,6 +32,26 @@ func TestExecuteUses(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
+	rc, err := FetchHTTP(ctx, server.URL)
+	require.NoError(t, err)
+	defer rc.Close()
+	b, err := io.ReadAll(rc)
+	require.NoError(t, err)
+	var actualWf Workflow
+	err = yaml.Unmarshal(b, &actualWf)
+	require.NoError(t, err)
+	require.Equal(t, helloWorldWorkflow, actualWf)
+
+	rc, err = FetchFile("testdata/hello-world.yaml")
+	require.NoError(t, err)
+	defer rc.Close()
+	b, err = io.ReadAll(rc)
+	require.NoError(t, err)
+	actualWf = Workflow{}
+	err = yaml.Unmarshal(b, &actualWf)
+	require.NoError(t, err)
+	require.Equal(t, helloWorldWorkflow, actualWf)
+
 	// run default task because no ?task=
 	uses := server.URL
 	with := With{}
@@ -40,4 +61,7 @@ func TestExecuteUses(t *testing.T) {
 
 	wf, err := store.Fetch(uses)
 	require.Equal(t, helloWorldWorkflow, wf)
+
+	err = ExecuteUses(ctx, store, "./path-with-no-scheme", with)
+	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
 }
