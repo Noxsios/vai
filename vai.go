@@ -44,7 +44,11 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 				}
 				continue
 			}
-			if err := ExecuteUses(ctx, step.Uses, templated); err != nil {
+			store, err := DefaultStore()
+			if err != nil {
+				return err
+			}
+			if err := ExecuteUses(ctx, store, step.Uses, templated); err != nil {
 				return err
 			}
 			continue

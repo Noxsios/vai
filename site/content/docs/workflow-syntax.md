@@ -155,15 +155,12 @@ vai echo --with message="Hello, World!"
 ## Run a task from a remote file
 
 {{< callout emoji="⚠️" >}}
-Currently only supports GitHub repos.
-
-`uses` syntax leverages the package-url spec: `{url}@{version}?task={task}#{path}`
+`uses` syntax leverages the [package-url spec](https://github.com/package-url/purl-spec)
 {{< /callout >}}
 
 ```yaml {filename="vai.yaml"}
 remote-echo:
-    # run the "echo" task from the "testdata/simple.yaml" file in the "github.com/noxsios/vai" repo on the "main" branch
-  - uses: github.com/noxsios/vai@main?task=echo#testdata/simple.yaml
+  - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
       message: "Hello, World!"
 ```

@@ -17,7 +17,7 @@ Type "    with:" Enter
 Type "      message: \${{ input }}" Enter
 Type "" Enter
 Type "remote-echo:" Enter
-Type "  - uses: github.com/noxsios/vai@main?task=echo#testdata/simple.yaml" Enter
+Type "  - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml" Enter
 Type "    with:" Enter
 Type "      message: hello from main" Enter
 Type "EOF" Enter
