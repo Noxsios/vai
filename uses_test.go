@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+
 package vai
 
 import (
@@ -20,13 +23,25 @@ func TestExecuteUses(t *testing.T) {
 
 	handler := http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			require.Equal(t, "vai", r.Header.Get("User-Agent"))
+			if r.Header.Get("User-Agent") != "vai" {
+				w.WriteHeader(http.StatusBadRequest)
+				_, _ = w.Write([]byte("User-Agent not vai"))
+				return
+			}
 
 			w.WriteHeader(http.StatusOK)
 			b, err := yaml.Marshal(helloWorldWorkflow)
-			require.NoError(t, err)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
 			_, err = w.Write(b)
-			require.NoError(t, err)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
 		},
 	)
 	server := httptest.NewServer(handler)

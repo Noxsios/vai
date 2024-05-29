@@ -5,6 +5,7 @@
 [![codecov](https://codecov.io/gh/Noxsios/vai/graph/badge.svg?token=P7E9QC2RB9)](https://codecov.io/gh/Noxsios/vai)
 [![Go Report Card](https://goreportcard.com/badge/github.com/noxsios/vai)](https://goreportcard.com/report/github.com/noxsios/vai)
 ![GitHub License](https://img.shields.io/github/license/noxsios/vai)
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B45282%2Fgithub.com%2FNoxsios%2Fvai.svg?type=shield&issueType=license)](https://app.fossa.com/projects/custom%2B45282%2Fgithub.com%2FNoxsios%2Fvai?ref=badge_shield&issueType=license)
 
 A simple task runner. Imagine GitHub actions and Makefile had a baby.
 
@@ -40,3 +41,5 @@ Per file basis:
 ```yaml
 # yaml-language-server: $schema=https://raw.githubusercontent.com/noxsios/vai/main/vai.schema.json
 ```
+
+[![FOSSA Status](https://app.fossa.com/api/projects/custom%2B45282%2Fgithub.com%2FNoxsios%2Fvai.svg?type=large&issueType=license)](https://app.fossa.com/projects/custom%2B45282%2Fgithub.com%2FNoxsios%2Fvai?ref=badge_large&issueType=license)
