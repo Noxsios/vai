@@ -19,9 +19,17 @@ const CacheEnvVar = "VAI_CACHE"
 // Force is a global flag to bypass SHA256 checksum verification for cached remote files.
 var Force = false
 
+// Fetcher is a generic fetcher function
 type Fetcher[T any] func(context.Context, T) (io.ReadCloser, error)
+
+// PackageURLFetcher is a fetcher for pURL
 type PackageURLFetcher Fetcher[packageurl.PackageURL]
 
+// GitHubFetcher is a PackageURLFetcher for GitHub
+//
+// If no subpath is given, the subpath is `vai.yaml`
+//
+// If no version is specified, the version is `main`
 func GitHubFetcher(ctx context.Context, pURL packageurl.PackageURL) (io.ReadCloser, error) {
 	if pURL.Subpath == "" {
 		pURL.Subpath = DefaultFileName
@@ -36,6 +44,11 @@ func GitHubFetcher(ctx context.Context, pURL packageurl.PackageURL) (io.ReadClos
 	return FetchHTTP(ctx, raw)
 }
 
+// FetchHTTP performs a GET request using the default HTTP client
+// against the provided raw URL string and returns the request body
+//
+// This function violates idiomatic Go's principle of not returning interfaces
+// due to *http.Response.Body being directly typed as an io.ReadCloser
 func FetchHTTP(ctx context.Context, raw string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
 	if err != nil {
@@ -50,6 +63,13 @@ func FetchHTTP(ctx context.Context, raw string) (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
+// FetchFile opens a file handle at the given location
+//
+// If the location is a directory, <loc>/vai.yaml is opened instead
+//
+// # This function is used to satisfy [io.ReadCloser] in other functions
+//
+// It is up to the caller to close the returned *os.File
 func FetchFile(loc string) (*os.File, error) {
 	fi, err := os.Stat(loc)
 	if err != nil {
