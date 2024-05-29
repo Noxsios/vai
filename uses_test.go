@@ -64,4 +64,10 @@ func TestExecuteUses(t *testing.T) {
 
 	err = ExecuteUses(ctx, store, "./path-with-no-scheme", with)
 	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
+
+	err = ExecuteUses(ctx, store, "ssh:not-supported", with)
+	require.EqualError(t, err, "unknown scheme: ssh")
+
+	err = ExecuteUses(ctx, store, "pkg:gitlab/owner/repo", with)
+	require.EqualError(t, err, "unsupported type: gitlab")
 }

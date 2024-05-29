@@ -102,11 +102,11 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 		if err != nil {
 			return err
 		}
-		switch pURL.Namespace {
+		switch pURL.Type {
 		case "github":
 			fetch = GitHubFetcher
 		default:
-			return fmt.Errorf("unsupported namespace: %q", pURL.Namespace)
+			return fmt.Errorf("unsupported type: %s", pURL.Type)
 		}
 
 		rc, err = fetch(ctx, pURL)
