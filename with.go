@@ -2,7 +2,6 @@ package vai
 
 import (
 	"fmt"
-	"maps"
 	"runtime"
 	"strings"
 	"text/template"
@@ -20,15 +19,18 @@ type With map[string]WithEntry
 
 // PerformLookups performs the following:
 //
-// 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `outer` and `local` With maps
+// 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `input` and `local` With maps
 //
 // 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
-func PerformLookups(input, local, persisted With, previousOutputs CommandOutputs) (With, With, error) {
-	logger.Debug("templating", "input", input, "local", local, "persisted", persisted)
+func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []string, error) {
+	if len(local) == 0 {
+		return local, nil, nil
+	}
 
-	r := make(With)
+	logger.Debug("templating", "input", input, "local", local)
 
-	persist := maps.Clone(persisted)
+	r := make(With, len(local))
+	toPersist := make([]string, 0, len(local))
 
 	for k, v := range local {
 		val := fmt.Sprintf("%s", v)
@@ -36,30 +38,34 @@ func PerformLookups(input, local, persisted With, previousOutputs CommandOutputs
 			"input": func() string {
 				v, ok := input[k]
 				if !ok || v == "" {
-					logger.Warn("no input", "key", k)
 					return ""
 				}
 				return fmt.Sprintf("%s", v)
 			},
 			"default": func(def, curr string) string {
-				if curr == "" {
+				if len(curr) == 0 {
 					return def
 				}
 				return curr
 			},
-			"persist": func(val string) string {
-				if val == "" {
+			"persist": func(s ...string) string {
+				toPersist = append(toPersist, k)
+				if len(s) == 0 {
 					return ""
 				}
-				persist[k] = val
-				return val
+				return s[0]
 			},
-			"from": func(taskName, name string) string {
-				v, ok := previousOutputs[taskName]
+			"from": func(stepName, id string) (string, error) {
+				stepOutputs, ok := previousOutputs[stepName]
 				if !ok {
-					return ""
+					return "", fmt.Errorf("no outputs for step %q", stepName)
 				}
-				return v[name]
+
+				v, ok := stepOutputs[id]
+				if ok {
+					return v, nil
+				}
+				return "", fmt.Errorf("no output %q from %q", id, stepName)
 			},
 		}
 		tmpl := template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}")
@@ -85,14 +91,6 @@ func PerformLookups(input, local, persisted With, previousOutputs CommandOutputs
 		r[k] = result
 	}
 
-	for k, v := range persist {
-		_, ok := r[k]
-		if ok {
-			continue
-		}
-		r[k] = v
-	}
-
 	logger.Debug("templated", "result", r)
-	return r, persist, nil
+	return r, toPersist, nil
 }

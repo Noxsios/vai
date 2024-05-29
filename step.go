@@ -4,18 +4,6 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// Operation is an enum for the type of operation a step is performing
-type Operation int
-
-const (
-	// OperationUnknown is an unknown operation
-	OperationUnknown Operation = iota
-	// OperationRun is a step that runs a command
-	OperationRun
-	// OperationUses is a step that calls another task
-	OperationUses
-)
-
 // Step is a single step in a task
 //
 // While a step can have both `run` and `uses` fields, only one of them can be set
@@ -33,17 +21,6 @@ type Step struct {
 	ID string `json:"id,omitempty"`
 	// Name is a human-readable name for the step
 	Name string `json:"name,omitempty"`
-}
-
-// Operation returns the type of operation the step is performing
-func (s Step) Operation() Operation {
-	if s.Run != "" {
-		return OperationRun
-	}
-	if s.Uses != "" {
-		return OperationUses
-	}
-	return OperationUnknown
 }
 
 // JSONSchemaExtend extends the JSON schema for a step

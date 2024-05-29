@@ -9,7 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/spf13/afero"
 )
+
+// IndexFileName is the name of the index file.
+const IndexFileName = "index.json"
 
 // ErrHashMismatch is returned when the hash of the stored file does not match the hash in the index.
 var ErrHashMismatch = fmt.Errorf("hash mismatch")
@@ -81,33 +86,32 @@ func (c *CacheIndex) Remove(key string) {
 
 // Store is a cache for storing and retrieving remote workflows.
 type Store struct {
-	root  string
 	index *CacheIndex
+
+	fs afero.Fs
 
 	sync sync.RWMutex
 }
 
 // NewStore creates a new store at the given path.
-func NewStore(path string) (*Store, error) {
+func NewStore(fs afero.Fs) (*Store, error) {
 	index := NewCacheIndex()
-	indexPath := filepath.Join(path, "index.json")
 
-	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
-		err := os.MkdirAll(path, 0755)
+	if _, err := fs.Stat(IndexFileName); os.IsNotExist(err) {
+		f, err := fs.Create(IndexFileName)
 		if err != nil {
 			return nil, err
 		}
-		_, err = os.Create(indexPath)
+		defer f.Close()
+
+		_, err = f.WriteString("{}")
 		if err != nil {
-			return nil, err
-		}
-		if err := os.WriteFile(indexPath, []byte("{}"), 0644); err != nil {
 			return nil, err
 		}
 	} else if err != nil {
 		return nil, err
 	} else {
-		b, err := os.ReadFile(indexPath)
+		b, err := afero.ReadFile(fs, IndexFileName)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +122,7 @@ func NewStore(path string) (*Store, error) {
 	}
 
 	return &Store{
-		root:  path,
+		fs:    fs,
 		index: index,
 	}, nil
 }
@@ -128,7 +132,7 @@ func NewStore(path string) (*Store, error) {
 // $VAI_CACHE || $HOME/.vai/cache
 func DefaultStore() (*Store, error) {
 	if cache := os.Getenv(CacheEnvVar); cache != "" {
-		return NewStore(cache)
+		return NewStore(afero.NewBasePathFs(afero.NewOsFs(), cache))
 	}
 
 	home, err := os.UserHomeDir()
@@ -138,22 +142,20 @@ func DefaultStore() (*Store, error) {
 
 	cache := filepath.Join(home, ".vai", "cache")
 
-	return NewStore(cache)
+	return NewStore(afero.NewBasePathFs(afero.NewOsFs(), cache))
 }
 
-// Fetch retrieves a workflow from the store by key (SHA256).
+// Fetch retrieves a workflow from the store
 func (s *Store) Fetch(key string) (Workflow, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()
 
-	sha, ok := s.index.Find(key)
+	hex, ok := s.index.Find(key)
 	if !ok {
 		return nil, fmt.Errorf("key not found")
 	}
 
-	path := filepath.Join(s.root, sha)
-
-	f, err := os.Open(path)
+	f, err := s.fs.Open(hex)
 	if err != nil {
 		return nil, err
 	}
@@ -165,13 +167,11 @@ func (s *Store) Fetch(key string) (Workflow, error) {
 		return nil, err
 	}
 
-	if fmt.Sprintf("%x", hasher.Sum(nil)) != sha {
+	if fmt.Sprintf("%x", hasher.Sum(nil)) != hex {
 		return nil, ErrHashMismatch
 	}
 
-	f.Close()
-
-	return ReadAndValidate(path)
+	return ReadAndValidate(f)
 }
 
 // Store a workflow in the store.
@@ -190,23 +190,20 @@ func (s *Store) Store(key string, r io.Reader) error {
 		return err
 	}
 
-	hash := fmt.Sprintf("%x", hasher.Sum(nil))
+	hex := fmt.Sprintf("%x", hasher.Sum(nil))
 
-	path := filepath.Join(s.root, hash)
-
-	if err := os.WriteFile(path, b, 0644); err != nil {
+	if err := afero.WriteFile(s.fs, hex, b, 0644); err != nil {
 		return err
 	}
 
-	s.index.Add(key, hash)
+	s.index.Add(key, hex)
 
-	indexPath := filepath.Join(s.root, "index.json")
 	b, err = json.Marshal(s.index)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(indexPath, b, 0644)
+	return afero.WriteFile(s.fs, IndexFileName, b, 0644)
 }
 
 // Delete a workflow from the store.
@@ -214,25 +211,23 @@ func (s *Store) Delete(key string) error {
 	s.sync.Lock()
 	defer s.sync.Unlock()
 
-	sha, ok := s.index.Find(key)
+	hex, ok := s.index.Find(key)
 	if !ok {
 		return fmt.Errorf("key not found")
 	}
 
 	s.index.Remove(key)
 
-	indexPath := filepath.Join(s.root, "index.json")
 	b, err := json.Marshal(s.index)
 	if err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(indexPath, b, 0644); err != nil {
+	if err := afero.WriteFile(s.fs, IndexFileName, b, 0644); err != nil {
 		return err
 	}
 
-	path := filepath.Join(s.root, sha)
-	return os.Remove(path)
+	return s.fs.Remove(hex)
 }
 
 // Exists checks if a workflow exists in the store.
@@ -240,16 +235,15 @@ func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 	s.sync.RLock()
 	defer s.sync.RUnlock()
 
-	sha, ok := s.index.Find(key)
+	hex, ok := s.index.Find(key)
 	if !ok {
 		return false, nil
 	}
 
-	path := filepath.Join(s.root, sha)
-	_, err := os.Stat(path)
+	_, err := s.fs.Stat(hex)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return false, fmt.Errorf("key exists in index, but no corresponding file was found, possible cache corruption: %s", key)
 		}
 		return false, err
 	}
@@ -260,11 +254,10 @@ func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 		return false, err
 	}
 
-	n := fmt.Sprintf("%x", hasher.Sum(nil))
+	nhex := fmt.Sprintf("%x", hasher.Sum(nil))
 
-	logger.Debug("hashes", "new", n, "old", sha)
-
-	if n != sha {
+	if nhex != hex {
+		logger.Debug("hashes", "new", nhex, "old", hex)
 		return false, ErrHashMismatch
 	}
 

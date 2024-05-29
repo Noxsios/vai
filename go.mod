@@ -10,6 +10,7 @@ require (
 	github.com/invopop/jsonschema v0.12.0
 	github.com/package-url/packageurl-go v0.1.3
 	github.com/rogpeppe/go-internal v1.12.0
+	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	github.com/xeipuuv/gojsonschema v1.2.0

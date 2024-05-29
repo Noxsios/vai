@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/goccy/go-yaml"
 	"github.com/package-url/packageurl-go"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,13 +62,12 @@ var shaMap = map[string]string{
 }
 
 func TestStore(t *testing.T) {
-	tmp := t.TempDir()
-
-	store, err := NewStore(tmp)
+	fs := afero.NewMemMapFs()
+	store, err := NewStore(fs)
 	require.NoError(t, err)
 
 	// store initializes with empty index
-	b, err := os.ReadFile(filepath.Join(store.root, "index.json"))
+	b, err := afero.ReadFile(fs, IndexFileName)
 	require.NoError(t, err)
 	require.JSONEq(t, "{}", string(b))
 
@@ -77,7 +77,7 @@ func TestStore(t *testing.T) {
 	}
 
 	// index is updated
-	b, err = os.ReadFile(filepath.Join(store.root, "index.json"))
+	b, err = afero.ReadFile(fs, IndexFileName)
 	require.NoError(t, err)
 	var index CacheIndex
 	err = json.Unmarshal(b, &index)
@@ -86,7 +86,7 @@ func TestStore(t *testing.T) {
 
 	// all keys exist at the correct sha
 	for k, v := range shaMap {
-		ok, err := store.Exists(k, bytes.NewReader([]byte(k)))
+		ok, err := store.Exists(k, strings.NewReader(k))
 		require.NoError(t, err)
 		require.True(t, ok)
 
@@ -99,12 +99,13 @@ func TestStore(t *testing.T) {
 
 	// delete
 	require.NoError(t, store.Delete("a"))
-	b, err = os.ReadFile(filepath.Join(store.root, "index.json"))
+	require.EqualError(t, store.Delete("z"), "key not found")
+	b, err = afero.ReadFile(fs, IndexFileName)
 	require.NoError(t, err)
 	err = json.Unmarshal(b, &index)
 	require.NoError(t, err)
 	require.ElementsMatch(t, index.Files, store.index.Files)
-	ok, err := store.Exists("a", bytes.NewReader([]byte("a")))
+	ok, err := store.Exists("a", strings.NewReader("a"))
 	require.NoError(t, err)
 	require.False(t, ok)
 
@@ -123,6 +124,17 @@ func TestStore(t *testing.T) {
 	wf, err := store.Fetch(key.String())
 	require.NoError(t, err)
 	require.Equal(t, helloWorldWorkflow, wf)
+
+	// store can be re-initialized just fine
+	store, err = NewStore(fs)
+	require.NoError(t, err)
+
+	// cause a mismatch between index and fs, causing cache corruption
+	err = fs.Remove(shaMap["b"])
+	require.NoError(t, err)
+	ok, err = store.Exists("b", strings.NewReader("b"))
+	require.False(t, ok)
+	require.EqualError(t, err, "key exists in index, but no corresponding file was found, possible cache corruption: b")
 }
 
 func TestDefaultStore(t *testing.T) {
@@ -131,5 +143,5 @@ func TestDefaultStore(t *testing.T) {
 	os.Setenv(CacheEnvVar, tmp)
 	store, err := DefaultStore()
 	require.NoError(t, err)
-	require.Equal(t, store.root, tmp)
+	require.NotNil(t, store)
 }

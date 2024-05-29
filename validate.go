@@ -3,12 +3,11 @@ package vai
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"regexp"
 	"sync"
 
 	"github.com/goccy/go-yaml"
-	"github.com/package-url/packageurl-go"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -19,8 +18,15 @@ var TaskNamePattern = regexp.MustCompile("^[_a-zA-Z][a-zA-Z0-9_-]*$")
 var EnvVariablePattern = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
 // Read reads a workflow from a file
-func Read(filename string) (Workflow, error) {
-	b, err := os.ReadFile(filename)
+func Read(r io.Reader) (Workflow, error) {
+	if rc, ok := r.(io.Seeker); ok {
+		_, err := rc.Seek(0, io.SeekStart)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +60,10 @@ func Validate(wf Workflow) error {
 				ids[step.ID] = idx
 			}
 
-			if step.Uses != "" {
-				_, err := packageurl.FromString(UsesPrefix + step.Uses)
-				if err != nil {
-					return fmt.Errorf(".%s[%d].uses %q is invalid: %w", name, idx, step.Uses, err)
-				}
-			}
+			// TODO: re-add step.Uses validation for:
+			// - local
+			// - http/https
+			// - pURL
 
 			if step.Uses != "" && step.Run != "" {
 				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
@@ -95,8 +99,8 @@ func Validate(wf Workflow) error {
 }
 
 // ReadAndValidate reads and validates a workflow
-func ReadAndValidate(filename string) (Workflow, error) {
-	wf, err := Read(filename)
+func ReadAndValidate(r io.Reader) (Workflow, error) {
+	wf, err := Read(r)
 	if err != nil {
 		return nil, err
 	}

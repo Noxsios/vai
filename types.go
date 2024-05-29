@@ -2,7 +2,6 @@ package vai
 
 import (
 	"cmp"
-	"fmt"
 	"slices"
 
 	"github.com/invopop/jsonschema"
@@ -25,12 +24,9 @@ type Workflow map[string]Task
 // Find returns a task by name
 //
 // If the task is not found, an error is returned
-func (wf Workflow) Find(call string) (Task, error) {
+func (wf Workflow) Find(call string) (Task, bool) {
 	task, ok := wf[call]
-	if !ok {
-		return nil, fmt.Errorf("task %q not found", call)
-	}
-	return task, nil
+	return task, ok
 }
 
 // OrderedTaskNames returns a list of task names in alphabetical order

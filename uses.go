@@ -1,185 +1,199 @@
 package vai
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
-	"github.com/goccy/go-yaml"
 	"github.com/package-url/packageurl-go"
 )
 
-const (
-	// CacheEnvVar is the environment variable for the cache directory.
-	CacheEnvVar = "VAI_CACHE"
-	// UsesPrefix is the prefix for remote tasks.
-	UsesPrefix = "pkg:vai/"
-)
+// CacheEnvVar is the environment variable for the cache directory.
+const CacheEnvVar = "VAI_CACHE"
 
 // Force is a global flag to bypass SHA256 checksum verification for cached remote files.
 var Force = false
 
-// FetchIntoStore fetches and stores a remote workflow into a given store.
-func FetchIntoStore(_ context.Context, pURL packageurl.PackageURL, store *Store) (Workflow, error) {
-	// TODO: handle SHA provided within the URI so that we don't have to pull at all if we already have the file.
+// Fetcher is a generic fetcher function
+type Fetcher[T any] func(context.Context, T) (io.ReadCloser, error)
 
+// PackageURLFetcher is a fetcher for pURL
+type PackageURLFetcher Fetcher[packageurl.PackageURL]
+
+// GitHubFetcher is a PackageURLFetcher for GitHub
+//
+// If no subpath is given, the subpath is `vai.yaml`
+//
+// If no version is specified, the version is `main`
+func GitHubFetcher(ctx context.Context, pURL packageurl.PackageURL) (io.ReadCloser, error) {
 	if pURL.Subpath == "" {
 		pURL.Subpath = DefaultFileName
 	}
 
-	var raw string
-
-	switch ns := pURL.Namespace; {
-	case strings.HasPrefix(ns, "github.com"):
-		if pURL.Name == "" || pURL.Version == "" {
-			return nil, fmt.Errorf("invalid uses: %#+v", pURL)
-		}
-		_, owner, ok := strings.Cut(ns, "github.com/")
-		if !ok {
-			return nil, fmt.Errorf("invalid uses: %q", pURL)
-		}
-		raw = fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, pURL.Name, pURL.Version, pURL.Subpath)
-	default:
-		return nil, fmt.Errorf("unsupported namespace: %q", pURL.Namespace)
+	if pURL.Version == "" {
+		pURL.Version = "main"
 	}
 
-	if strings.Contains(strings.TrimPrefix(raw, "https://"), "//") {
-		return nil, fmt.Errorf("invalid uses: %#+v", pURL)
-	}
+	raw := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", pURL.Namespace, pURL.Name, pURL.Version, pURL.Subpath)
 
-	logger.Debug("fetching", "url", raw)
+	return FetchHTTP(ctx, raw)
+}
 
-	// TODO: add context usage
-	resp, err := http.Get(raw)
+// FetchHTTP performs a GET request using the default HTTP client
+// against the provided raw URL string and returns the request body
+//
+// This function violates idiomatic Go's principle of not returning interfaces
+// due to *http.Response.Body being directly typed as an io.ReadCloser
+func FetchHTTP(ctx context.Context, raw string) (io.ReadCloser, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	req.Header.Set("User-Agent", "vai")
 
-	tmpFile, err := os.CreateTemp("", "vai-")
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer tmpFile.Close()
+	return resp.Body, nil
+}
 
-	_, err = io.Copy(tmpFile, resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	_, err = tmpFile.Seek(0, 0)
+// FetchFile opens a file handle at the given location
+//
+// If the location is a directory, <loc>/vai.yaml is opened instead
+//
+// # This function is used to satisfy [io.ReadCloser] in other functions
+//
+// It is up to the caller to close the returned *os.File
+func FetchFile(loc string) (*os.File, error) {
+	fi, err := os.Stat(loc)
 	if err != nil {
 		return nil, err
 	}
 
-	var wf Workflow
-
-	b, err := io.ReadAll(tmpFile)
+	if fi.IsDir() {
+		loc = filepath.Join(loc, DefaultFileName)
+	}
+	f, err := os.Open(loc)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := yaml.Unmarshal(b, &wf); err != nil {
-		return nil, err
-	}
-
-	_, err = tmpFile.Seek(0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	key := pURL.String()
-	ok, err := store.Exists(key, tmpFile)
-	if err != nil {
-		if IsHashMismatch(err) && !Force {
-			ok, err := ConfirmSHAOverwrite()
-			if err != nil {
-				return nil, err
-			}
-
-			if !ok {
-				return nil, fmt.Errorf("hash mismatch, not overwriting")
-			}
-
-			if err := store.Delete(key); err != nil {
-				return nil, err
-			}
-
-			_, err = tmpFile.Seek(0, 0)
-			if err != nil {
-				return nil, err
-			}
-			if err := store.Store(key, tmpFile); err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	} else if !ok {
-		_, err = tmpFile.Seek(0, 0)
-		if err != nil {
-			return nil, err
-		}
-		logger.Debug("caching", "workflow", pURL)
-		if err = store.Store(key, tmpFile); err != nil {
-			return nil, err
-		}
-	}
-
-	return wf, nil
+	return f, nil
 }
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, uses string, with With) error {
+func ExecuteUses(ctx context.Context, store *Store, uses string, with With) error {
 	logger.Debug("using", "task", uses)
 
-	pURL, err := packageurl.FromString(UsesPrefix + uses)
+	uri, err := url.Parse(uses)
 	if err != nil {
 		return err
 	}
 
-	var wf Workflow
+	if uri.Scheme == "" {
+		return fmt.Errorf("must contain a scheme: %s", uses)
+	}
 
-	// If the pURL has no subpath or version, we assume it's a local file.
-	if pURL.Subpath == "" && pURL.Version == "" {
-		var loc string
-
-		switch pURL.Namespace {
-		case "", ".", "..":
-			loc = pURL.Name
-		default:
-			loc = filepath.Join(pURL.Namespace, pURL.Name)
+	var rc io.ReadCloser
+	defer func() {
+		if rc != nil {
+			if err := rc.Close(); err != nil {
+				logger.Warn(err)
+			}
 		}
+	}()
 
-		fi, err := os.Stat(loc)
+	var pURL packageurl.PackageURL
+
+	switch uri.Scheme {
+	case "http", "https":
+		rc, err = FetchHTTP(ctx, uses)
 		if err != nil {
 			return err
 		}
-
-		if fi.IsDir() {
-			loc = filepath.Join(loc, DefaultFileName)
+	case "pkg":
+		var fetch PackageURLFetcher
+		pURL, err = packageurl.FromString(uses)
+		if err != nil {
+			return err
+		}
+		switch pURL.Type {
+		case "github":
+			fetch = GitHubFetcher
+		default:
+			return fmt.Errorf("unsupported type: %s", pURL.Type)
 		}
 
-		wf, err = ReadAndValidate(loc)
+		rc, err = fetch(ctx, pURL)
+		if err != nil {
+			return err
+		}
+	case "file":
+		// TODO: handle paths from remote fetched workflows
+		loc := uri.Opaque
+		rc, err = FetchFile(loc)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown scheme: %s", uri.Scheme)
+	}
+
+	var wf Workflow
+
+	if uri.Scheme == "file" {
+		wf, err = ReadAndValidate(rc)
 		if err != nil {
 			return err
 		}
 	} else {
-		store, err := DefaultStore()
+		b, err := io.ReadAll(rc)
 		if err != nil {
 			return err
 		}
-		wf, err = FetchIntoStore(ctx, pURL, store)
+		exists, err := store.Exists(uses, bytes.NewReader(b))
+		if err != nil && !IsHashMismatch(err) {
+			return err
+		}
+		if err != nil && IsHashMismatch(err) && !Force {
+			yes, err := ConfirmSHAOverwrite()
+			if err != nil {
+				return err
+			}
+
+			if !yes {
+				return fmt.Errorf("hash mismatch, not overwriting")
+			}
+		}
+		if exists {
+			if err := store.Delete(uses); err != nil {
+				return err
+			}
+		}
+
+		if err := store.Store(uses, bytes.NewReader(b)); err != nil {
+			return err
+		}
+
+		wf, err = store.Fetch(uses)
 		if err != nil {
 			return err
 		}
 	}
 
-	taskName := pURL.Qualifiers.Map()["task"]
+	var taskName string
+
+	switch uri.Scheme {
+	case "file":
+		taskName = uri.Query().Get("task")
+	default:
+		taskName = pURL.Qualifiers.Map()["task"]
+	}
 
 	return Run(ctx, wf, taskName, with)
 }

@@ -13,16 +13,15 @@ import (
 var helloWorldWorkflow = Workflow{"default": {Step{Run: "echo 'Hello World!'"}}, "a-task": {Step{Run: "echo 'task a'"}}, "task-b": {Step{Run: "echo 'task b'"}}}
 
 func TestWorkflowFind(t *testing.T) {
-	task, err := helloWorldWorkflow.Find(DefaultTaskName)
-	require.NoError(t, err)
+	task, ok := helloWorldWorkflow.Find(DefaultTaskName)
+	require.True(t, ok)
 
 	require.Len(t, task, 1)
 	require.Equal(t, "echo 'Hello World!'", task[0].Run)
 
-	task, err = helloWorldWorkflow.Find("foo")
-	require.Error(t, err)
+	task, ok = helloWorldWorkflow.Find("foo")
 	require.Nil(t, task)
-	require.EqualError(t, err, `task "foo" not found`)
+	require.False(t, ok)
 }
 
 func TestOrderedTaskNames(t *testing.T) {
@@ -35,10 +34,10 @@ func TestOrderedTaskNames(t *testing.T) {
 	expected = []string{"default", "bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 
-	wf["default"] = nil
+	delete(wf, "default")
 
 	names = wf.OrderedTaskNames()
-	expected = []string{"default", "bar", "baz", "foo"}
+	expected = []string{"bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 }
 

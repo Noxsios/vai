@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+// IsCI is true if the environment is a CI environment.
 var IsCI = os.Getenv("CI") == "true"
 
 // ConfirmSHAOverwrite asks the user if they want to overwrite the SHA

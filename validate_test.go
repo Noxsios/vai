@@ -1,7 +1,9 @@
 package vai
 
 import (
+	"io"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -185,23 +187,79 @@ func FuzzEnvVariablePattern(f *testing.F) {
 	})
 }
 
-func TestRead(t *testing.T) {
+func TestReadAndValidate(t *testing.T) {
 	testCases := []struct {
-		filename    string
-		expectedErr string
+		name                string
+		r                   io.Reader
+		wf                  Workflow
+		expectedReadErr     string
+		expectedValidateErr string
 	}{
-		{"testdata/simple.yaml", ""},
-		{"testdata/does-not-exist.yaml", "open testdata/does-not-exist.yaml: no such file or directory"},
+		{
+			"simple good read",
+			strings.NewReader(`
+echo:
+  - run: echo
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run: "echo",
+				}},
+			}, "", ""},
+		{
+			"malformed YAML",
+			strings.NewReader(`
+echo:
+			`),
+			Workflow{
+				"echo": Task(nil),
+			}, "", "schema validation failed",
+		},
+		{
+			"bad task name",
+			strings.NewReader(`
+2-echo:
+  - run: echo
+			`),
+			Workflow{
+				"2-echo": Task{Step{
+					Run: "echo",
+				}},
+			}, "", `task name "2-echo" is invalid`,
+		},
+		{
+			"bad step id",
+			strings.NewReader(`
+echo:
+  - run: echo
+    id: "&1337"
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run: "echo",
+					ID:  "&1337",
+				}},
+			}, "", `.echo[0].id "&1337" is invalid`,
+		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.filename, func(t *testing.T) {
-			wf, err := Read(tc.filename)
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			wf, err := Read(tc.r)
+			require.Equal(t, tc.wf, wf)
 			if err != nil {
-				require.EqualError(t, err, tc.expectedErr)
+				require.EqualError(t, err, tc.expectedReadErr)
 			}
 			if err == nil {
 				require.NotEmpty(t, wf)
+			}
+
+			err = Validate(wf)
+			if err != nil {
+				require.EqualError(t, err, tc.expectedValidateErr)
 			}
 		})
 	}

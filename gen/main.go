@@ -37,11 +37,7 @@ func run(root string) error {
 
 	usage := fmt.Sprintf("{\n  \"usage\": %q\n}", buf.String())
 
-	if err := os.WriteFile(filepath.Join(root, "site/data/usage.json"), []byte(usage), 0644); err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(filepath.Join(root, "site/data/usage.json"), []byte(usage), 0644)
 }
 
 // main is the entry point for the application
