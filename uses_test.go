@@ -56,6 +56,12 @@ func TestExecuteUses(t *testing.T) {
 	uses := server.URL
 	with := With{}
 
+	err = ExecuteUses(ctx, store, "file:testdata/hello-world.yaml", with)
+	require.NoError(t, err)
+
+	err = ExecuteUses(ctx, store, "file:testdata/hello-world.yaml?task=a-task", with)
+	require.NoError(t, err)
+
 	wf, err := store.Fetch(uses)
 	require.EqualError(t, err, "key not found")
 	require.Nil(t, wf)
