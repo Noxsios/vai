@@ -187,31 +187,79 @@ func FuzzEnvVariablePattern(f *testing.F) {
 	})
 }
 
-func TestRead(t *testing.T) {
+func TestReadAndValidate(t *testing.T) {
 	testCases := []struct {
-		name        string
-		r           io.Reader
-		expectedErr string
+		name                string
+		r                   io.Reader
+		wf                  Workflow
+		expectedReadErr     string
+		expectedValidateErr string
 	}{
 		{
 			"simple good read",
 			strings.NewReader(`
 echo:
-  - run: |
-      echo "$MESSAGE"
-    with:
-      message: ${{ input }}
-			`), ""},
+  - run: echo
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run: "echo",
+				}},
+			}, "", ""},
+		{
+			"malformed YAML",
+			strings.NewReader(`
+echo:
+			`),
+			Workflow{
+				"echo": Task(nil),
+			}, "", "schema validation failed",
+		},
+		{
+			"bad task name",
+			strings.NewReader(`
+2-echo:
+  - run: echo
+			`),
+			Workflow{
+				"2-echo": Task{Step{
+					Run: "echo",
+				}},
+			}, "", `task name "2-echo" is invalid`,
+		},
+		{
+			"bad step id",
+			strings.NewReader(`
+echo:
+  - run: echo
+    id: "&1337"
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run: "echo",
+					ID:  "&1337",
+				}},
+			}, "", `.echo[0].id "&1337" is invalid`,
+		},
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
 			wf, err := Read(tc.r)
+			require.Equal(t, tc.wf, wf)
 			if err != nil {
-				require.EqualError(t, err, tc.expectedErr)
+				require.EqualError(t, err, tc.expectedReadErr)
 			}
 			if err == nil {
 				require.NotEmpty(t, wf)
+			}
+
+			err = Validate(wf)
+			if err != nil {
+				require.EqualError(t, err, tc.expectedValidateErr)
 			}
 		})
 	}
