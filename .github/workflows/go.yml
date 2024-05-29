@@ -8,13 +8,15 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: go-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  ci:
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,3 +44,18 @@ jobs:
         run: |
           go test -fuzz=FuzzTaskNamePattern -fuzztime=15s
           go test -fuzz=FuzzEnvVariablePattern -fuzztime=15s
+
+  golangci:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          go-version: 1.22.x
+          cache-dependency-path: |
+            go.sum
+            go.mod
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
