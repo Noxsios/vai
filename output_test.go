@@ -14,6 +14,7 @@ func TestParseOutputFile(t *testing.T) {
 		rs          io.ReadSeeker
 		expected    map[string]string
 		expectedErr string
+		initialRead int
 	}{
 		{
 			name:        "empty file",
@@ -51,6 +52,24 @@ multiline<<1
 			expectedErr: "invalid syntax: multiline value not terminated",
 		},
 		{
+			name: "missing delimiter",
+			rs: strings.NewReader(`
+a=b
+multiline<<
+2`),
+			expected:    nil,
+			expectedErr: "invalid syntax: missing delimiter after '<<'",
+		},
+		{
+			name: "non-delimited multiline value",
+			rs: strings.NewReader(`
+a=b
+multiline
+2`),
+			expected:    nil,
+			expectedErr: "invalid syntax: non-delimited multiline value",
+		},
+		{
 			name: "multiline value with delimiter",
 			rs: strings.NewReader(`
 a=b
@@ -70,7 +89,15 @@ c=d`),
 	}
 
 	for _, tc := range testCases {
+		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if tc.initialRead != 0 {
+				_, err := tc.rs.Seek(0, tc.initialRead)
+				require.NoError(t, err)
+			}
+
 			outputs, err := ParseOutput(tc.rs)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedErr)

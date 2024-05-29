@@ -143,7 +143,7 @@ simple:
 
 ```yaml {filename="vai.yaml"}
 echo:
-  - uses: tasks/echo.yaml?task=simple
+  - uses: file:tasks/echo.yaml?task=simple
     with:
       message: ${{ input }}
 ```
@@ -158,12 +158,29 @@ vai echo --with message="Hello, World!"
 `uses` syntax leverages the [package-url spec](https://github.com/package-url/purl-spec)
 {{< /callout >}}
 
+{{< tabs items="GitHub,HTTP(S)" >}}
+
+{{< tab >}}
+
 ```yaml {filename="vai.yaml"}
 remote-echo:
   - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
       message: "Hello, World!"
 ```
+
+{{< /tab >}}
+
+{{< tab >}}
+
+```yaml {filename="vai.yaml"}
+remote-echo:
+  - uses: https://raw.githubusercontent.com/noxsios/vai/main/testdata/simple.yaml?task=echo
+    with:
+      message: "Hello, World!"
+```
+
+{{< /tab >}}
 
 ```sh
 vai remote-echo

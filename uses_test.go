@@ -56,11 +56,19 @@ func TestExecuteUses(t *testing.T) {
 	uses := server.URL
 	with := With{}
 
+	wf, err := store.Fetch(uses)
+	require.EqualError(t, err, "key not found")
+	require.Nil(t, wf)
+
 	err = ExecuteUses(ctx, store, uses, with)
 	require.NoError(t, err)
 
-	wf, err := store.Fetch(uses)
+	wf, err = store.Fetch(uses)
+	require.NoError(t, err)
 	require.Equal(t, helloWorldWorkflow, wf)
+
+	err = ExecuteUses(ctx, store, uses, with)
+	require.NoError(t, err)
 
 	err = ExecuteUses(ctx, store, "./path-with-no-scheme", with)
 	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
