@@ -243,7 +243,7 @@ func (s *Store) Exists(key string, r io.Reader) (bool, error) {
 	_, err := s.fs.Stat(hex)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return false, fmt.Errorf("key exists in index, but no corresponding file was found, possible cache corruption: %s", key)
 		}
 		return false, err
 	}

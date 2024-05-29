@@ -99,6 +99,7 @@ func TestStore(t *testing.T) {
 
 	// delete
 	require.NoError(t, store.Delete("a"))
+	require.EqualError(t, store.Delete("z"), "key not found")
 	b, err = afero.ReadFile(fs, IndexFileName)
 	require.NoError(t, err)
 	err = json.Unmarshal(b, &index)
@@ -123,6 +124,17 @@ func TestStore(t *testing.T) {
 	wf, err := store.Fetch(key.String())
 	require.NoError(t, err)
 	require.Equal(t, helloWorldWorkflow, wf)
+
+	// store can be re-initialized just fine
+	store, err = NewStore(fs)
+	require.NoError(t, err)
+
+	// cause a mismatch between index and fs, causing cache corruption
+	err = fs.Remove(shaMap["b"])
+	require.NoError(t, err)
+	ok, err = store.Exists("b", strings.NewReader("b"))
+	require.False(t, ok)
+	require.EqualError(t, err, "key exists in index, but no corresponding file was found, possible cache corruption: b")
 }
 
 func TestDefaultStore(t *testing.T) {
