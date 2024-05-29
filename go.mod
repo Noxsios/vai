@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+
 module github.com/noxsios/vai
 
 go 1.22.2
