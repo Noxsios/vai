@@ -59,3 +59,11 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+
+  fossa-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: fossas/fossa-action@v1.3.3
+        with:
+          api-key: ${{secrets.FOSSA_API_KEY}}
