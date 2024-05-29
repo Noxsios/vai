@@ -182,6 +182,8 @@ remote-echo:
 
 {{< /tab >}}
 
+{{< /tabs >}}
+
 ```sh
 vai remote-echo
 ```
