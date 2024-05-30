@@ -7,5 +7,6 @@
 #         threshold: 1%
 
 ignore:
-  - gen
-  - cmd
+  - gen/main.go
+  - cmd/vai/main.go
+  - cmd/root.go
