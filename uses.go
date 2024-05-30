@@ -203,8 +203,6 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With, orig
 			key = u.String()
 		}
 
-		fmt.Println("key", key)
-
 		b, err := io.ReadAll(rc)
 		if err != nil {
 			return err
