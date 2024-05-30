@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/goccy/go-yaml"
 	"github.com/package-url/packageurl-go"
@@ -151,6 +152,8 @@ func TestGitHubFetcher(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	pURL, err := packageurl.FromString("pkg:github/noxsios/vai")
 	require.NoError(t, err)
