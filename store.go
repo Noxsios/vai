@@ -100,6 +100,10 @@ type Store struct {
 func NewStore(fs afero.Fs) (*Store, error) {
 	index := NewCacheIndex()
 
+	if err := fs.MkdirAll("/", 0644); err != nil {
+		return nil, err
+	}
+
 	if _, err := fs.Stat(IndexFileName); os.IsNotExist(err) {
 		f, err := fs.Create(IndexFileName)
 		if err != nil {

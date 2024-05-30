@@ -132,8 +132,15 @@ func NewRootCmd() *cobra.Command {
 				defer cancel()
 			}
 
+			store, err := vai.DefaultStore()
+			if err != nil {
+				return err
+			}
+
+			rootOrigin := "file:" + filename
+
 			for _, call := range args {
-				if err := vai.Run(ctx, wf, call, with); err != nil {
+				if err := vai.Run(ctx, store, wf, call, with, rootOrigin); err != nil {
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 						return fmt.Errorf("task %q timed out", call)
 					}

@@ -18,7 +18,7 @@ import (
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
+func Run(ctx context.Context, store *Store, wf Workflow, taskName string, outer With, origin string) error {
 	if taskName == "" {
 		taskName = DefaultTaskName
 	}
@@ -42,16 +42,12 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With) error {
 
 		if step.Uses != "" {
 			if _, ok := wf.Find(step.Uses); ok {
-				if err := Run(ctx, wf, step.Uses, templated); err != nil {
+				if err := Run(ctx, store, wf, step.Uses, templated, origin); err != nil {
 					return err
 				}
 				continue
 			}
-			store, err := DefaultStore()
-			if err != nil {
-				return err
-			}
-			if err := ExecuteUses(ctx, store, step.Uses, templated); err != nil {
+			if err := ExecuteUses(ctx, store, step.Uses, templated, origin); err != nil {
 				return err
 			}
 			continue
