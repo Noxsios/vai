@@ -5,6 +5,7 @@ package vai
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -43,12 +44,6 @@ func TestExecuteUses(t *testing.T) {
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("User-Agent") != "vai" {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("User-Agent not vai"))
-			return
-		}
-
 		// handle /hello-world.yaml
 		if r.URL.Path == "/hello-world.yaml" {
 			handleWF(w, helloWorldWorkflow)
@@ -72,6 +67,9 @@ func TestExecuteUses(t *testing.T) {
 	}
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
+
+	_, err = FetchHTTP(ctx, server.URL)
+	require.EqualError(t, err, fmt.Sprintf("failed to fetch %s: 404 Not Found", server.URL))
 
 	rc, err := FetchHTTP(ctx, server.URL+"/hello-world.yaml")
 	require.NoError(t, err)
