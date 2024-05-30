@@ -37,7 +37,6 @@ func TestExecuteUses(t *testing.T) {
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		return
 	}
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +66,6 @@ func TestExecuteUses(t *testing.T) {
 
 		w.WriteHeader(http.StatusNotFound)
 		_, _ = w.Write([]byte("not found"))
-		return
 	}
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
