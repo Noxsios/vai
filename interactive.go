@@ -25,7 +25,7 @@ func ConfirmSHAOverwrite() (bool, error) {
 		huh.NewGroup(
 			huh.NewConfirm().Value(&choice).Title("There is a SHA mismatch, do you want to overwrite?"),
 		),
-	).WithShowHelp(true).Run()
+	).WithShowHelp(true).WithTheme(huh.ThemeCatppuccin()).Run()
 
 	return choice, err
 }

@@ -8,9 +8,11 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/goccy/go-yaml"
+	"github.com/package-url/packageurl-go"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -140,4 +142,28 @@ func TestExecuteUses(t *testing.T) {
 	files, err := afero.ReadDir(fs, "/")
 	require.NoError(t, err)
 	require.Len(t, files, 4)
+}
+
+// TODO: is there a way to test this without hitting the network?
+func TestGitHubFetcher(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping TestGithubFetcher in short mode.")
+	}
+
+	ctx := context.Background()
+
+	pURL, err := packageurl.FromString("pkg:github/noxsios/vai")
+	require.NoError(t, err)
+
+	rc, err := GitHubFetcher(ctx, pURL)
+	require.NoError(t, err)
+
+	b, err := io.ReadAll(rc)
+	require.NoError(t, err)
+
+	// this means the current branches vai.yaml cannot deviate from the main branch
+	actualBytes, err := os.ReadFile("vai.yaml")
+	require.NoError(t, err)
+
+	require.Equal(t, actualBytes, b)
 }
