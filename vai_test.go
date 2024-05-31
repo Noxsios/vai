@@ -7,18 +7,22 @@ import (
 	"context"
 	"testing"
 
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRun(t *testing.T) {
 	ctx := context.Background()
+	fs := afero.NewMemMapFs()
+	store, err := NewStore(fs)
+	require.NoError(t, err)
 	with := With{}
 
 	// simple happy path
-	err := Run(ctx, helloWorldWorkflow, "", with)
+	err = Run(ctx, store, helloWorldWorkflow, "", with, "file:test")
 	require.NoError(t, err)
 
 	// fast failure for 404
-	err = Run(ctx, helloWorldWorkflow, "does not exist", with)
+	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test")
 	require.EqualError(t, err, "task \"does not exist\" not found")
 }

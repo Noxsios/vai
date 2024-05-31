@@ -63,6 +63,9 @@ func FetchHTTP(ctx context.Context, raw string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch %s: %s", raw, resp.Status)
+	}
 	return resp.Body, nil
 }
 
@@ -90,15 +93,15 @@ func FetchFile(loc string) (*os.File, error) {
 }
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, store *Store, uses string, with With) error {
+func ExecuteUses(ctx context.Context, store *Store, uses string, with With, origin string) error {
 	logger.Debug("using", "task", uses)
 
-	uri, err := url.Parse(uses)
+	usesURI, err := url.Parse(uses)
 	if err != nil {
 		return err
 	}
 
-	if uri.Scheme == "" {
+	if usesURI.Scheme == "" {
 		return fmt.Errorf("must contain a scheme: %s", uses)
 	}
 
@@ -113,8 +116,10 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 
 	var pURL packageurl.PackageURL
 
-	switch uri.Scheme {
+	switch usesURI.Scheme {
 	case "http", "https":
+		// mutate the origin to the URL
+		origin = uses
 		rc, err = FetchHTTP(ctx, uses)
 		if err != nil {
 			return err
@@ -125,6 +130,8 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 		if err != nil {
 			return err
 		}
+		// mutate the origin to the package URL
+		origin = uses
 		switch pURL.Type {
 		case "github":
 			fetch = GitHubFetcher
@@ -137,29 +144,70 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 			return err
 		}
 	case "file":
-		// TODO: handle paths from remote fetched workflows
-		loc := uri.Opaque
-		rc, err = FetchFile(loc)
+		loc := usesURI.Opaque
+
+		originURL, err := url.Parse(origin)
 		if err != nil {
 			return err
 		}
+
+		switch originURL.Scheme {
+		case "file":
+			rc, err = FetchFile(loc)
+			if err != nil {
+				return err
+			}
+		case "http", "https":
+			// turn relative paths into absolute references
+			originURL.Path = filepath.Join(filepath.Dir(originURL.Path), loc)
+			originURL.RawQuery = usesURI.RawQuery
+			return ExecuteUses(ctx, store, originURL.String(), with, originURL.String())
+		case "pkg":
+			pURL, err = packageurl.FromString(uses)
+			if err != nil {
+				return err
+			}
+			// turn relative paths into absolute references
+			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), loc)
+			return ExecuteUses(ctx, store, pURL.String(), with, pURL.String())
+		}
+
 	default:
-		return fmt.Errorf("unknown scheme: %s", uri.Scheme)
+		return fmt.Errorf("unknown scheme: %s", usesURI.Scheme)
 	}
 
 	var wf Workflow
 
-	if uri.Scheme == "file" {
+	if usesURI.Scheme == "file" {
 		wf, err = ReadAndValidate(rc)
 		if err != nil {
 			return err
 		}
 	} else {
+		var key string
+		// strip the task query parameter from the URL
+		// to avoid caching the same workflow multiple times
+		// TODO: make this a function
+		switch usesURI.Scheme {
+		case "pkg":
+			// shallow copy to avoid modifying the original
+			p := pURL
+			p.Qualifiers = packageurl.Qualifiers{}
+			key = p.String()
+		default:
+			shadowURI := *usesURI
+			u := &shadowURI
+			q := u.Query()
+			q.Del("task")
+			u.RawQuery = q.Encode()
+			key = u.String()
+		}
+
 		b, err := io.ReadAll(rc)
 		if err != nil {
 			return err
 		}
-		exists, err := store.Exists(uses, bytes.NewReader(b))
+		exists, err := store.Exists(key, bytes.NewReader(b))
 		if err != nil && !IsHashMismatch(err) {
 			return err
 		}
@@ -174,16 +222,17 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 			}
 		}
 		if exists {
-			if err := store.Delete(uses); err != nil {
+			if err := store.Delete(key); err != nil {
 				return err
 			}
 		}
 
-		if err := store.Store(uses, bytes.NewReader(b)); err != nil {
+		logger.Debug("caching", "task", key)
+		if err := store.Store(key, bytes.NewReader(b)); err != nil {
 			return err
 		}
 
-		wf, err = store.Fetch(uses)
+		wf, err = store.Fetch(key)
 		if err != nil {
 			return err
 		}
@@ -191,12 +240,12 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With) erro
 
 	var taskName string
 
-	switch uri.Scheme {
-	case "file":
-		taskName = uri.Query().Get("task")
-	default:
+	switch usesURI.Scheme {
+	case "pkg":
 		taskName = pURL.Qualifiers.Map()["task"]
+	default:
+		taskName = usesURI.Query().Get("task")
 	}
 
-	return Run(ctx, wf, taskName, with)
+	return Run(ctx, store, wf, taskName, with, origin)
 }
