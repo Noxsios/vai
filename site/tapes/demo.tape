@@ -32,11 +32,11 @@ Sleep 3s
 
 Type "vai echo --with message='Hello World!'" Sleep 500ms  Enter
 
-Sleep 3s
-
-Type "vai remote-echo" Sleep 500ms  Enter
-
 Sleep 5s
+
+Type "vai remote-echo -l debug" Sleep 500ms  Enter
+
+Sleep 7s
 
 Hide
 Type "rm vai.yaml" Enter

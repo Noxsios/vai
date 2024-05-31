@@ -20,7 +20,7 @@ go install github.com/noxsios/vai/cmd/vai@latest
 
 ## Example
 
-![demo](https://github.com/Noxsios/vai/assets/50058333/89a8ffcd-cb56-4664-b23c-69609ed34bac)
+![demo](https://github.com/Noxsios/vai/assets/50058333/850b79e5-4ebf-4b59-8e29-95102f50d759)
 
 Checkout more examples in the [docs](https://vai.razzle.cloud/docs/).
 
