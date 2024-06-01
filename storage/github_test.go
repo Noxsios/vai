@@ -24,8 +24,8 @@ func TestGitHubFetcher(t *testing.T) {
 
 	desc, err := client.Describe(ctx, uses)
 	require.NoError(t, err)
-	require.Equal(t, desc.Hex, "ceb3c512fb9368eec89c66bef42378fd1e322c2f")
-	require.Equal(t, desc.Size, int64(92))
+	require.Equal(t, "ceb3c512fb9368eec89c66bef42378fd1e322c2f", desc.Hex)
+	require.Equal(t, int64(92), desc.Size)
 
 	rc, err := client.Fetch(ctx, uses)
 	require.NoError(t, err)
@@ -33,9 +33,9 @@ func TestGitHubFetcher(t *testing.T) {
 	b, err := io.ReadAll(rc)
 	require.NoError(t, err)
 
-	require.Equal(t, string(b), `# yaml-language-server: $schema=vai.schema.json
+	require.Equal(t, `# yaml-language-server: $schema=vai.schema.json
 
 hello-world:
   - run: echo "Hello, World!"
-`)
+`, string(b))
 }

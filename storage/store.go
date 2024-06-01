@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
+// Package storage provides a cache+clients for storing and retrieving remote workflows.
 package storage
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -16,6 +18,23 @@ import (
 	"github.com/spf13/afero"
 )
 
+// Fetcher fetches a file from a remote location.
+type Fetcher interface {
+	Fetch(context.Context, string) (io.ReadCloser, error)
+}
+
+// Describer describes a file from a remote location.
+type Describer interface {
+	Describe(context.Context, string) (Descriptor, error)
+}
+
+// Cacher is a combination of a fetcher and a describer.
+type Cacher interface {
+	Fetcher
+	Describer
+}
+
+// Descriptor describes a file to use for caching.
 type Descriptor struct {
 	Size int64
 	Hex  string

@@ -10,6 +10,7 @@ import (
 	"net/http"
 )
 
+// HTTPFetcher fetches a file from a remote HTTP server
 type HTTPFetcher struct{}
 
 // NewHTTPFetcher returns a new HTTPFetcher

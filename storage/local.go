@@ -13,14 +13,17 @@ import (
 	"github.com/spf13/afero"
 )
 
+// LocalFetcher fetches a file from the local filesystem.
 type LocalFetcher struct {
 	fs afero.Fs
 }
 
+// NewLocalFetcher creates a new local fetcher
 func NewLocalFetcher(fs afero.Fs) *LocalFetcher {
 	return &LocalFetcher{fs}
 }
 
+// Describe returns a descriptor for the given file
 func (f *LocalFetcher) Describe(_ context.Context, uses string) (Descriptor, error) {
 	uri, err := url.Parse(uses)
 	if err != nil {
@@ -51,6 +54,7 @@ func (f *LocalFetcher) Describe(_ context.Context, uses string) (Descriptor, err
 	}, nil
 }
 
+// Fetch opens a file handle at the given location
 func (f *LocalFetcher) Fetch(_ context.Context, uses string) (io.ReadCloser, error) {
 	uri, err := url.Parse(uses)
 	if err != nil {

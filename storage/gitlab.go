@@ -15,10 +15,12 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
+// GitLabClient is a client for fetching files from GitLab
 type GitLabClient struct {
 	client *gitlab.Client
 }
 
+// NewGitLabClient creates a new GitLab client
 func NewGitLabClient(base string) (*GitLabClient, error) {
 	token := os.Getenv("GITLAB_TOKEN")
 	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(base))
@@ -29,6 +31,7 @@ func NewGitLabClient(base string) (*GitLabClient, error) {
 	return &GitLabClient{client}, nil
 }
 
+// Describe returns a descriptor for the given file
 func (g *GitLabClient) Describe(ctx context.Context, uses string) (Descriptor, error) {
 	pURL, err := packageurl.FromString(uses)
 	if err != nil {
@@ -53,6 +56,7 @@ func (g *GitLabClient) Describe(ctx context.Context, uses string) (Descriptor, e
 	}, nil
 }
 
+// Fetch the file
 func (g *GitLabClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {
 	pURL, err := packageurl.FromString(uses)
 	if err != nil {

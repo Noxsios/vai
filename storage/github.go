@@ -14,10 +14,12 @@ import (
 	"github.com/package-url/packageurl-go"
 )
 
+// GitHubClient is a client for fetching files from GitHub
 type GitHubClient struct {
 	client *github.Client
 }
 
+// NewGitHubClient creates a new GitHub client
 func NewGitHubClient() *GitHubClient {
 	client := github.NewClient(nil)
 
@@ -28,6 +30,7 @@ func NewGitHubClient() *GitHubClient {
 	return &GitHubClient{client}
 }
 
+// Describe returns a descriptor for the given file
 func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, error) {
 	pURL, err := packageurl.FromString(uses)
 	if err != nil {
@@ -55,6 +58,7 @@ func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, e
 	}, nil
 }
 
+// Fetch fetches a file from a remote location
 func (g *GitHubClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {
 	pURL, err := packageurl.FromString(uses)
 	if err != nil {
