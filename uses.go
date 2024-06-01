@@ -81,12 +81,21 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 		origin = uses
 		fetcher = storage.NewHTTPFetcher()
 	case "pkg":
-		// mutate the origin to the URL
-		origin = uses
 		pURL, err := packageurl.FromString(uses)
 		if err != nil {
 			return err
 		}
+		if pURL.Subpath == "" {
+			pURL.Subpath = DefaultFileName
+		}
+		if pURL.Version == "" {
+			pURL.Version = "main"
+		}
+
+		uses = pURL.String()
+		// mutate the origin to the URL
+		origin = uses
+
 		switch pURL.Type {
 		case "github":
 			fetcher = storage.NewGitHubClient()

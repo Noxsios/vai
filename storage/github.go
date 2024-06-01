@@ -58,7 +58,7 @@ func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, e
 	}, nil
 }
 
-// Fetch fetches a file from a remote location
+// Fetch the file
 func (g *GitHubClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {
 	pURL, err := packageurl.FromString(uses)
 	if err != nil {
