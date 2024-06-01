@@ -10,6 +10,9 @@ import (
 )
 
 func TestGenMain(t *testing.T) {
+	if testing.Short() {
+		t.Skip("")
+	}
 	err := run("..")
 	require.NoError(t, err)
 }

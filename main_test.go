@@ -18,7 +18,11 @@ func TestMain(m *testing.M) {
 	}))
 }
 
-func TestSimple(t *testing.T) {
+func TestCLI(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping testscript tests")
+	}
+
 	testscript.Run(t, testscript.Params{
 		Dir: "testdata",
 		Setup: func(env *testscript.Env) error {

@@ -4,69 +4,37 @@
 package vai
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 
+	"github.com/noxsios/vai/storage"
 	"github.com/package-url/packageurl-go"
+	"github.com/spf13/afero"
 )
 
 // CacheEnvVar is the environment variable for the cache directory.
 const CacheEnvVar = "VAI_CACHE"
 
-// Force is a global flag to bypass SHA256 checksum verification for cached remote files.
-var Force = false
-
-// Fetcher is a generic fetcher function
-type Fetcher[T any] func(context.Context, T) (io.ReadCloser, error)
-
-// PackageURLFetcher is a fetcher for pURL
-type PackageURLFetcher Fetcher[packageurl.PackageURL]
-
-// GitHubFetcher is a PackageURLFetcher for GitHub
+// DefaultStore creates a new store in the default location:
 //
-// If no subpath is given, the subpath is `vai.yaml`
-//
-// If no version is specified, the version is `main`
-func GitHubFetcher(ctx context.Context, pURL packageurl.PackageURL) (io.ReadCloser, error) {
-	if pURL.Subpath == "" {
-		pURL.Subpath = DefaultFileName
+// $VAI_CACHE || $HOME/.vai/cache
+func DefaultStore() (*storage.Store, error) {
+	if cache := os.Getenv(CacheEnvVar); cache != "" {
+		return storage.New(afero.NewBasePathFs(afero.NewOsFs(), cache))
 	}
 
-	if pURL.Version == "" {
-		pURL.Version = "main"
-	}
-
-	raw := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", pURL.Namespace, pURL.Name, pURL.Version, pURL.Subpath)
-
-	return FetchHTTP(ctx, raw)
-}
-
-// FetchHTTP performs a GET request using the default HTTP client
-// against the provided raw URL string and returns the request body
-//
-// This function violates idiomatic Go's principle of not returning interfaces
-// due to *http.Response.Body being directly typed as an io.ReadCloser
-func FetchHTTP(ctx context.Context, raw string) (io.ReadCloser, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "vai")
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch %s: %s", raw, resp.Status)
-	}
-	return resp.Body, nil
+	cache := filepath.Join(home, ".vai", "cache")
+
+	return storage.New(afero.NewBasePathFs(afero.NewOsFs(), cache))
 }
 
 // FetchFile opens a file handle at the given location
@@ -93,58 +61,47 @@ func FetchFile(loc string) (*os.File, error) {
 }
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, store *Store, uses string, with With, origin string) error {
+func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with With, origin string) error {
 	logger.Debug("using", "task", uses)
 
-	usesURI, err := url.Parse(uses)
+	uri, err := url.Parse(uses)
 	if err != nil {
 		return err
 	}
 
-	if usesURI.Scheme == "" {
+	if uri.Scheme == "" {
 		return fmt.Errorf("must contain a scheme: %s", uses)
 	}
 
-	var rc io.ReadCloser
-	defer func() {
-		if rc != nil {
-			if err := rc.Close(); err != nil {
-				logger.Warn(err)
-			}
-		}
-	}()
+	var fetcher storage.Fetcher
 
-	var pURL packageurl.PackageURL
-
-	switch usesURI.Scheme {
+	switch uri.Scheme {
 	case "http", "https":
 		// mutate the origin to the URL
 		origin = uses
-		rc, err = FetchHTTP(ctx, uses)
-		if err != nil {
-			return err
-		}
+		fetcher = storage.NewHTTPFetcher()
 	case "pkg":
-		var fetch PackageURLFetcher
-		pURL, err = packageurl.FromString(uses)
+		// mutate the origin to the URL
+		origin = uses
+		pURL, err := packageurl.FromString(uses)
 		if err != nil {
 			return err
 		}
-		// mutate the origin to the package URL
-		origin = uses
 		switch pURL.Type {
 		case "github":
-			fetch = GitHubFetcher
+			fetcher = storage.NewGitHubClient()
+		case "gitlab":
+			fetcher, err = storage.NewGitLabClient(pURL.Qualifiers.Map()["base"])
+			if err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unsupported type: %s", pURL.Type)
 		}
-
-		rc, err = fetch(ctx, pURL)
-		if err != nil {
-			return err
-		}
 	case "file":
-		loc := usesURI.Opaque
+		fetcher = storage.NewLocalFetcher(afero.NewOsFs())
+
+		loc := uri.Opaque
 
 		originURL, err := url.Parse(origin)
 		if err != nil {
@@ -152,100 +109,84 @@ func ExecuteUses(ctx context.Context, store *Store, uses string, with With, orig
 		}
 
 		switch originURL.Scheme {
-		case "file":
-			rc, err = FetchFile(loc)
-			if err != nil {
-				return err
-			}
 		case "http", "https":
 			// turn relative paths into absolute references
 			originURL.Path = filepath.Join(filepath.Dir(originURL.Path), loc)
-			originURL.RawQuery = usesURI.RawQuery
-			return ExecuteUses(ctx, store, originURL.String(), with, originURL.String())
+			originURL.RawQuery = uri.RawQuery
+			origin, uses = originURL.String(), originURL.String()
+			fetcher = storage.NewHTTPFetcher()
 		case "pkg":
-			pURL, err = packageurl.FromString(uses)
+			pURL, err := packageurl.FromString(uses)
 			if err != nil {
 				return err
 			}
 			// turn relative paths into absolute references
 			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), loc)
-			return ExecuteUses(ctx, store, pURL.String(), with, pURL.String())
+			origin, uses = pURL.String(), pURL.String()
+			fetcher = storage.NewGitHubClient()
+		default:
+			dir := filepath.Dir(originURL.Opaque)
+			if dir != "." {
+				originURL.Opaque = filepath.Join(dir, loc)
+				origin = originURL.String()
+			}
 		}
 
 	default:
-		return fmt.Errorf("unknown scheme: %s", usesURI.Scheme)
+		return fmt.Errorf("unsupported scheme: %s", uri.Scheme)
 	}
 
-	var wf Workflow
+	logger.Debug("chosen", "fetcher", fmt.Sprintf("%T", fetcher))
 
-	if usesURI.Scheme == "file" {
-		wf, err = ReadAndValidate(rc)
+	var f io.ReadCloser
+
+	if cacher, ok := fetcher.(storage.Cacher); ok {
+		desc, err := cacher.Describe(ctx, uses)
 		if err != nil {
 			return err
 		}
-	} else {
-		var key string
-		// strip the task query parameter from the URL
-		// to avoid caching the same workflow multiple times
-		// TODO: make this a function
-		switch usesURI.Scheme {
-		case "pkg":
-			// shallow copy to avoid modifying the original
-			p := pURL
-			p.Qualifiers = packageurl.Qualifiers{}
-			key = p.String()
-		default:
-			shadowURI := *usesURI
-			u := &shadowURI
-			q := u.Query()
-			q.Del("task")
-			u.RawQuery = q.Encode()
-			key = u.String()
-		}
-
-		b, err := io.ReadAll(rc)
+		
+		exists, err := store.Exists(desc)
 		if err != nil {
 			return err
 		}
-		exists, err := store.Exists(key, bytes.NewReader(b))
-		if err != nil && !IsHashMismatch(err) {
-			return err
-		}
-		if err != nil && IsHashMismatch(err) && !Force {
-			yes, err := ConfirmSHAOverwrite()
+
+		if !exists {
+			logger.Debug("caching", "task", uses)
+			rc, err := cacher.Fetch(ctx, uses)
 			if err != nil {
 				return err
 			}
+			defer rc.Close()
 
-			if !yes {
-				return fmt.Errorf("hash mismatch, not overwriting")
-			}
-		}
-		if exists {
-			if err := store.Delete(key); err != nil {
+			if err := store.Store(rc); err != nil {
 				return err
 			}
 		}
 
-		logger.Debug("caching", "task", key)
-		if err := store.Store(key, bytes.NewReader(b)); err != nil {
-			return err
-		}
-
-		wf, err = store.Fetch(key)
+		f, err = store.Fetch(desc)
 		if err != nil {
 			return err
 		}
+		defer f.Close()
+	} else {
+		f, err = fetcher.Fetch(ctx, uses)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
 	}
 
-	var taskName string
-
-	switch usesURI.Scheme {
-	case "pkg":
-		taskName = pURL.Qualifiers.Map()["task"]
-	default:
-		taskName = usesURI.Query().Get("task")
+	if f == nil {
+		return fmt.Errorf("failed to fetch %s referenced by %s", uses, origin)
 	}
+
+	wf, err := ReadAndValidate(f)
+	if err != nil {
+		return err
+	}
+
+	taskName := uri.Query().Get("task")
 
 	return Run(ctx, store, wf, taskName, with, origin)
 }

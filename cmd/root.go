@@ -154,7 +154,6 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().StringToStringVarP(&w, "with", "w", nil, "key=value pairs to pass to the called task(s)")
 	root.Flags().StringVarP(&level, "log-level", "l", "info", "log level")
 	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
-	root.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
 	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
 	root.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout for task execution")

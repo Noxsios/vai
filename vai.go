@@ -13,12 +13,13 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/noxsios/vai/storage"
 )
 
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(ctx context.Context, store *Store, wf Workflow, taskName string, outer With, origin string) error {
+func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string, outer With, origin string) error {
 	if taskName == "" {
 		taskName = DefaultTaskName
 	}
