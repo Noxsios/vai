@@ -20,9 +20,6 @@ func NewHTTPFetcher() *HTTPFetcher {
 
 // Fetch performs a GET request using the default HTTP client
 // against the provided raw URL string and returns the request body
-//
-// This function violates idiomatic Go's principle of not returning interfaces
-// due to *http.Response.Body being directly typed as an io.ReadCloser
 func (f *HTTPFetcher) Fetch(ctx context.Context, raw string) (io.ReadCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
 	if err != nil {

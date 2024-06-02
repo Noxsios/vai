@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/spf13/afero"
@@ -111,21 +112,23 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, ok)
 
-	// store and retrieve a workflow
-	// b, err = yaml.Marshal(helloWorldWorkflow)
-	// require.NoError(t, err)
-	// key := packageurl.PackageURL{
-	// 	Type:      "vai",
-	// 	Namespace: "github.com/noxsios",
-	// 	Name:      "vai",
-	// 	Version:   "v0.1.5",
-	// 	Subpath:   "vai.yaml",
-	// }
-	// require.NoError(t, store.Store(key.String(), bytes.NewReader(b)))
+	// fetch
+	rc, err := store.Fetch(Descriptor{
+		Hex:  shaMap["b"],
+		Size: 1,
+	})
+	require.NoError(t, err)
+	b, err = io.ReadAll(rc)
+	require.NoError(t, err)
+	require.Equal(t, b, []byte{'b'})
 
-	// wf, err := store.Fetch(key.String())
-	// require.NoError(t, err)
-	// require.Equal(t, helloWorldWorkflow, wf)
+	// fetch non-existent
+	rc, err = store.Fetch(Descriptor{
+		Hex:  shaMap["a"],
+		Size: 1,
+	})
+	require.Nil(t, rc)
+	require.EqualError(t, err, "descriptor not found")
 
 	// store can be re-initialized just fine
 	store, err = New(fs)
@@ -140,4 +143,22 @@ func TestStore(t *testing.T) {
 	})
 	require.False(t, ok)
 	require.EqualError(t, err, fmt.Sprintf("descriptor exists in index, but no corresponding file was found, possible cache corruption: %s", shaMap["b"]))
+
+	// change the contents of a file, causing size mismatch
+	require.NoError(t, afero.WriteFile(fs, shaMap["c"], []byte("foo"), 0644))
+	ok, err = store.Exists(Descriptor{
+		Hex:  shaMap["c"],
+		Size: 1,
+	})
+	require.False(t, ok)
+	require.EqualError(t, err, fmt.Sprintf("size mismatch, expected %d, got %d", 1, 3))
+
+	// change the contents of a file, causing hash mismatch
+	require.NoError(t, afero.WriteFile(fs, shaMap["c"], []byte("f"), 0644))
+	ok, err = store.Exists(Descriptor{
+		Hex:  shaMap["c"],
+		Size: 1,
+	})
+	require.False(t, ok)
+	require.EqualError(t, err, "hash mismatch")
 }
