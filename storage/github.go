@@ -45,6 +45,8 @@ func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, e
 		return Descriptor{}, err
 	}
 
+	defer rc.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return Descriptor{}, fmt.Errorf("failed to get contents %s: %s", pURL, resp.Status)
 	}

@@ -14,8 +14,6 @@ The `--list` flag can be used to list all the tasks in a Vai workflow.
 
 If defined, the `default` task will be listed first. Otherwise, tasks will be listed in alphabetical order.
 
-### Example of listing tasks
-
 ```sh
 $ vai --list
 

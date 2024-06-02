@@ -3,4 +3,4 @@ stderr 'ERRO task "sleep" timed out'
 
 -- vai.yaml --
 sleep:
-  - run: sleep 10
+  - run: sleep 5
