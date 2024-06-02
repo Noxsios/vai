@@ -5,6 +5,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -28,8 +29,8 @@ type Describer interface {
 	Describe(context.Context, string) (Descriptor, error)
 }
 
-// Cacher is a combination of a fetcher and a describer.
-type Cacher interface {
+// Downloader is a combination of a fetcher and a describer.
+type Downloader interface {
 	Fetcher
 	Describer
 }
@@ -101,10 +102,6 @@ type Store struct {
 func New(fs afero.Fs) (*Store, error) {
 	index := NewCacheIndex()
 
-	if err := fs.MkdirAll("/", 0644); err != nil {
-		return nil, err
-	}
-
 	if _, err := fs.Stat(IndexFileName); os.IsNotExist(err) {
 		f, err := fs.Create(IndexFileName)
 		if err != nil {
@@ -160,27 +157,26 @@ func (s *Store) Store(r io.Reader) error {
 
 	hasher := sha256.New()
 
-	b, err := io.ReadAll(r)
-	if err != nil {
-		return err
-	}
+	var buf bytes.Buffer
 
-	if _, err := hasher.Write(b); err != nil {
+	mw := io.MultiWriter(hasher, &buf)
+
+	if _, err := io.Copy(mw, r); err != nil {
 		return err
 	}
 
 	hex := fmt.Sprintf("%x", hasher.Sum(nil))
 
-	if err := afero.WriteFile(s.fs, hex, b, 0644); err != nil {
+	if err := afero.WriteFile(s.fs, hex, buf.Bytes(), 0644); err != nil {
 		return err
 	}
 
 	s.index.Add(Descriptor{
-		Size: int64(len(b)),
+		Size: int64(buf.Len()),
 		Hex:  hex,
 	})
 
-	b, err = json.Marshal(s.index)
+	b, err := json.Marshal(s.index)
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ func TestGitLabFetcher(t *testing.T) {
 
 	desc, err := client.Describe(ctx, uses)
 	require.NoError(t, err)
-	require.Equal(t, "ceb3c512fb9368eec89c66bef42378fd1e322c2f", desc.Hex)
+	require.Equal(t, "89385d0bd4358fa98a3724eb6cd4f33819b90012201ab2f27c08ba2d19a85919", desc.Hex)
 	require.Equal(t, int64(92), desc.Size)
 
 	rc, err := client.Fetch(ctx, uses)

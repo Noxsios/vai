@@ -5,6 +5,7 @@ package storage
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,7 +38,7 @@ func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, e
 		return Descriptor{}, err
 	}
 
-	fileContent, _, resp, err := g.client.Repositories.GetContents(ctx, pURL.Namespace, pURL.Name, pURL.Subpath, &github.RepositoryContentGetOptions{
+	rc, content, resp, err := g.client.Repositories.DownloadContentsWithMeta(ctx, pURL.Namespace, pURL.Name, pURL.Subpath, &github.RepositoryContentGetOptions{
 		Ref: pURL.Version,
 	})
 	if err != nil {
@@ -48,13 +49,19 @@ func (g *GitHubClient) Describe(ctx context.Context, uses string) (Descriptor, e
 		return Descriptor{}, fmt.Errorf("failed to get contents %s: %s", pURL, resp.Status)
 	}
 
-	if fileContent == nil {
+	if content == nil {
 		return Descriptor{}, fmt.Errorf("no content found for %s", pURL)
 	}
 
+	hasher := sha256.New()
+
+	if _, err := io.Copy(hasher, rc); err != nil {
+		return Descriptor{}, err
+	}
+
 	return Descriptor{
-		Size: int64(fileContent.GetSize()),
-		Hex:  fileContent.GetSHA(),
+		Size: int64(content.GetSize()),
+		Hex:  fmt.Sprintf("%x", hasher.Sum(nil)),
 	}, nil
 }
 

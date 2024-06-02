@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../vai.schema.json
 
 remote-echo:
-  - uses: github.com/noxsios/vai@main?task=simple#tasks/echo.yaml
+  - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
       message: remote-test
 
