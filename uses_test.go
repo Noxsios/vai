@@ -67,16 +67,6 @@ func TestExecuteUses(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	rc, err := FetchFile("testdata/hello-world.yaml")
-	require.NoError(t, err)
-	defer rc.Close()
-	b, err := io.ReadAll(rc)
-	require.NoError(t, err)
-	actualWf := Workflow{}
-	err = yaml.Unmarshal(b, &actualWf)
-	require.NoError(t, err)
-	require.Equal(t, helloWorldWorkflow, actualWf)
-
 	// run default task because no ?task=
 	helloWorld := server.URL + "/hello-world.yaml"
 	with := With{}
@@ -96,9 +86,6 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, "ssh:not-supported", with, "file:test")
 	require.EqualError(t, err, "unsupported scheme: ssh")
 
-	// err = ExecuteUses(ctx, store, "pkg:gitlab/owner/repo", with, "file:test")
-	// require.EqualError(t, err, "unsupported type: gitlab")
-
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
 	require.EqualError(t, err, "unsupported type: bitbucket")
 
@@ -107,10 +94,8 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, server.URL+"/foo.yaml", with, "file:test")
 	require.NoError(t, err)
 
-	// // ensure the fs only has 4 files (index.json and the 3 yaml SHAs)
 	files, err := afero.ReadDir(fs, "/")
 	require.NoError(t, err)
-	// require.Len(t, files, 4)
 
 	for _, f := range files {
 		if f.Name() == storage.IndexFileName {

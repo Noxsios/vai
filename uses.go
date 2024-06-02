@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/url"
-	"os"
 	"path/filepath"
 
 	"github.com/noxsios/vai/storage"
@@ -18,29 +17,6 @@ import (
 
 // CacheEnvVar is the environment variable for the cache directory.
 const CacheEnvVar = "VAI_CACHE"
-
-// FetchFile opens a file handle at the given location
-//
-// If the location is a directory, <loc>/vai.yaml is opened instead
-//
-// # This function is used to satisfy [io.ReadCloser] in other functions
-//
-// It is up to the caller to close the returned *os.File
-func FetchFile(loc string) (*os.File, error) {
-	fi, err := os.Stat(loc)
-	if err != nil {
-		return nil, err
-	}
-
-	if fi.IsDir() {
-		loc = filepath.Join(loc, DefaultFileName)
-	}
-	f, err := os.Open(loc)
-	if err != nil {
-		return nil, err
-	}
-	return f, nil
-}
 
 // ExecuteUses runs a task from a remote workflow source.
 func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with With, origin string) error {
