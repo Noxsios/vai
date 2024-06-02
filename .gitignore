@@ -2,3 +2,4 @@ bin
 .vscode
 *.gif
 coverage.out
+coverage.html

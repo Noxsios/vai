@@ -7,6 +7,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/noxsios/vai/storage"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +15,7 @@ import (
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := NewStore(fs)
+	store, err := storage.New(fs)
 	require.NoError(t, err)
 	with := With{}
 

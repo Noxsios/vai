@@ -10,12 +10,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime/debug"
 	"syscall"
 	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai"
+	"github.com/noxsios/vai/storage"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -132,11 +135,23 @@ func NewRootCmd() *cobra.Command {
 				defer cancel()
 			}
 
-			store, err := vai.DefaultStore()
+			var cacheDirectory string
+
+			if cache, ok := os.LookupEnv(vai.CacheEnvVar); ok {
+				cacheDirectory = cache
+			} else {
+				home, err := os.UserHomeDir()
+				if err != nil {
+					return err
+				}
+
+				cacheDirectory = filepath.Join(home, ".vai", "cache")
+			}
+
+			store, err := storage.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
 			if err != nil {
 				return err
 			}
-
 			rootOrigin := "file:" + filename
 
 			for _, call := range args {
@@ -154,7 +169,6 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().StringToStringVarP(&w, "with", "w", nil, "key=value pairs to pass to the called task(s)")
 	root.Flags().StringVarP(&level, "log-level", "l", "info", "log level")
 	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
-	root.Flags().BoolVarP(&vai.Force, "force", "F", false, "ignore checksum mismatch for cached remote files")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
 	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
 	root.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout for task execution")

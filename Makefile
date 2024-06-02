@@ -9,6 +9,9 @@ build:
 test:
 	go test -race -cover -coverprofile=coverage.out -failfast -timeout 3m ./...
 
+test-short:
+	go test -race -cover -coverprofile=coverage.out -failfast -timeout 3m ./... -short
+
 clean:
 	rm -rf bin/
 

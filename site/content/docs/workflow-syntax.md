@@ -158,13 +158,24 @@ vai echo --with message="Hello, World!"
 `uses` syntax leverages the [package-url spec](https://github.com/package-url/purl-spec)
 {{< /callout >}}
 
-{{< tabs items="GitHub,HTTP(S)" >}}
+{{< tabs items="GitHub,GitLab,HTTP(S)" >}}
 
 {{< tab >}}
 
 ```yaml {filename="vai.yaml"}
 remote-echo:
   - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml
+    with:
+      message: "Hello, World!"
+```
+
+{{< /tab >}}
+
+{{< tab >}}
+
+```yaml {filename="vai.yaml"}
+remote-echo:
+  - uses: pkg:gitlab/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
       message: "Hello, World!"
 ```

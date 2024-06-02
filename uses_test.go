@@ -5,16 +5,15 @@ package vai
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/goccy/go-yaml"
-	"github.com/package-url/packageurl-go"
+	"github.com/noxsios/vai/storage"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +21,7 @@ import (
 func TestExecuteUses(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := NewStore(fs)
+	store, err := storage.New(fs)
 	require.NoError(t, err)
 
 	workflowFoo := Workflow{"default": {Step{Run: "echo 'foo'"}, Step{Uses: "file:bar/baz.yaml?task=baz"}}}
@@ -68,29 +67,6 @@ func TestExecuteUses(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	defer server.Close()
 
-	_, err = FetchHTTP(ctx, server.URL)
-	require.EqualError(t, err, fmt.Sprintf("failed to fetch %s: 404 Not Found", server.URL))
-
-	rc, err := FetchHTTP(ctx, server.URL+"/hello-world.yaml")
-	require.NoError(t, err)
-	defer rc.Close()
-	b, err := io.ReadAll(rc)
-	require.NoError(t, err)
-	var actualWf Workflow
-	err = yaml.Unmarshal(b, &actualWf)
-	require.NoError(t, err)
-	require.Equal(t, helloWorldWorkflow, actualWf)
-
-	rc, err = FetchFile("testdata/hello-world.yaml")
-	require.NoError(t, err)
-	defer rc.Close()
-	b, err = io.ReadAll(rc)
-	require.NoError(t, err)
-	actualWf = Workflow{}
-	err = yaml.Unmarshal(b, &actualWf)
-	require.NoError(t, err)
-	require.Equal(t, helloWorldWorkflow, actualWf)
-
 	// run default task because no ?task=
 	helloWorld := server.URL + "/hello-world.yaml"
 	with := With{}
@@ -101,17 +77,6 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, "file:testdata/hello-world.yaml?task=a-task", with, "file:test")
 	require.NoError(t, err)
 
-	wf, err := store.Fetch(helloWorld)
-	require.EqualError(t, err, "key not found")
-	require.Nil(t, wf)
-
-	err = ExecuteUses(ctx, store, helloWorld, with, "file:test")
-	require.NoError(t, err)
-
-	wf, err = store.Fetch(helloWorld)
-	require.NoError(t, err)
-	require.Equal(t, helloWorldWorkflow, wf)
-
 	err = ExecuteUses(ctx, store, helloWorld, with, "file:test")
 	require.NoError(t, err)
 
@@ -119,52 +84,39 @@ func TestExecuteUses(t *testing.T) {
 	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
 
 	err = ExecuteUses(ctx, store, "ssh:not-supported", with, "file:test")
-	require.EqualError(t, err, "unknown scheme: ssh")
+	require.EqualError(t, err, "unsupported scheme: ssh")
 
-	err = ExecuteUses(ctx, store, "pkg:gitlab/owner/repo", with, "file:test")
-	require.EqualError(t, err, "unsupported type: gitlab")
+	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
+	require.EqualError(t, err, "unsupported type: bitbucket")
 
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
 	err = ExecuteUses(ctx, store, server.URL+"/foo.yaml", with, "file:test")
 	require.NoError(t, err)
 
-	wf, err = store.Fetch(server.URL + "/foo.yaml")
-	require.NoError(t, err)
-	require.Equal(t, workflowFoo, wf)
-
-	wf, err = store.Fetch(server.URL + "/bar/baz.yaml")
-	require.NoError(t, err)
-	require.Equal(t, workflowBaz, wf)
-
-	// ensure the fs only has 4 files (index.json and the 3 yaml SHAs)
 	files, err := afero.ReadDir(fs, "/")
 	require.NoError(t, err)
-	require.Len(t, files, 4)
-}
 
-// TODO: is there a way to test this without hitting the network?
-func TestGitHubFetcher(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping TestGithubFetcher in short mode.")
+	for _, f := range files {
+		if f.Name() == storage.IndexFileName {
+			continue
+		}
+
+		hasher := sha256.New()
+		b, err := afero.ReadFile(fs, f.Name())
+		require.NoError(t, err)
+		_, err = hasher.Write(b)
+		require.NoError(t, err)
+		require.Equal(t, f.Name(), fmt.Sprintf("%x", hasher.Sum(nil)))
+
+		desc := storage.Descriptor{Hex: f.Name(), Size: f.Size()}
+
+		rc, err := store.Fetch(desc)
+		require.NoError(t, err)
+		defer rc.Close()
+
+		b2, err := io.ReadAll(rc)
+		require.NoError(t, err)
+		require.Equal(t, b, b2)
 	}
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	pURL, err := packageurl.FromString("pkg:github/noxsios/vai")
-	require.NoError(t, err)
-
-	rc, err := GitHubFetcher(ctx, pURL)
-	require.NoError(t, err)
-
-	b, err := io.ReadAll(rc)
-	require.NoError(t, err)
-
-	// this means the current branches vai.yaml cannot deviate from the main branch
-	actualBytes, err := os.ReadFile("vai.yaml")
-	require.NoError(t, err)
-
-	require.Equal(t, actualBytes, b)
 }
