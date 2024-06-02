@@ -22,6 +22,10 @@ type GitLabClient struct {
 
 // NewGitLabClient creates a new GitLab client
 func NewGitLabClient(base string) (*GitLabClient, error) {
+	if base == "" {
+		base = "https://gitlab.com"
+	}
+
 	token := os.Getenv("GITLAB_TOKEN")
 	client, err := gitlab.NewClient(token, gitlab.WithBaseURL(base))
 	if err != nil {
@@ -52,7 +56,7 @@ func (g *GitLabClient) Describe(ctx context.Context, uses string) (Descriptor, e
 
 	return Descriptor{
 		Size: int64(file.Size),
-		Hex:  file.SHA256,
+		Hex:  file.BlobID,
 	}, nil
 }
 
