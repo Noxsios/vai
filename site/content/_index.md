@@ -11,6 +11,12 @@ Vai: a simple task runner.
 go install github.com/noxsios/vai/cmd/vai@latest
 ```
 
+or if you like to live dangerously:
+
+```sh
+go install github.com/noxsios/vai/cmd/vai@main
+```
+
 ![demo](https://github.com/Noxsios/vai/assets/50058333/850b79e5-4ebf-4b59-8e29-95102f50d759)
 
 ## Next
