@@ -30,6 +30,10 @@ func (f *LocalFetcher) Describe(_ context.Context, uses string) (Descriptor, err
 		return Descriptor{}, err
 	}
 
+	if uri.Scheme != "file" {
+		return Descriptor{}, fmt.Errorf("scheme is not \"file\"")
+	}
+
 	p := uri.Opaque
 
 	fi, err := f.fs.Stat(p)
@@ -59,6 +63,10 @@ func (f *LocalFetcher) Fetch(_ context.Context, uses string) (io.ReadCloser, err
 	uri, err := url.Parse(uses)
 	if err != nil {
 		return nil, err
+	}
+
+	if uri.Scheme != "file" {
+		return nil, fmt.Errorf("scheme is not \"file\"")
 	}
 
 	p := uri.Opaque
