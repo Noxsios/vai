@@ -120,7 +120,7 @@ func TestStore(t *testing.T) {
 	require.NoError(t, err)
 	b, err = io.ReadAll(rc)
 	require.NoError(t, err)
-	require.Equal(t, b, []byte{'b'})
+	require.Equal(t, []byte{'b'}, b)
 
 	// fetch non-existent
 	rc, err = store.Fetch(Descriptor{
