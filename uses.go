@@ -19,24 +19,6 @@ import (
 // CacheEnvVar is the environment variable for the cache directory.
 const CacheEnvVar = "VAI_CACHE"
 
-// DefaultStore creates a new store in the default location:
-//
-// $VAI_CACHE || $HOME/.vai/cache
-func DefaultStore() (*storage.Store, error) {
-	if cache := os.Getenv(CacheEnvVar); cache != "" {
-		return storage.New(afero.NewBasePathFs(afero.NewOsFs(), cache))
-	}
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	cache := filepath.Join(home, ".vai", "cache")
-
-	return storage.New(afero.NewBasePathFs(afero.NewOsFs(), cache))
-}
-
 // FetchFile opens a file handle at the given location
 //
 // If the location is a directory, <loc>/vai.yaml is opened instead
