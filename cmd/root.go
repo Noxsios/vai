@@ -146,6 +146,10 @@ func NewRootCmd() *cobra.Command {
 				}
 
 				cacheDirectory = filepath.Join(home, ".vai", "cache")
+
+				if err := os.MkdirAll(cacheDirectory, 0777); err != nil {
+					return err
+				}
 			}
 
 			store, err := storage.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))

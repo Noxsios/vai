@@ -56,7 +56,7 @@ func (g *GitLabClient) Describe(ctx context.Context, uses string) (Descriptor, e
 
 	return Descriptor{
 		Size: int64(file.Size),
-		Hex:  file.BlobID,
+		Hex:  file.SHA256,
 	}, nil
 }
 

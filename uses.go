@@ -107,8 +107,8 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 
 	var f io.ReadCloser
 
-	if cacher, ok := fetcher.(storage.Cacher); ok {
-		desc, err := cacher.Describe(ctx, uses)
+	if downloader, ok := fetcher.(storage.Downloader); ok {
+		desc, err := downloader.Describe(ctx, uses)
 		if err != nil {
 			return err
 		}
@@ -120,7 +120,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 
 		if !exists {
 			logger.Debug("caching", "task", uses)
-			rc, err := cacher.Fetch(ctx, uses)
+			rc, err := downloader.Fetch(ctx, uses)
 			if err != nil {
 				return err
 			}
