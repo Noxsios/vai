@@ -12,9 +12,9 @@ A simple task runner. Imagine GitHub actions and Makefile had a baby.
 ## Features
 
 - Simple syntax and usage
-- Remote and local imports (wip)
+- Input and output style similar to GitHub actions
+- Remote and local imports
 - Matrix support (design in progress)
-- Task input and output style similar to GitHub actions
 
 ## Questions or Feedback?
 

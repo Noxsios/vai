@@ -5,7 +5,6 @@ draft: true
 
 TODO:
 
-- handle local paths for imports
 - add matrix support
 - add more examples
 - get coverage to ~80%
@@ -21,6 +20,5 @@ TODO:
 - CHANGELOG.md
 - Add SPDX?
 - outputs from a "uses" task
-- directory traversal outside of repo using relative path in a remote task
 - add `if` and `continue-on-error` fields?
 - `--dry-run` flag

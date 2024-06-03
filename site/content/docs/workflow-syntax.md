@@ -81,7 +81,7 @@ mIxEdCaSe: ...
 WithNumbers123: ...
 ```
 
-## Run a task with variables
+## Passing inputs
 
 `with` follows a syntax similar to GitHub Actions expressions.
 
@@ -109,7 +109,7 @@ vai echo --with name=$(whoami) --with date=$(date)
 
 ## Run another task as a step
 
-Calling another task within the same file is as simple as using the task name.
+Calling another task within the same workflow is as simple as using the task name, similar to Makefile targets.
 
 ```yaml {filename="vai.yaml"}
 general-kenobi:
@@ -219,15 +219,15 @@ set-name:
 vai set-name --with name="Universe"
 ```
 
-## Passing outputs between steps
+## Passing outputs
 
-> This leverages the same mechanism as GitHub Actions.
->
-> The `id` field is used to reference the output in subsequent steps.
->
-> The `from` function is used to reference the output from a previous step.
+This leverages the same mechanism as GitHub Actions.
 
-```yaml {filename="vai.yaml",hl_lines=[6,7,12]}
+The `id` field is used to reference the output in subsequent steps.
+
+The `from` function is used to reference the output from a previous step.
+
+```yaml {filename="vai.yaml"}
 color:
   - run: |
       echo "selected-color=green" >> $VAI_OUTPUT
