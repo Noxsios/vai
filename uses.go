@@ -50,9 +50,8 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 			pURL.Version = "main"
 		}
 
-		uses = pURL.String()
 		// mutate the origin to the URL
-		origin = uses
+		origin = pURL.String()
 
 		switch pURL.Type {
 		case "github":
@@ -90,7 +89,17 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 			// turn relative paths into absolute references
 			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), loc)
 			origin, uses = pURL.String(), pURL.String()
-			fetcher = storage.NewGitHubClient()
+			switch pURL.Type {
+			case "github":
+				fetcher = storage.NewGitHubClient()
+			case "gitlab":
+				fetcher, err = storage.NewGitLabClient(pURL.Qualifiers.Map()["base"])
+				if err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unsupported type: %s", pURL.Type)
+			}
 		default:
 			dir := filepath.Dir(originURL.Opaque)
 			if dir != "." {
