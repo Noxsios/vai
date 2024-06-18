@@ -39,7 +39,7 @@ jobs:
         run: go test -race -covermode=atomic -coverprofile=coverage.out -failfast -timeout 3m ./...
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.4.1
+        uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
