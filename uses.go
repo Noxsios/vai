@@ -27,7 +27,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 	}
 
 	if uri.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %s", uses)
+		return fmt.Errorf("must contain a scheme: %q", uses)
 	}
 
 	previous, err := url.Parse(prev)
@@ -36,7 +36,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 	}
 
 	if previous.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %s", prev)
+		return fmt.Errorf("must contain a scheme: %q", prev)
 	}
 
 	fetcher, err := storage.SelectFetcher(uri, previous)
