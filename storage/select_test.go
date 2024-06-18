@@ -93,10 +93,17 @@ func TestSelectFetcher(t *testing.T) {
 		},
 		{
 			name:        "unsupported previous type",
-			uri:         "pkg:unsupported/noxsios/vai",
-			prev:        "unsupported:tmp/test",
+			uri:         "file:tmp/test",
+			prev:        "pkg:unsupported/noxsios/vai",
 			want:        nil,
 			expectedErr: `unsupported type: "unsupported"`,
+		},
+		{
+			name:        "invalid previous package-url",
+			uri:         "file:tmp/test",
+			prev:        "pkg:",
+			want:        nil,
+			expectedErr: "purl is missing type or name",
 		},
 		{
 			name:        "invalid package-url",
@@ -137,6 +144,12 @@ func TestSelectFetcher(t *testing.T) {
 				name: "default",
 				uri:  "pkg:gitlab/noxsios/vai",
 				prev: defaultPrev,
+				base: "",
+			},
+			{
+				name: "default from previous",
+				uri:  defaultPrev,
+				prev: "pkg:gitlab/noxsios/vai",
 				base: "",
 			},
 			{
