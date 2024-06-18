@@ -73,7 +73,7 @@ func NewRootCmd() *cobra.Command {
 				return nil
 			}
 
-			if cmpl := os.Getenv("VAI_COMPLETION"); cmpl == "true" && len(args) == 2 && args[0] == "completion" {
+			if cmpl, ok := os.LookupEnv("VAI_COMPLETION"); ok && cmpl == "true" && len(args) == 2 && args[0] == "completion" {
 				switch args[1] {
 				case "bash":
 					return cmd.GenBashCompletion(os.Stdout)

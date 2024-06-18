@@ -12,14 +12,13 @@ import (
 
 	"github.com/noxsios/vai/storage"
 	"github.com/package-url/packageurl-go"
-	"github.com/spf13/afero"
 )
 
 // CacheEnvVar is the environment variable for the cache directory.
 const CacheEnvVar = "VAI_CACHE"
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with With, origin string) error {
+func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with With, prev string) error {
 	logger.Debug("using", "task", uses)
 
 	uri, err := url.Parse(uses)
@@ -28,79 +27,69 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 	}
 
 	if uri.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %s", uses)
+		return fmt.Errorf("must contain a scheme: %q", uses)
 	}
 
-	var fetcher storage.Fetcher
+	previous, err := url.Parse(prev)
+	if err != nil {
+		return err
+	}
 
-	switch uri.Scheme {
-	case "http", "https":
-		// mutate the origin to the URL
-		origin = uses
-		fetcher = storage.NewHTTPFetcher()
-	case "pkg":
-		pURL, err := packageurl.FromString(uses)
-		if err != nil {
-			return err
-		}
-		if pURL.Subpath == "" {
-			pURL.Subpath = DefaultFileName
-		}
-		if pURL.Version == "" {
-			pURL.Version = "main"
-		}
+	if previous.Scheme == "" {
+		return fmt.Errorf("must contain a scheme: %q", prev)
+	}
 
-		uses = pURL.String()
-		// mutate the origin to the URL
-		origin = uses
+	fetcher, err := storage.SelectFetcher(uri, previous)
+	if err != nil {
+		return err
+	}
 
-		switch pURL.Type {
-		case "github":
-			fetcher = storage.NewGitHubClient()
-		case "gitlab":
-			fetcher, err = storage.NewGitLabClient(pURL.Qualifiers.Map()["base"])
-			if err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unsupported type: %s", pURL.Type)
-		}
-	case "file":
-		fetcher = storage.NewLocalFetcher(afero.NewOsFs())
+	var next *url.URL
 
-		loc := uri.Opaque
-
-		originURL, err := url.Parse(origin)
-		if err != nil {
-			return err
-		}
-
-		switch originURL.Scheme {
+	if uri.Scheme == "file" {
+		switch previous.Scheme {
 		case "http", "https":
 			// turn relative paths into absolute references
-			originURL.Path = filepath.Join(filepath.Dir(originURL.Path), loc)
-			originURL.RawQuery = uri.RawQuery
-			origin, uses = originURL.String(), originURL.String()
-			fetcher = storage.NewHTTPFetcher()
+			next = previous
+			next.Path = filepath.Join(filepath.Dir(previous.Path), uri.Opaque)
 		case "pkg":
 			pURL, err := packageurl.FromString(uses)
 			if err != nil {
 				return err
 			}
 			// turn relative paths into absolute references
-			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), loc)
-			origin, uses = pURL.String(), pURL.String()
-			fetcher = storage.NewGitHubClient()
+			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), uri.Opaque)
+			next, _ = url.Parse(pURL.String())
 		default:
-			dir := filepath.Dir(originURL.Opaque)
+			dir := filepath.Dir(previous.Opaque)
 			if dir != "." {
-				originURL.Opaque = filepath.Join(dir, loc)
-				origin = originURL.String()
+				next = &url.URL{
+					Scheme: previous.Scheme,
+					Opaque: filepath.Join(dir, uri.Opaque),
+				}
 			}
 		}
 
-	default:
-		return fmt.Errorf("unsupported scheme: %s", uri.Scheme)
+		if next != nil {
+			logger.Debug("merged", previous, uses, next)
+			uses = next.String()
+		}
+	}
+
+	if next == nil {
+		next, _ = url.Parse(uses)
+	}
+
+	if uri.Scheme == "pkg" {
+		// dogsledding the error here since we know it's a package URL
+		pURL, _ := packageurl.FromString(uses)
+		if pURL.Subpath == "" {
+			pURL.Subpath = DefaultFileName
+		}
+		if pURL.Version == "" {
+			pURL.Version = "main"
+		}
+		uses = pURL.String()
 	}
 
 	logger.Debug("chosen", "fetcher", fmt.Sprintf("%T", fetcher))
@@ -145,7 +134,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 	}
 
 	if f == nil {
-		return fmt.Errorf("failed to fetch %s referenced by %s", uses, origin)
+		return fmt.Errorf("failed to fetch %s referenced by %s", uses, prev)
 	}
 
 	wf, err := ReadAndValidate(f)
@@ -155,5 +144,5 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 
 	taskName := uri.Query().Get("task")
 
-	return Run(ctx, store, wf, taskName, with, origin)
+	return Run(ctx, store, wf, taskName, with, next.String())
 }

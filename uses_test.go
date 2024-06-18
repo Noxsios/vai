@@ -81,13 +81,22 @@ func TestExecuteUses(t *testing.T) {
 	require.NoError(t, err)
 
 	err = ExecuteUses(ctx, store, "./path-with-no-scheme", with, "file:test")
-	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
+	require.EqualError(t, err, `must contain a scheme: "./path-with-no-scheme"`)
+
+	err = ExecuteUses(ctx, store, "file:test", with, "./missing-scheme")
+	require.EqualError(t, err, `must contain a scheme: "./missing-scheme"`)
+
+	err = ExecuteUses(ctx, store, "http://www.example.com/\x7f", with, "file:test")
+	require.EqualError(t, err, `parse "http://www.example.com/\x7f": net/url: invalid control character in URL`)
+
+	err = ExecuteUses(ctx, store, "file:test", with, "http://www.example.com/\x7f")
+	require.EqualError(t, err, `parse "http://www.example.com/\x7f": net/url: invalid control character in URL`)
 
 	err = ExecuteUses(ctx, store, "ssh:not-supported", with, "file:test")
-	require.EqualError(t, err, "unsupported scheme: ssh")
+	require.EqualError(t, err, `unsupported scheme: "ssh"`)
 
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
-	require.EqualError(t, err, "unsupported type: bitbucket")
+	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
