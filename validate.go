@@ -22,8 +22,8 @@ var EnvVariablePattern = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
 // Read reads a workflow from a file
 func Read(r io.Reader) (Workflow, error) {
-	if rc, ok := r.(io.Seeker); ok {
-		_, err := rc.Seek(0, io.SeekStart)
+	if rs, ok := r.(io.Seeker); ok {
+		_, err := rs.Seek(0, io.SeekStart)
 		if err != nil {
 			return nil, err
 		}

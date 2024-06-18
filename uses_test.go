@@ -84,10 +84,10 @@ func TestExecuteUses(t *testing.T) {
 	require.EqualError(t, err, "must contain a scheme: ./path-with-no-scheme")
 
 	err = ExecuteUses(ctx, store, "ssh:not-supported", with, "file:test")
-	require.EqualError(t, err, "unsupported scheme: ssh")
+	require.EqualError(t, err, `unsupported scheme: "ssh"`)
 
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
-	require.EqualError(t, err, "unsupported type: bitbucket")
+	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
