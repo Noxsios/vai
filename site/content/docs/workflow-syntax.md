@@ -54,8 +54,8 @@ clean:
 
 Task names must follow the following regex: `^[_a-zA-Z][a-zA-Z0-9_-]*$`. Try it out below:
 
-<input class="border rounded-md px-3 py-2 mt-2" spellcheck="false" placeholder="some-task" id="task-name-regex" />
-<span id="regex-result" class="ml-2"></span>
+<input spellcheck="false" placeholder="some-task" id="task-name-regex" />
+<span id="regex-result"></span>
 
 <script type="module" defer>
   const input = document.getElementById('task-name-regex');
