@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+
 package storage
 
 import (
@@ -8,6 +11,7 @@ import (
 	"github.com/spf13/afero"
 )
 
+// SelectFetcher returns a Fetcher based on the URI scheme and previous scheme.
 func SelectFetcher(uri, previous *url.URL) (Fetcher, error) {
 	switch uri.Scheme {
 	case "http", "https":

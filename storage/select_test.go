@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+
 package storage
 
 import (
@@ -165,7 +168,7 @@ func TestSelectFetcher(t *testing.T) {
 
 				got, err := SelectFetcher(uri, previous)
 				require.NoError(t, err)
-				require.IsType(t, got, want)
+				require.IsType(t, want, got)
 				if got, ok := got.(*GitLabClient); ok && tc.base != "" {
 					require.Equal(t, want.client.BaseURL(), got.client.BaseURL())
 				} else {
