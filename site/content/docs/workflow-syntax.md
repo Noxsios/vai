@@ -34,16 +34,18 @@ clean:
 
 ```yaml {filename="vai.yaml"}
 default:
-  - uses: build
+    - uses: build
 
 build:
-  - run: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+    - run: go build -o bin/ -ldflags="-s -w" ./cmd/vai
+      with:
+        CGO_ENABLED: 0
 
 test:
-  - run: go test -v -race -cover -failfast -timeout 3m ./...
+    - run: go test -v -race -cover -failfast -timeout 3m ./...
 
 clean:
-  - run: rm -rf bin/
+    - run: rm -rf bin/
 ```
 
   {{< /tab >}}

@@ -17,9 +17,9 @@ Not placing task calls behind a `run` subcommand was a deliberate choice. In my 
 
 I decided to use Cobra's `StringToStringVarP` to pass arguments to the called task(s) instead of replicating `make`'s variables syntax. `vai hello --with text=world --with debug=true` versus `make hello TEXT=world DEBUG=true`. While more verbose, I felt this reads a little better.
 
-> I also borrowed the concept of the `.DEFAULT_GOAL` for Vai's [../cli#default-task]
+> I also borrowed the concept of the `.DEFAULT_GOAL` for Vai's ["default" task](../cli#default-task)
 
-Another major design decision I borrowed from `make` was not mutating the current working directory at all. Given the following repository structure:
+Another major design decision I borrowed from `make` was not mutating the current working directory. Given the following repository structure:
 
 {{< filetree/container >}}
   {{< filetree/folder name="tasks" >}}
@@ -50,7 +50,7 @@ In Vai, all tasks are run from the context of the current working directory, if 
 
 ## Inspiration from GitHub Actions
 
-The majority of Vai's [workflow schema](../schema-validation#raw-schema) was either inspired by, or is a direct replication of [GitHub Workflow's JSON schema](https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/github-workflow.json).
+The majority of Vai's [workflow schema](../schema-validation#raw-schema) was either inspired by, or is a direct replication of [GitHub's Workflow JSON schema](https://github.com/SchemaStore/schemastore/blob/master/src/schemas/json/github-workflow.json).
 
 GitHub orchestrates `jobs`, which are collections of either `run` or `uses` steps.
 
