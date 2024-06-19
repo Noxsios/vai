@@ -244,6 +244,42 @@ echo:
 				}},
 			}, "", `.echo[0].id "&1337" is invalid`,
 		},
+		{
+			"duplicate step ids",
+			strings.NewReader(`
+echo:
+  - run: echo
+    id: id-123
+  - run: echo again
+    id: id-123
+			`),
+			Workflow{
+				"echo": Task{
+					{
+						Run: "echo",
+						ID:  "id-123",
+					},
+					{
+						Run: "echo again",
+						ID:  "id-123",
+					},
+				},
+			}, "", `.echo[0] and .echo[1] have the same ID "id-123"`,
+		},
+		{
+			"incorrect double usage of run and uses",
+			strings.NewReader(`
+echo:
+  - run: echo
+    uses: file:dne
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run:  "echo",
+					Uses: "file:dne",
+				}},
+			}, "", `.echo[0] has both run and uses fields set`,
+		},
 	}
 
 	for _, tc := range testCases {
