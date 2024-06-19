@@ -29,7 +29,7 @@ default:
   - run: echo "default"
 
 echo:
-  - uses: ./simple.yaml?task=echo
+  - uses: file:simple.yaml?task=echo
     with:
       message: ${{ input | default "Hello World!" }}
 

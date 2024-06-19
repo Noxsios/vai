@@ -16,7 +16,7 @@ import (
 type Step struct {
 	// Run is the command/script to run
 	Run string `json:"run,omitempty"`
-	// Uses is a reference to a remote task
+	// Uses is a reference to another task
 	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
 	With `json:"with,omitempty"`
