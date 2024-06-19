@@ -1,0 +1,15 @@
+exec vai -l debug
+stdout 'default\ndefault\ncallback\n'
+
+-- vai.yaml --
+default:
+  - run: echo "default"
+  - uses: file:dir/vai-other.yaml
+
+callback:
+  - run: echo "callback"
+
+-- dir/vai-other.yaml --
+default:
+  - run: echo "default"
+  - uses: file:../?task=callback

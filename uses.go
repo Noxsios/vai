@@ -39,11 +39,6 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 		return fmt.Errorf("must contain a scheme: %q", prev)
 	}
 
-	fetcher, err := storage.SelectFetcher(uri, previous)
-	if err != nil {
-		return err
-	}
-
 	var next *url.URL
 
 	if uri.Scheme == "file" {
@@ -64,14 +59,18 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 			dir := filepath.Dir(previous.Opaque)
 			if dir != "." {
 				next = &url.URL{
-					Scheme: previous.Scheme,
-					Opaque: filepath.Join(dir, uri.Opaque),
+					Scheme:   uri.Scheme,
+					Opaque:   filepath.Join(dir, uri.Opaque),
+					RawQuery: uri.RawQuery,
+				}
+				if next.Opaque == "." {
+					next.Opaque = DefaultFileName
 				}
 			}
 		}
 
 		if next != nil {
-			logger.Debug("merged", previous, uses, next)
+			logger.Debug("merged", "previous", previous, "uses", uses, "next", next)
 			uses = next.String()
 		}
 	}
@@ -90,6 +89,11 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 			pURL.Version = "main"
 		}
 		uses = pURL.String()
+	}
+
+	fetcher, err := storage.SelectFetcher(uri, previous)
+	if err != nil {
+		return err
 	}
 
 	logger.Debug("chosen", "fetcher", fmt.Sprintf("%T", fetcher))

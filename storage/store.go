@@ -67,11 +67,9 @@ func (c *CacheIndex) Find(desc Descriptor) (Descriptor, bool) {
 
 // Add adds an entry to the index.
 //
-// If the key already exists in the index and the value is the same, nothing will happen.
+// If the desc already exists in the index, nothing will happen.
 //
-// If the key already exists in the index and the value is different, the key will be removed and re-added.
-//
-// If the key does not exist in the index, it will be added.
+// If the desc does not exist in the index, it will be added.
 func (c *CacheIndex) Add(desc Descriptor) {
 	if _, ok := c.Find(desc); ok {
 		return

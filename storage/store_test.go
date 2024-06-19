@@ -30,6 +30,17 @@ func TestCacheIndex(t *testing.T) {
 	// add
 	index.Add(foo)
 
+	require.Equal(t, &CacheIndex{
+		Content: []Descriptor{foo},
+	}, index)
+
+	// add again, no change
+	index.Add(foo)
+
+	require.Equal(t, &CacheIndex{
+		Content: []Descriptor{foo},
+	}, index)
+
 	// found
 	val, ok := index.Find(foo)
 	require.Equal(t, foo, val)

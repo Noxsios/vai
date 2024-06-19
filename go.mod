@@ -3,7 +3,7 @@
 
 module github.com/noxsios/vai
 
-go 1.22.2
+go 1.22.4
 
 require (
 	github.com/charmbracelet/lipgloss v0.11.0

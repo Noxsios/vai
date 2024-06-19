@@ -15,11 +15,14 @@ echo:
       name: ${{ input }}
       # default to "now" if not provided
       date: ${{ input | default "now" }}
+  - uses: hello-world
 -- stderr.txt --
 $ echo "Hello, World!"
 $ echo "default"
 $ echo "Hello, $NAME, today is $DATE"
+$ echo "Hello, World!"
 -- stdout.txt --
 Hello, World!
 default
 Hello, Jeff, today is now
+Hello, World!
