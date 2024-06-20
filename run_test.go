@@ -28,7 +28,7 @@ func TestRun(t *testing.T) {
 	require.EqualError(t, err, "task \"does not exist\" not found")
 }
 
-func TesttoEnvVar(t *testing.T) {
+func TestToEnvVar(t *testing.T) {
 	testCases := []struct {
 		name     string
 		s        string

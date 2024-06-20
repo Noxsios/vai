@@ -17,14 +17,14 @@ type badReadSeeker struct {
 	failOnSeek bool
 }
 
-func (b badReadSeeker) Read(p []byte) (n int, err error) {
+func (b badReadSeeker) Read(_ []byte) (n int, err error) {
 	if b.failOnRead {
 		return 0, io.ErrUnexpectedEOF
 	}
 	return 0, nil
 }
 
-func (b badReadSeeker) Seek(offset int64, whence int) (int64, error) {
+func (b badReadSeeker) Seek(_ int64, _ int) (int64, error) {
 	if b.failOnSeek {
 		return 0, io.ErrUnexpectedEOF
 	}
