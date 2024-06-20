@@ -27,3 +27,39 @@ func TestRun(t *testing.T) {
 	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test")
 	require.EqualError(t, err, "task \"does not exist\" not found")
 }
+
+func TesttoEnvVar(t *testing.T) {
+	testCases := []struct {
+		name     string
+		s        string
+		expected string
+	}{
+		{
+			name: "empty",
+		},
+		{
+			name:     "simple",
+			s:        "foo",
+			expected: "FOO",
+		},
+		{
+			name:     "with dash",
+			s:        "foo-bar",
+			expected: "FOO_BAR",
+		},
+		{
+			name:     "with underscore",
+			s:        "foo_bar",
+			expected: "FOO_BAR",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			actual := toEnvVar(tc.s)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
+}

@@ -64,10 +64,6 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 			env := os.Environ()
 			for k, v := range templated {
-				toEnvVar := func(s string) string {
-					return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
-				}
-
 				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
@@ -112,4 +108,8 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 	}
 
 	return nil
+}
+
+func toEnvVar(s string) string {
+	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
 }
