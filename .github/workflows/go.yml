@@ -24,22 +24,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
           go-version: 1.22.x
           cache-dependency-path: |
             go.sum
             go.mod
 
-      - name: Build
-        run: make
+      - run: make
 
-      - name: Test
-        run: go test -race -covermode=atomic -coverprofile=coverage.out -failfast -timeout 3m ./...
+      - run: go test -race -covermode=atomic -coverprofile=coverage.out -failfast -timeout 3m ./...
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.5.0
+      - uses: codecov/codecov-action@v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -53,6 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: 1.22.x
           cache-dependency-path: |
