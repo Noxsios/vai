@@ -73,14 +73,23 @@ build:
 
 ## Import System
 
-- github.com/package-url/packageurl-go
-- caching
-- gitlab vs github API for SHA
-- relative pathing from `file:` from remote sources
+I chose to use full+valid URLs as the import syntax.
 
+Each protocol scheme is mapped to its respective fetcher:
+
+- `file:` for reading workflows from relative paths
+- `http:|https:` for fetching workflows from raw URLs
+- `pkg:` leveraging the [package-url spec](https://github.com/package-url/purl-spec)
+  - `pkg:github` fetches from GitHub using `github.com/google/go-github/v62`
+  - `pkg:gitlab` fetches from GitLab using `github.com/xanzy/go-gitlab`
+
+Where possible, remote workflows are cached locally by their SHA256. Subsequent fetches can pull from cache if using SHA-pinning.
+
+<!--
 ## Testing
 
 - testscript
 - testify
 - fuzzing
 - coverage as a goal
+-->
