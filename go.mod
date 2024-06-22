@@ -5,7 +5,10 @@ module github.com/noxsios/vai
 
 go 1.22.4
 
-retract v0.10.0 // accidentally tagged incorrect version
+retract (
+	v0.10.1 // v0.10.1 was tagged to retract v0.10.0
+	v0.10.0 // accidentally tagged incorrect version
+)
 
 require (
 	github.com/charmbracelet/lipgloss v0.11.0
