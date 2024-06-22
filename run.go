@@ -70,9 +70,13 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
 
 			for k, v := range templated {
-				script.Add(k, v)
+				if err := script.Add(k, v); err != nil {
+					return err
+				}
 			}
-			script.Add("vai_output", map[string]interface{}{})
+			if err := script.Add("vai_output", map[string]interface{}{}); err != nil {
+				return err
+			}
 
 			compiled, err := script.Compile()
 			if err != nil {
