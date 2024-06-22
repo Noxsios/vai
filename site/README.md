@@ -2,7 +2,7 @@
 
 ## Favicon
 
-This favicon was generated using the following font:
+Some favicons were generated using the following font:
 
 - Font Title: Varela
 - Font Author: Copyright (c) 2011 by Admix Designs. All rights reserved.

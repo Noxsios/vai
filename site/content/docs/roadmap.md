@@ -7,7 +7,6 @@ TODO:
 
 - add matrix support
 - add more examples
-- get coverage to ~80%
 - get E2E tests covering all the golden paths
 - import / publish to OCI?
 - run a docker container as a task
@@ -22,3 +21,4 @@ TODO:
 - outputs from a "uses" task
 - add `if` and `continue-on-error` fields?
 - `--dry-run` flag
+- `-s, --silent, --quiet       Don't echo commands.`

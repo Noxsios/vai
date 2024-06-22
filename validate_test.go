@@ -12,6 +12,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type badReadSeeker struct {
+	failOnRead bool
+	failOnSeek bool
+}
+
+func (b badReadSeeker) Read(_ []byte) (n int, err error) {
+	if b.failOnRead {
+		return 0, io.ErrUnexpectedEOF
+	}
+	return 0, nil
+}
+
+func (b badReadSeeker) Seek(_ int64, _ int) (int64, error) {
+	if b.failOnSeek {
+		return 0, io.ErrUnexpectedEOF
+	}
+	return 0, nil
+}
+
+func (badReadSeeker) Close() error {
+	return nil
+}
+
 func TestTaskNamePattern(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -219,6 +242,16 @@ echo:
 			}, "", "schema validation failed",
 		},
 		{
+			"bad reader",
+			&badReadSeeker{failOnRead: true},
+			Workflow(nil), "unexpected EOF", "",
+		},
+		{
+			"bad seeker",
+			&badReadSeeker{failOnSeek: true},
+			Workflow(nil), "unexpected EOF", "",
+		},
+		{
 			"bad task name",
 			strings.NewReader(`
 2-echo:
@@ -291,9 +324,7 @@ echo:
 			require.Equal(t, tc.wf, wf)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedReadErr)
-			}
-			if err == nil {
-				require.NotEmpty(t, wf)
+				return
 			}
 
 			err = Validate(wf)

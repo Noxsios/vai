@@ -37,7 +37,9 @@ default:
     - uses: build
 
 build:
-    - run: CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+    - run: go build -o bin/ -ldflags="-s -w" ./cmd/vai
+      with:
+        CGO_ENABLED: 0
 
 test:
     - run: go test -v -race -cover -failfast -timeout 3m ./...
@@ -128,7 +130,7 @@ vai hello
 
 Calling a task from a local file takes two arguments: the file path (required) and the task name (optional).
 
-`<filepath>?task=<taskname>`
+`file:<filepath>?task=<taskname>`
 
 If the filepath is a directory, `vai.yaml` is appended to the path.
 

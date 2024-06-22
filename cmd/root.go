@@ -175,7 +175,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
 	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
-	root.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout for task execution")
+	root.Flags().DurationVarP(&timeout, "timeout", "t", time.Hour, "timeout for task execution")
 
 	return root
 }

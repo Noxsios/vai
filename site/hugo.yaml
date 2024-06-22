@@ -20,9 +20,6 @@ menu:
     - name: Documentation
       pageRef: /docs
       weight: 1
-    # - name: Blog
-    #   pageRef: /blog
-    #   weight: 2
     - name: About
       pageRef: /about
       weight: 3

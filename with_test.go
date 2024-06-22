@@ -107,6 +107,18 @@ func TestPerformLookups(t *testing.T) {
 			},
 			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
 		},
+		{
+			name: "invalid syntax",
+			previous: CommandOutputs{
+				"step-1": map[string]string{
+					"bar": "baz",
+				},
+			},
+			local: With{
+				"foo": `${{ input`,
+			},
+			expectedError: `template: expression evaluator:1: unclosed action`,
+		},
 	}
 
 	for _, tc := range testCases {

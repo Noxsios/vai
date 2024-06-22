@@ -22,7 +22,7 @@ go install github.com/noxsios/vai/cmd/vai@main
 ## Next
 
 {{< cards >}}
-  {{< card link="docs/schema" title="Schema" icon="document-duplicate" >}}
+  {{< card link="docs/schema-validation" title="Schema" icon="document-duplicate" >}}
   {{< card link="docs/workflow-syntax#passing-inputs" title="Inputs" icon="template" >}}
   {{< card link="docs/workflow-syntax#run-a-task-from-a-remote-file" title="Remote Tasks" icon="server" >}}
   {{< card link="docs/workflow-syntax#passing-outputs" title="Outputs" icon="chart-square-bar" >}}

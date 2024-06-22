@@ -25,8 +25,6 @@ type Task []Step
 type Workflow map[string]Task
 
 // Find returns a task by name
-//
-// If the task is not found, an error is returned
 func (wf Workflow) Find(call string) (Task, bool) {
 	task, ok := wf[call]
 	return task, ok
