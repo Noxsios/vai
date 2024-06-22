@@ -13,6 +13,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/d5/tengo/v2"
+	"github.com/d5/tengo/v2/stdlib"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -52,6 +54,42 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 				return err
 			}
 			continue
+		}
+
+		if step.Eval != "" {
+			lines := strings.Split(step.Eval, "\n")
+			for _, line := range lines {
+				trimmed := strings.TrimSpace(line)
+				if trimmed == "" {
+					continue
+				}
+				logger.Printf("> %s", trimmed)
+			}
+
+			script := tengo.NewScript([]byte(step.Eval))
+			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
+
+			for k, v := range templated {
+				script.Add(k, v)
+			}
+			script.Add("vai_output", map[string]interface{}{})
+
+			compiled, err := script.Compile()
+			if err != nil {
+				return err
+			}
+			if err := compiled.RunContext(ctx); err != nil {
+				return err
+			}
+			if step.ID != "" {
+				out := compiled.Get("vai_output").Map()
+				for k, v := range out {
+					if outputs[step.ID] == nil {
+						outputs[step.ID] = make(map[string]string)
+					}
+					outputs[step.ID][k] = fmt.Sprintf("%v", v)
+				}
+			}
 		}
 
 		if step.Run != "" {
