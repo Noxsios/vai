@@ -57,14 +57,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 		}
 
 		if step.Eval != "" {
-			lines := strings.Split(step.Eval, "\n")
-			for _, line := range lines {
-				trimmed := strings.TrimSpace(line)
-				if trimmed == "" {
-					continue
-				}
-				logger.Printf("> %s", trimmed)
-			}
+			printScript(">", step.Eval)
 
 			script := tengo.NewScript([]byte(step.Eval))
 			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
@@ -116,20 +109,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
 
-			customStyles := log.DefaultStyles()
-			customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
-			logger.SetStyles(customStyles)
-
-			lines := strings.Split(step.Run, "\n")
-			for _, line := range lines {
-				trimmed := strings.TrimSpace(line)
-				if trimmed == "" {
-					continue
-				}
-				logger.Printf("$ %s", trimmed)
-			}
-
-			logger.SetStyles(log.DefaultStyles())
+			printScript("$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err
@@ -154,4 +134,20 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 func toEnvVar(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+}
+
+func printScript(prefix, script string) {
+	customStyles := log.DefaultStyles()
+	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
+	logger.SetStyles(customStyles)
+	defer logger.SetStyles(log.DefaultStyles())
+
+	lines := strings.Split(script, "\n")
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		logger.Printf("%s %s", prefix, trimmed)
+	}
 }
