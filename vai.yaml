@@ -2,3 +2,8 @@
 
 hello-world:
   - run: echo "Hello, World!"
+
+exprs:
+  - run: echo "$RESULT"
+    with:
+      RESULT: ${{ expr "1 + 15" }}

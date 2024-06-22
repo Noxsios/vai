@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/expr-lang/expr"
 )
 
 // WithEntry is a single entry in a With map
@@ -69,6 +71,21 @@ func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []
 					return v, nil
 				}
 				return "", fmt.Errorf("no output %q from %q", id, stepName)
+			},
+			"expr": func(e string) (any, error) {
+				env := map[string]interface{}{
+					"os":       runtime.GOOS,
+					"arch":     runtime.GOARCH,
+					"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+					"input":    input[k],
+				}
+
+				program, err := expr.Compile(e, expr.Env(env))
+				if err != nil {
+					return "", err
+				}
+
+				return expr.Run(program, env)
 			},
 		}
 		tmpl := template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}")
