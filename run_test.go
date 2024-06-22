@@ -5,6 +5,8 @@ package vai
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/noxsios/vai/storage"
@@ -60,6 +62,48 @@ func TestToEnvVar(t *testing.T) {
 			t.Parallel()
 			actual := toEnvVar(tc.s)
 			require.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+func TestPrintScript(t *testing.T) {
+	testCases := []struct {
+		name     string
+		script   string
+		prefix   string
+		expected string
+	}{
+		{
+			name:     "simple eval",
+			script:   `h := "hello"`,
+			prefix:   ">",
+			expected: "> h := \"hello\"\n",
+		},
+		{
+			name:     "simple shell",
+			script:   "echo hello",
+			prefix:   "$",
+			expected: "$ echo hello\n",
+		},
+		{
+			name:     "multiline",
+			script:   "echo hello\necho world\n\necho !",
+			prefix:   "$",
+			expected: "$ echo hello\n$ echo world\n$ echo !\n",
+		},
+	}
+
+	var buf strings.Builder
+	logger.SetOutput(&buf)
+	t.Cleanup(func() {
+		logger.SetOutput(os.Stderr)
+	})
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			printScript(tc.prefix, tc.script)
+			require.Equal(t, tc.expected, buf.String())
+			buf.Reset()
 		})
 	}
 }
