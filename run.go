@@ -67,9 +67,8 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 					return err
 				}
 			}
-			if err := script.Add("vai_output", map[string]interface{}{}); err != nil {
-				return err
-			}
+			// this addition will not trigger any error conditions from tengo.FromInterface
+			_ = script.Add("vai_output", map[string]interface{}{})
 
 			compiled, err := script.Compile()
 			if err != nil {
