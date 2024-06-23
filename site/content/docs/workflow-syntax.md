@@ -102,7 +102,7 @@ There are a few built-in functions that can be used in `with`, two shown below a
   - If the task is called from another task, `with` values are passed from the calling step.
 - `default`: sets a default value if the input is not provided
 
-{{< tabs items="Shell,Tengo" >}}
+{{< tabs items="run,eval" >}}
 {{< tab >}}
 
 `with` is then mapped to the steps's environment variables, with key names being transformed to standard environment variable names (uppercase, with underscores).
@@ -273,6 +273,9 @@ The `id` field is used to reference the output in subsequent steps.
 
 The `from` function is used to reference the output from a previous step.
 
+{{< tabs items="run,eval" >}}
+{{< tab >}}
+
 ```yaml {filename="vai.yaml"}
 color:
   - run: |
@@ -282,6 +285,23 @@ color:
     with:
       selected: ${{ from "color-selector" "selected-color" }}
 ```
+
+{{< /tab >}}
+{{< tab >}}
+
+```yaml {filename="vai.yaml"}
+color:
+  - eval: |
+      color := "green"
+      vai_output["selected-color"] = color
+    id: color-selector
+  - run: echo "The selected color is $SELECTED"
+    with:
+      selected: ${{ from "color-selector" "selected-color" }}
+```
+
+{{< /tab >}}
+{{< /tabs >}}
 
 ```sh
 vai color
