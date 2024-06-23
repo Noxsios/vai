@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
@@ -95,8 +96,10 @@ func TestPrintScript(t *testing.T) {
 
 	var buf strings.Builder
 	logger.SetOutput(&buf)
+	_loggerColorProfile = termenv.Ascii
 	t.Cleanup(func() {
 		logger.SetOutput(os.Stderr)
+		_loggerColorProfile = 0
 	})
 
 	for _, tc := range testCases {

@@ -11,10 +11,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/stdlib"
+	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -136,17 +138,40 @@ func toEnvVar(s string) string {
 }
 
 func printScript(prefix, script string) {
+	noColor := _loggerColorProfile == termenv.Ascii
+	if noColor {
+		for _, line := range strings.Split(script, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			logger.Printf("%s %s", prefix, line)
+		}
+		return
+	}
+
 	customStyles := log.DefaultStyles()
 	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
 	logger.SetStyles(customStyles)
 	defer logger.SetStyles(log.DefaultStyles())
 
-	lines := strings.Split(script, "\n")
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
+	var buf strings.Builder
+
+	for _, line := range strings.Split(script, "\n") {
+		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		logger.Printf("%s %s", prefix, trimmed)
+		style := "catppuccin-latte"
+		if lipgloss.HasDarkBackground() {
+			style = "catppuccin-frappe"
+		}
+		lang := "shell"
+		if prefix == ">" {
+			lang = "go"
+		}
+		if err := quick.Highlight(&buf, line, lang, "terminal256", style); err != nil {
+			logger.Printf("error highlighting source code: %v", err)
+		}
+		logger.Printf("%s %s", prefix, buf.String())
+		buf.Reset()
 	}
 }
