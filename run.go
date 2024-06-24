@@ -155,23 +155,22 @@ func printScript(prefix, script string) {
 	defer logger.SetStyles(log.DefaultStyles())
 
 	var buf strings.Builder
+	style := "catppuccin-latte"
+	if lipgloss.HasDarkBackground() {
+		style = "catppuccin-frappe"
+	}
+	lang := "shell"
+	if prefix == ">" {
+		lang = "go"
+	}
+	if err := quick.Highlight(&buf, script, lang, "terminal256", style); err != nil {
+		logger.Printf("error highlighting source code: %v", err)
+	}
 
-	for _, line := range strings.Split(script, "\n") {
+	for _, line := range strings.Split(buf.String(), "\n") {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		style := "catppuccin-latte"
-		if lipgloss.HasDarkBackground() {
-			style = "catppuccin-frappe"
-		}
-		lang := "shell"
-		if prefix == ">" {
-			lang = "go"
-		}
-		if err := quick.Highlight(&buf, line, lang, "terminal256", style); err != nil {
-			logger.Printf("error highlighting source code: %v", err)
-		}
 		logger.Printf("%s %s", prefix, buf.String())
-		buf.Reset()
 	}
 }

@@ -2,7 +2,11 @@
 title: Design
 ---
 
-At the end of the day, Vai's objective is to orchestrate shell commands from local and remote sources in a sane manner.
+At the end of the day, Vai's objective is to orchestrate scripts from local and remote sources in a sane manner.
+
+> "Simple things should be simple, complex things should be possible"
+>
+> ~ Alan Kay
 
 Vai values:
 
