@@ -6,8 +6,6 @@ package vai
 import (
 	"fmt"
 	"runtime"
-	"strings"
-	"text/template"
 
 	"github.com/expr-lang/expr"
 )
@@ -38,77 +36,67 @@ func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []
 	toPersist := make([]string, 0, len(local))
 
 	for k, v := range local {
-		val := fmt.Sprintf("%s", v)
-		fm := template.FuncMap{
-			"input": func() string {
-				v, ok := input[k]
-				if !ok || v == "" {
-					return ""
-				}
-				return fmt.Sprintf("%s", v)
-			},
-			"default": func(def, curr string) string {
-				if len(curr) == 0 {
-					return def
-				}
-				return curr
-			},
-			"persist": func(s ...string) string {
-				toPersist = append(toPersist, k)
-				if len(s) == 0 {
-					return ""
-				}
-				return s[0]
-			},
-			"from": func(stepName, id string) (string, error) {
-				stepOutputs, ok := previousOutputs[stepName]
-				if !ok {
-					return "", fmt.Errorf("no outputs for step %q", stepName)
-				}
-
-				v, ok := stepOutputs[id]
-				if ok {
-					return v, nil
-				}
-				return "", fmt.Errorf("no output %q from %q", id, stepName)
-			},
-			"expr": func(e string) (any, error) {
-				env := map[string]interface{}{
-					"os":       runtime.GOOS,
-					"arch":     runtime.GOARCH,
-					"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-					"input":    input[k],
-				}
-
-				program, err := expr.Compile(e, expr.Env(env))
-				if err != nil {
-					return "", err
-				}
-
-				return expr.Run(program, env)
-			},
+		env := map[string]interface{}{
+			"os":       runtime.GOOS,
+			"arch":     runtime.GOARCH,
+			"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+			"input":    input[k],
 		}
-		tmpl := template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}")
-		tmpl.Funcs(fm)
-		tmpl, err := tmpl.Parse(val)
+
+		persist := expr.Function("persist", func(params ...any) (any, error) {
+			if len(params) == 0 || params[0] == nil {
+				return nil, fmt.Errorf("no value to persist")
+			}
+			toPersist = append(toPersist, k)
+			return params[0], nil
+		})
+
+		from := expr.Function("from", func(params ...any) (any, error) {
+			stepName := params[0].(string)
+			id := params[1].(string)
+
+			stepOutputs, ok := previousOutputs[stepName]
+			if !ok {
+				return "", fmt.Errorf("no outputs for step %q", stepName)
+			}
+
+			v, ok := stepOutputs[id]
+			if ok {
+				return v, nil
+			}
+			return "", fmt.Errorf("no output %q from %q", id, stepName)
+		},
+			new(func(string, string) (string, error)),
+		)
+
+		var script string
+
+		switch v := v.(type) {
+		case string:
+			script = v
+		case int, bool:
+			// no need to evaluate
+			r[k] = v
+			continue
+		default:
+			// should never happen in CLI due to schema validation
+			return nil, nil, fmt.Errorf("unsupported type %T for key %q", v, k)
+		}
+
+		program, err := expr.Compile(script, expr.Env(env), persist, from)
 		if err != nil {
 			return nil, nil, err
 		}
-		var templated strings.Builder
 
-		if err := tmpl.Execute(&templated, struct {
-			OS       string
-			ARCH     string
-			PLATFORM string
-		}{
-			OS:       runtime.GOOS,
-			ARCH:     runtime.GOARCH,
-			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		}); err != nil {
+		out, err := expr.Run(program, env)
+		if err != nil {
 			return nil, nil, err
 		}
-		result := templated.String()
-		r[k] = result
+		// ensure output is not nil
+		if out == nil {
+			return nil, nil, fmt.Errorf("expression %q evaluated to <nil>", script)
+		}
+		r[k] = out
 	}
 
 	logger.Debug("templated", "result", r)
