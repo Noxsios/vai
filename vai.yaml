@@ -6,4 +6,22 @@ hello-world:
 exprs:
   - run: echo "$RESULT"
     with:
-      RESULT: ${{ expr "1 + 15" }}
+      RESULT: 1 + 15
+
+simple:
+  - run: echo "$MESSAGE"
+    with:
+      message: input ?? (5 + 5)
+  - run: echo "2 $MESSAGE"
+    with:
+      message: input | persist()
+  - run: echo "3 $MESSAGE"
+
+color:
+  - run: |
+      echo "selected-color=green" >> $VAI_OUTPUT
+    id: color-selector
+  - run: echo "The selected color is $SELECTED"
+    with:
+      selected: from("color-selector", "selected-color")
+      # selected: steps["color-selector"]["selected-color"]
