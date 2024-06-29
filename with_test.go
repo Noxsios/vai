@@ -62,7 +62,7 @@ func TestPerformLookups(t *testing.T) {
 			},
 			local: With{
 				"foo": "input | persist()",
-				"c":   "d",
+				"c":   "'d'",
 				"e":   `"" | persist()`,
 			},
 			expectedPersisted: []string{"foo", "e"},
@@ -91,7 +91,9 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `from("step-1","bar")`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+			expectedError: `no outputs for step "step-1" (1:1)
+ | from("step-1","bar")
+ | ^`,
 		},
 		{
 			name: "lookup from previous outputs - output from step not found",
@@ -103,7 +105,9 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `from("step-1","dne")`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
+			expectedError: `no output "dne" from "step-1" (1:1)
+ | from("step-1","dne")
+ | ^`,
 		},
 		{
 			name: "invalid syntax",
@@ -115,7 +119,9 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `input | persist`,
 			},
-			expectedError: `template: expression evaluator:1: unclosed action`,
+			expectedError: `unexpected token EOF (1:15)
+ | input | persist
+ | ..............^`,
 		},
 	}
 
