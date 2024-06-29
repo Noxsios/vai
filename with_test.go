@@ -29,10 +29,10 @@ func TestPerformLookups(t *testing.T) {
 				"key": "value",
 			},
 			local: With{
-				"key":      "${{ input }}",
-				"os":       "${{ .OS }}",
-				"arch":     "${{ .ARCH }}",
-				"platform": "${{ .PLATFORM }}",
+				"key":      "input",
+				"os":       "os",
+				"arch":     "arch",
+				"platform": "platform",
 			},
 			expectedTemplated: With{
 				"key":      "value",
@@ -47,8 +47,8 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "value",
 			},
 			local: With{
-				"foo": "${{ input | default \"default\" }}",
-				"bar": "${{ input | default \"default\" }}",
+				"foo": "input ?? \"value\"",
+				"bar": "input ?? \"default\"",
 			},
 			expectedTemplated: With{
 				"foo": "value",
@@ -61,15 +61,13 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "bar",
 			},
 			local: With{
-				"foo": "${{ input | persist }}",
-				"a":   "b${{ persist }}",
+				"foo": "input | persist()",
 				"c":   "d",
-				"e":   "${{ persist }}",
+				"e":   `"" | persist()`,
 			},
-			expectedPersisted: []string{"foo", "a", "e"},
+			expectedPersisted: []string{"foo", "e"},
 			expectedTemplated: With{
 				"foo": "bar",
-				"a":   "b",
 				"c":   "d",
 				"e":   "",
 			},
@@ -82,7 +80,7 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `from("step-1","bar")`,
 			},
 			expectedTemplated: With{
 				"foo": "baz",
@@ -91,7 +89,7 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - no outputs from step",
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `from("step-1","bar")`,
 			},
 			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
 		},
@@ -103,7 +101,7 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "dne" }}`,
+				"foo": `from("step-1","dne")`,
 			},
 			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
 		},
@@ -115,7 +113,7 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ input`,
+				"foo": `input | persist`,
 			},
 			expectedError: `template: expression evaluator:1: unclosed action`,
 		},
