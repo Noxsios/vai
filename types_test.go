@@ -39,7 +39,7 @@ func TestWorkflowFind(t *testing.T) {
 
 func TestOrderedTaskNames(t *testing.T) {
 	names := helloWorldWorkflow.OrderedTaskNames()
-	expected := []string{"default", "a-task", "task-b"}
+	expected := []string{"default", "a-task", "task-b", "timeout-run", "timeout-eval"}
 	require.ElementsMatch(t, expected, names)
 
 	wf := Workflow{"foo": nil, "bar": nil, "baz": nil, "default": nil}
