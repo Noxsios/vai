@@ -33,8 +33,8 @@ func TestPerformLookups(t *testing.T) {
 				"os":       "os",
 				"arch":     "arch",
 				"platform": "platform",
-				"boolean":  "true",
-				"int":      "1",
+				"boolean":  true,
+				"int":      1,
 			},
 			expectedTemplated: With{
 				"key":      "value",
