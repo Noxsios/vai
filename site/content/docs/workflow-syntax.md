@@ -83,6 +83,14 @@ mIxEdCaSe: ...
 WithNumbers123: ...
 ```
 
+## `eval` vs `run` vs `uses`
+
+- `eval`: runs a [Tengo](https://github.com/d5/tengo) script
+- `run`: runs a shell command/script
+- `uses`: calls another task
+
+All three can be used interchangeably within a task, and interoperate cleanly with `with`.
+
 ## Passing inputs
 
 `with` follows a syntax similar to GitHub Actions expressions.
@@ -94,7 +102,10 @@ There are a few built-in functions that can be used in `with`, two shown below a
   - If the task is called from another task, `with` values are passed from the calling step.
 - `default`: sets a default value if the input is not provided
 
-The `with` map is then mapped to the steps's environment variables, with key names being transformed to standard environment variable names (uppercase, with underscores).
+{{< tabs items="run,eval" >}}
+{{< tab >}}
+
+`with` is then mapped to the steps's environment variables, with key names being transformed to standard environment variable names (uppercase, with underscores).
 
 ```yaml {filename="vai.yaml"}
 echo:
@@ -109,17 +120,50 @@ echo:
 vai echo --with name=$(whoami) --with date=$(date)
 ```
 
+{{< /tab >}}
+{{< tab >}}
+
+`with` values are passed to the Tengo script as global variables at compilation time.
+
+```yaml {filename="vai.yaml"}
+echo:
+  - eval: |
+      fmt := import("fmt")
+      if date == "" {
+        times := import("times")
+        date = times.time_format(times.now(), "2006-01-02")
+      }
+      s := fmt.sprintf("Hello, %s, today is %s", name, date)
+      fmt.println(s)
+    with:
+      name: ${{ input }}
+      # default to "now" if not provided
+      date: ${{ input }}
+```
+
+```sh
+vai echo --with name=$(whoami)
+```
+
+{{< /tab >}}
+{{< /tabs >}}
+
 ## Run another task as a step
 
 Calling another task within the same workflow is as simple as using the task name, similar to Makefile targets.
 
 ```yaml {filename="vai.yaml"}
 general-kenobi:
-  - run: echo "General Kenobi"
+  - run: echo "General Kenobi, you are a bold one"
+  - run: echo "RESPONSE"
+    with:
+      response: ${{ input }}
 
 hello:
   - run: echo "Hello There!"
   - uses: general-kenobi
+    with:
+      response: "Your move"
 ```
 
 ```sh
@@ -229,6 +273,9 @@ The `id` field is used to reference the output in subsequent steps.
 
 The `from` function is used to reference the output from a previous step.
 
+{{< tabs items="run,eval" >}}
+{{< tab >}}
+
 ```yaml {filename="vai.yaml"}
 color:
   - run: |
@@ -238,6 +285,23 @@ color:
     with:
       selected: ${{ from "color-selector" "selected-color" }}
 ```
+
+{{< /tab >}}
+{{< tab >}}
+
+```yaml {filename="vai.yaml"}
+color:
+  - eval: |
+      color := "green"
+      vai_output["selected-color"] = color
+    id: color-selector
+  - run: echo "The selected color is $SELECTED"
+    with:
+      selected: ${{ from "color-selector" "selected-color" }}
+```
+
+{{< /tab >}}
+{{< /tabs >}}
 
 ```sh
 vai color

@@ -11,8 +11,12 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
+	"github.com/d5/tengo/v2"
+	"github.com/d5/tengo/v2/stdlib"
+	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -54,6 +58,38 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			continue
 		}
 
+		if step.Eval != "" {
+			printScript(">", step.Eval)
+
+			script := tengo.NewScript([]byte(step.Eval))
+			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
+
+			for k, v := range templated {
+				if err := script.Add(k, v); err != nil {
+					return err
+				}
+			}
+			// this addition will not trigger any error conditions from tengo.FromInterface
+			_ = script.Add("vai_output", map[string]interface{}{})
+
+			compiled, err := script.Compile()
+			if err != nil {
+				return err
+			}
+			if err := compiled.RunContext(ctx); err != nil {
+				return err
+			}
+			if step.ID != "" {
+				out := compiled.Get("vai_output").Map()
+				for k, v := range out {
+					if outputs[step.ID] == nil {
+						outputs[step.ID] = make(map[string]string)
+					}
+					outputs[step.ID][k] = fmt.Sprintf("%v", v)
+				}
+			}
+		}
+
 		if step.Run != "" {
 			outFile, err := os.CreateTemp("", "vai-output-*")
 			if err != nil {
@@ -88,20 +124,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
 
-			customStyles := log.DefaultStyles()
-			customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
-			logger.SetStyles(customStyles)
-
-			lines := strings.Split(step.Run, "\n")
-			for _, line := range lines {
-				trimmed := strings.TrimSpace(line)
-				if trimmed == "" {
-					continue
-				}
-				logger.Printf("$ %s", trimmed)
-			}
-
-			logger.SetStyles(log.DefaultStyles())
+			printScript("$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err
@@ -126,4 +149,42 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 func toEnvVar(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+}
+
+func printScript(prefix, script string) {
+	noColor := _loggerColorProfile == termenv.Ascii
+	if noColor {
+		for _, line := range strings.Split(script, "\n") {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			logger.Printf("%s %s", prefix, line)
+		}
+		return
+	}
+
+	customStyles := log.DefaultStyles()
+	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
+	logger.SetStyles(customStyles)
+	defer logger.SetStyles(log.DefaultStyles())
+
+	var buf strings.Builder
+	style := "catppuccin-latte"
+	if lipgloss.HasDarkBackground() {
+		style = "catppuccin-frappe"
+	}
+	lang := "shell"
+	if prefix == ">" {
+		lang = "go"
+	}
+	if err := quick.Highlight(&buf, script, lang, "terminal256", style); err != nil {
+		logger.Printf("error highlighting source code: %v", err)
+	}
+
+	for _, line := range strings.Split(buf.String(), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		logger.Printf("%s %s", prefix, buf.String())
+	}
 }

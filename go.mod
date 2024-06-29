@@ -5,14 +5,21 @@ module github.com/noxsios/vai
 
 go 1.22.4
 
-retract v0.10.0 // accidentally tagged incorrect version
+retract (
+	v0.10.1 // v0.10.1 was tagged to retract v0.10.0
+	v0.10.0 // accidentally tagged incorrect version
+)
 
 require (
+	github.com/alecthomas/chroma/v2 v2.14.0
 	github.com/charmbracelet/lipgloss v0.11.0
 	github.com/charmbracelet/log v0.4.0
+	github.com/d5/tengo/v2 v2.17.0
+	github.com/expr-lang/expr v1.16.9
 	github.com/goccy/go-yaml v1.11.3
 	github.com/google/go-github/v62 v62.0.0
 	github.com/invopop/jsonschema v0.12.0
+	github.com/muesli/termenv v0.15.2
 	github.com/package-url/packageurl-go v0.1.3
 	github.com/rogpeppe/go-internal v1.12.0
 	github.com/spf13/afero v1.11.0
@@ -28,7 +35,7 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/charmbracelet/x/ansi v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/expr-lang/expr v1.16.9 // indirect
+	github.com/dlclark/regexp2 v1.11.0 // indirect
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -42,7 +49,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
-	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
