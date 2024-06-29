@@ -185,6 +185,6 @@ func printScript(prefix, script string) {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		logger.Printf("%s %s", prefix, buf.String())
+		logger.Printf("%s %s", prefix, line)
 	}
 }
