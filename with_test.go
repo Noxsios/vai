@@ -33,12 +33,16 @@ func TestPerformLookups(t *testing.T) {
 				"os":       "os",
 				"arch":     "arch",
 				"platform": "platform",
+				"boolean":  "true",
+				"int":      "1",
 			},
 			expectedTemplated: With{
 				"key":      "value",
 				"os":       runtime.GOOS,
 				"arch":     runtime.GOARCH,
 				"platform": runtime.GOOS + "/" + runtime.GOARCH,
+				"boolean":  true,
+				"int":      1,
 			},
 		},
 		{
@@ -110,6 +114,15 @@ func TestPerformLookups(t *testing.T) {
  | ^`,
 		},
 		{
+			name: "no value to persist",
+			local: With{
+				"foo": `input | persist()`,
+			},
+			expectedError: `no value to persist (1:9)
+ | input | persist()
+ | ........^`,
+		},
+		{
 			name: "invalid syntax",
 			previous: CommandOutputs{
 				"step-1": map[string]string{
@@ -122,6 +135,20 @@ func TestPerformLookups(t *testing.T) {
 			expectedError: `unexpected token EOF (1:15)
  | input | persist
  | ..............^`,
+		},
+		{
+			name: "impossible - complex data structure",
+			local: With{
+				"foo": struct{ a string }{a: "bar"},
+			},
+			expectedError: `unsupported type struct { a string } for key "foo"`,
+		},
+		{
+			name: "eval to nil",
+			local: With{
+				"foo": "input",
+			},
+			expectedError: `expression "input" evaluated to <nil>`,
 		},
 	}
 
