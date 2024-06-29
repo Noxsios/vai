@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
@@ -29,6 +30,20 @@ func TestRun(t *testing.T) {
 	// fast failure for 404
 	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test")
 	require.EqualError(t, err, "task \"does not exist\" not found")
+
+	// fail on timeout - eval
+	ctx = context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	err = Run(ctx, store, helloWorldWorkflow, "timeout-eval", with, "file:test")
+	require.EqualError(t, err, "context deadline exceeded")
+
+	// fail on timeout - run
+	ctx = context.Background()
+	ctx, cancel = context.WithTimeout(ctx, time.Second)
+	defer cancel()
+	err = Run(ctx, store, helloWorldWorkflow, "timeout-run", with, "file:test")
+	require.EqualError(t, err, "context deadline exceeded")
 }
 
 func TestToEnvVar(t *testing.T) {
