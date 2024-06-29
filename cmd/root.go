@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/log"
+	"github.com/muesli/termenv"
 	"github.com/noxsios/vai"
 	"github.com/noxsios/vai/storage"
 	"github.com/spf13/afero"
@@ -24,12 +25,15 @@ import (
 
 // NewRootCmd creates the root command for the vai CLI.
 func NewRootCmd() *cobra.Command {
-	var w map[string]string
-	var level string
-	var ver bool
-	var list bool
-	var filename string
-	var timeout time.Duration
+	var (
+		w        map[string]string
+		level    string
+		ver      bool
+		list     bool
+		filename string
+		timeout  time.Duration
+		color    bool
+	)
 
 	root := &cobra.Command{
 		Use:   "vai",
@@ -57,6 +61,9 @@ func NewRootCmd() *cobra.Command {
 				return err
 			}
 			vai.SetLogLevel(l)
+			if !color {
+				vai.SetColorProfile(termenv.Ascii)
+			}
 			return nil
 		},
 		SilenceUsage:  true,
@@ -176,6 +183,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVar(&list, "list", false, "list available tasks")
 	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
 	root.Flags().DurationVarP(&timeout, "timeout", "t", time.Hour, "timeout for task execution")
+	root.Flags().BoolVarP(&color, "color", "c", true, "enable/disable color output")
 
 	return root
 }
