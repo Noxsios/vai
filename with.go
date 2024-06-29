@@ -74,8 +74,7 @@ func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []
 		switch v := v.(type) {
 		case string:
 			script = v
-		case int:
-		case bool:
+		case int, bool:
 			// no need to evaluate
 			r[k] = v
 			continue
