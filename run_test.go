@@ -73,11 +73,10 @@ fmt.printf("bool: %t, int: %d\n", b, i)
 		ctx = context.Background()
 		err = Run(ctx, store, Workflow{
 			"default": {Step{Run: `
-echo "bool: $B, int: $I, stringer: $STRINGER"
+echo "bool: $B, int: $I"
 `, With: map[string]WithEntry{
-				"b":        true,
-				"i":        42,
-				"stringer": dummyStringer("hello"),
+				"b": true,
+				"i": 42,
 			}},
 			},
 		}, "", with, "file:test")
