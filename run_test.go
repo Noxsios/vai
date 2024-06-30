@@ -16,12 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type dummyStringer string
-
-func (d dummyStringer) String() string {
-	return string(d)
-}
-
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()

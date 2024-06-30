@@ -104,14 +104,10 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 				switch v := v.(type) {
 				case string:
 					val = v
-				case fmt.Stringer:
-					val = v.String()
 				case int:
 					val = fmt.Sprintf("%d", v)
 				case bool:
 					val = fmt.Sprintf("%t", v)
-				default:
-					val = fmt.Sprintf("%v", v)
 				}
 
 				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), val))
