@@ -11,7 +11,7 @@ color:
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: ${{ from "color-selector" "selected-color" }}
+      selected: from("color-selector","selected-color")
 
 id-with-no-output:
   - eval: |
@@ -19,7 +19,7 @@ id-with-no-output:
       id: color-selector
     - run: echo "The selected color is $SELECTED"
       with:
-        selected: ${{ from "color-selector" "selected-color" }}
+        selected: from("color-selector","selected-color")
 -- stderr.txt --
 > vai_output["selected-color"] = "green"
 $ echo "The selected color is $SELECTED"

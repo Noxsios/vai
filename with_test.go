@@ -29,16 +29,20 @@ func TestPerformLookups(t *testing.T) {
 				"key": "value",
 			},
 			local: With{
-				"key":      "${{ input }}",
-				"os":       "${{ .OS }}",
-				"arch":     "${{ .ARCH }}",
-				"platform": "${{ .PLATFORM }}",
+				"key":      "input",
+				"os":       "os",
+				"arch":     "arch",
+				"platform": "platform",
+				"boolean":  true,
+				"int":      1,
 			},
 			expectedTemplated: With{
 				"key":      "value",
 				"os":       runtime.GOOS,
 				"arch":     runtime.GOARCH,
 				"platform": runtime.GOOS + "/" + runtime.GOARCH,
+				"boolean":  true,
+				"int":      1,
 			},
 		},
 		{
@@ -47,8 +51,8 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "value",
 			},
 			local: With{
-				"foo": "${{ input | default \"default\" }}",
-				"bar": "${{ input | default \"default\" }}",
+				"foo": "input ?? \"value\"",
+				"bar": "input ?? \"default\"",
 			},
 			expectedTemplated: With{
 				"foo": "value",
@@ -61,15 +65,13 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "bar",
 			},
 			local: With{
-				"foo": "${{ input | persist }}",
-				"a":   "b${{ persist }}",
-				"c":   "d",
-				"e":   "${{ persist }}",
+				"foo": "input | persist()",
+				"c":   "'d'",
+				"e":   `"" | persist()`,
 			},
-			expectedPersisted: []string{"foo", "a", "e"},
+			expectedPersisted: []string{"foo", "e"},
 			expectedTemplated: With{
 				"foo": "bar",
-				"a":   "b",
 				"c":   "d",
 				"e":   "",
 			},
@@ -82,7 +84,7 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `from("step-1","bar")`,
 			},
 			expectedTemplated: With{
 				"foo": "baz",
@@ -91,9 +93,11 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - no outputs from step",
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `from("step-1","bar")`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+			expectedError: `no outputs for step "step-1" (1:1)
+ | from("step-1","bar")
+ | ^`,
 		},
 		{
 			name: "lookup from previous outputs - output from step not found",
@@ -103,9 +107,20 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "dne" }}`,
+				"foo": `from("step-1","dne")`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
+			expectedError: `no output "dne" from "step-1" (1:1)
+ | from("step-1","dne")
+ | ^`,
+		},
+		{
+			name: "no value to persist",
+			local: With{
+				"foo": `input | persist()`,
+			},
+			expectedError: `no value to persist (1:9)
+ | input | persist()
+ | ........^`,
 		},
 		{
 			name: "invalid syntax",
@@ -115,9 +130,25 @@ func TestPerformLookups(t *testing.T) {
 				},
 			},
 			local: With{
-				"foo": `${{ input`,
+				"foo": `input | persist`,
 			},
-			expectedError: `template: expression evaluator:1: unclosed action`,
+			expectedError: `unexpected token EOF (1:15)
+ | input | persist
+ | ..............^`,
+		},
+		{
+			name: "impossible - complex data structure",
+			local: With{
+				"foo": struct{ a string }{a: "bar"},
+			},
+			expectedError: `unsupported type struct { a string } for key "foo"`,
+		},
+		{
+			name: "eval to nil",
+			local: With{
+				"foo": "input",
+			},
+			expectedError: `expression "input" evaluated to <nil>`,
 		},
 	}
 

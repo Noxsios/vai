@@ -100,7 +100,17 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 			env := os.Environ()
 			for k, v := range templated {
-				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
+				var val string
+				switch v := v.(type) {
+				case string:
+					val = v
+				case int:
+					val = fmt.Sprintf("%d", v)
+				case bool:
+					val = fmt.Sprintf("%t", v)
+				}
+
+				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), val))
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 			// TODO: handle other shells
@@ -171,6 +181,6 @@ func printScript(prefix, script string) {
 		if strings.TrimSpace(line) == "" {
 			continue
 		}
-		logger.Printf("%s %s", prefix, buf.String())
+		logger.Printf("%s %s", prefix, line)
 	}
 }

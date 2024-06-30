@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
@@ -29,6 +30,58 @@ func TestRun(t *testing.T) {
 	// fast failure for 404
 	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test")
 	require.EqualError(t, err, "task \"does not exist\" not found")
+
+	t.Run("fail on timeout - eval", func(t *testing.T) {
+		ctx := context.TODO()
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err := Run(ctx, store, Workflow{
+			"timeout-eval": {Step{Eval: `
+times := import("times")
+times.sleep(3 * times.second)
+`}},
+		}, "timeout-eval", with, "file:test")
+		require.EqualError(t, err, "context deadline exceeded")
+	})
+
+	t.Run("fail on timeout - run", func(t *testing.T) {
+		ctx = context.TODO()
+		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		defer cancel()
+		err = Run(ctx, store, Workflow{
+			"timeout-run": {Step{Run: "sleep 3"}},
+		}, "timeout-run", with, "file:test")
+		require.EqualError(t, err, "signal: killed")
+	})
+
+	t.Run("boolean and int in with - eval", func(t *testing.T) {
+		ctx = context.Background()
+		err = Run(ctx, store, Workflow{
+			"default": {Step{Eval: `
+fmt := import("fmt")
+fmt.printf("bool: %t, int: %d\n", b, i)
+`, With: map[string]WithEntry{
+				"b": true,
+				"i": 42,
+			}},
+			},
+		}, "", with, "file:test")
+		require.NoError(t, err)
+	})
+
+	t.Run("boolean and int in with - run", func(t *testing.T) {
+		ctx = context.Background()
+		err = Run(ctx, store, Workflow{
+			"default": {Step{Run: `
+echo "bool: $B, int: $I"
+`, With: map[string]WithEntry{
+				"b": true,
+				"i": 42,
+			}},
+			},
+		}, "", with, "file:test")
+		require.NoError(t, err)
+	})
 }
 
 func TestToEnvVar(t *testing.T) {
