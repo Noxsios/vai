@@ -16,6 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type dummyStringer string
+
+func (d dummyStringer) String() string {
+	return string(d)
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
@@ -54,7 +60,7 @@ times.sleep(3 * times.second)
 		require.EqualError(t, err, "signal: killed")
 	})
 
-	t.Run("boolean and int in with", func(t *testing.T) {
+	t.Run("boolean and int in with - eval", func(t *testing.T) {
 		ctx = context.Background()
 		err = Run(ctx, store, Workflow{
 			"default": {Step{Eval: `
@@ -63,6 +69,21 @@ fmt.printf("bool: %t, int: %d\n", b, i)
 `, With: map[string]WithEntry{
 				"b": true,
 				"i": 42,
+			}},
+			},
+		}, "", with, "file:test")
+		require.NoError(t, err)
+	})
+
+	t.Run("boolean and int in with - run", func(t *testing.T) {
+		ctx = context.Background()
+		err = Run(ctx, store, Workflow{
+			"default": {Step{Run: `
+echo "bool: $B, int: $I, stringer: $STRINGER"
+`, With: map[string]WithEntry{
+				"b":        true,
+				"i":        42,
+				"stringer": dummyStringer("hello"),
 			}},
 			},
 		}, "", with, "file:test")
