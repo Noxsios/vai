@@ -11,18 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// helloWorldWorkflow is a simple workflow that prints "Hello World!"
 // do not make changes to this variable within tests
 var helloWorldWorkflow = Workflow{
-	"default":     {Step{Run: "echo 'Hello World!'"}},
-	"a-task":      {Step{Run: "echo 'task a'"}},
-	"task-b":      {Step{Run: "echo 'task b'"}},
-	"timeout-run": {Step{Run: "sleep 3"}},
-	"timeout-eval": {Step{Eval: `
-times := import("times")
-times.sleep(3 * times.second)
-`,
-	}},
+	"default": {Step{Run: "echo 'Hello World!'"}},
+	"a-task":  {Step{Run: "echo 'task a'"}},
+	"task-b":  {Step{Run: "echo 'task b'"}},
 }
 
 func TestWorkflowFind(t *testing.T) {
@@ -39,7 +32,7 @@ func TestWorkflowFind(t *testing.T) {
 
 func TestOrderedTaskNames(t *testing.T) {
 	names := helloWorldWorkflow.OrderedTaskNames()
-	expected := []string{"default", "a-task", "task-b", "timeout-run", "timeout-eval"}
+	expected := []string{"default", "a-task", "task-b"}
 	require.ElementsMatch(t, expected, names)
 
 	wf := Workflow{"foo": nil, "bar": nil, "baz": nil, "default": nil}

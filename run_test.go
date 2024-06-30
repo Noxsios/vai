@@ -35,7 +35,12 @@ func TestRun(t *testing.T) {
 		ctx := context.TODO()
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err := Run(ctx, store, helloWorldWorkflow, "timeout-eval", with, "file:test")
+		err := Run(ctx, store, Workflow{
+			"timeout-eval": {Step{Eval: `
+times := import("times")
+times.sleep(3 * times.second)
+`}},
+		}, "timeout-eval", with, "file:test")
 		require.EqualError(t, err, "context deadline exceeded")
 	})
 
@@ -43,8 +48,25 @@ func TestRun(t *testing.T) {
 		ctx = context.TODO()
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		err = Run(ctx, store, helloWorldWorkflow, "timeout-run", with, "file:test")
+		err = Run(ctx, store, Workflow{
+			"timeout-run": {Step{Run: "sleep 3"}},
+		}, "timeout-run", with, "file:test")
 		require.EqualError(t, err, "signal: killed")
+	})
+
+	t.Run("boolean and int in with", func(t *testing.T) {
+		ctx = context.Background()
+		err = Run(ctx, store, Workflow{
+			"default": {Step{Eval: `
+fmt := import("fmt")
+fmt.printf("bool: %t, int: %d\n", b, i)
+`, With: map[string]WithEntry{
+				"b": true,
+				"i": 42,
+			}},
+			},
+		}, "", with, "file:test")
+		require.NoError(t, err)
 	})
 }
 
