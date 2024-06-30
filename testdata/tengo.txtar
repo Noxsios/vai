@@ -6,19 +6,20 @@ stdout 'The selected color is green'
 
 -- vai.yaml --
 color:
-  - run: |
-      echo "selected-color=green" >> $VAI_OUTPUT
+  - eval: |
+      vai_output["selected-color"] = "green"
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: from("color-selector", "selected-color")
+      selected: from("color-selector","selected-color")
 
 id-with-no-output:
-    - run: echo "selected-color=green"
+  - eval: |
+      vai_output["color"] = "green"
       id: color-selector
     - run: echo "The selected color is $SELECTED"
       with:
-        selected: from("color-selector", "selected-color")
+        selected: from("color-selector","selected-color")
 -- stderr.txt --
-$ echo "selected-color=green" >> $VAI_OUTPUT
+> vai_output["selected-color"] = "green"
 $ echo "The selected color is $SELECTED"

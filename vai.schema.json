@@ -11,6 +11,9 @@
             },
             "uses": {
               "not": true
+            },
+            "eval": {
+              "not": true
             }
           },
           "required": [
@@ -22,12 +25,31 @@
             "run": {
               "not": true
             },
+            "eval": {
+              "not": true
+            },
             "uses": {
               "type": "string"
             }
           },
           "required": [
             "uses"
+          ]
+        },
+        {
+          "properties": {
+            "run": {
+              "not": true
+            },
+            "uses": {
+              "not": true
+            },
+            "eval": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "eval"
           ]
         }
       ],
@@ -39,6 +61,10 @@
         "uses": {
           "type": "string",
           "description": "Location of a remote task to call conforming to the purl spec"
+        },
+        "eval": {
+          "type": "string",
+          "description": "Expression to evaluate with tengo"
         },
         "id": {
           "type": "string",

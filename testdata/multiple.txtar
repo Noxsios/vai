@@ -12,9 +12,9 @@ hello-world:
 echo:
   - run: echo "Hello, $NAME, today is $DATE"
     with:
-      name: ${{ input }}
+      name: input
       # default to "now" if not provided
-      date: ${{ input | default "now" }}
+      date: input ?? "now"
   - uses: hello-world
 -- stderr.txt --
 $ echo "Hello, World!"
