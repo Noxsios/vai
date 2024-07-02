@@ -100,7 +100,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 				switch v := v.(type) {
 				case string:
 					val = v
-				case int:
+				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 					val = fmt.Sprintf("%d", v)
 				case bool:
 					val = fmt.Sprintf("%t", v)

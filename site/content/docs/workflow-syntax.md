@@ -93,14 +93,14 @@ All three can be used interchangeably within a task, and interoperate cleanly wi
 
 ## Passing inputs
 
-`with` follows a syntax similar to GitHub Actions expressions.
+`with` is a map of [Expr](https://expr-lang.org/) expressions.
 
-There are a few built-in functions that can be used in `with`, two shown below are:
+On top of the standard Expr functions and behavior, Vai provides a few additional helpers:
 
-- `input`: grabs the value passed to the task
+- `input`: the value passed to the task at that key
   - If the task is top-level (called via CLI), `with` values are received from the `--with` flag.
   - If the task is called from another task, `with` values are passed from the calling step.
-- `default`: sets a default value if the input is not provided
+- `os`, `arch`, `platform`: the current OS, architecture, or platform
 
 {{< tabs items="run,eval" >}}
 {{< tab >}}
@@ -111,9 +111,14 @@ There are a few built-in functions that can be used in `with`, two shown below a
 echo:
   - run: echo "Hello, $NAME, today is $DATE"
     with:
-      name: ${{ input }}
-      # default to "now" if not provided
-      date: ${{ input | default "now" }}
+      name: input
+      # default to "now" if input is nil
+      date: input ?? "now"
+  - run: echo "The current OS is $OS, architecture is $ARCH, platform is $PLATFORM"
+    with:
+      os: os
+      arch: arch
+      platform: platform
 ```
 
 ```sh
@@ -129,16 +134,16 @@ vai echo --with name=$(whoami) --with date=$(date)
 echo:
   - eval: |
       fmt := import("fmt")
-      if date == "" {
+      if date == "now" {
         times := import("times")
         date = times.time_format(times.now(), "2006-01-02")
       }
       s := fmt.sprintf("Hello, %s, today is %s", name, date)
       fmt.println(s)
     with:
-      name: ${{ input }}
-      # default to "now" if not provided
-      date: ${{ input }}
+      name: input
+      # default to "now" if input is nil
+      date: input ?? "now"
 ```
 
 ```sh
@@ -155,15 +160,15 @@ Calling another task within the same workflow is as simple as using the task nam
 ```yaml {filename="vai.yaml"}
 general-kenobi:
   - run: echo "General Kenobi, you are a bold one"
-  - run: echo "RESPONSE"
+  - run: echo "$RESPONSE"
     with:
-      response: ${{ input }}
+      response: input
 
 hello:
   - run: echo "Hello There!"
   - uses: general-kenobi
     with:
-      response: "Your move"
+      response: "'Your move'"
 ```
 
 ```sh
@@ -184,14 +189,14 @@ If the task name is not provided, the `default` task is run.
 simple:
   - run: echo "$MESSAGE"
     with:
-      message: ${{ input }}
+      message: input
 ```
 
 ```yaml {filename="vai.yaml"}
 echo:
   - uses: file:tasks/echo.yaml?task=simple
     with:
-      message: ${{ input }}
+      message: input
 ```
 
 ```sh

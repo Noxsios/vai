@@ -72,10 +72,17 @@ func Validate(wf Workflow) error {
 					return fmt.Errorf(".%s[%d].uses %q is invalid", name, idx, step.Uses)
 				}
 
-				schemes := []string{"file", "http", "https", "pkg"}
+				if u.Scheme == "" {
+					_, ok := wf.Find(step.Uses)
+					if !ok {
+						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
+					}
+				} else {
+					schemes := []string{"file", "http", "https", "pkg"}
 
-				if !slices.Contains(schemes, u.Scheme) {
-					return fmt.Errorf(".%s[%d].uses %q scheme is not one of [%s]", name, idx, step.Uses, strings.Join(schemes, ", "))
+					if !slices.Contains(schemes, u.Scheme) {
+						return fmt.Errorf(".%s[%d].uses %q scheme is not one of [%s]", name, idx, step.Uses, strings.Join(schemes, ", "))
+					}
 				}
 			}
 
