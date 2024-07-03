@@ -313,6 +313,58 @@ echo:
 				}},
 			}, "", `.echo[0] has both run and uses fields set`,
 		},
+		{
+			"incorrect double usage of run and eval",
+			strings.NewReader(`
+echo:
+  - run: echo
+    eval: 1+1
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run:  "echo",
+					Eval: "1+1",
+				}},
+			}, "", `.echo[0] has both run and eval fields set`,
+		},
+		{
+			"incorrect double usage of uses and eval",
+			strings.NewReader(`
+echo:
+  - uses: dne
+    eval: 1+1
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "dne",
+					Eval: "1+1",
+				}},
+			}, "", `.echo[0] has both eval and uses fields set`,
+		},
+		{
+			"task not found",
+			strings.NewReader(`
+echo:
+  - uses: dne
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "dne",
+				}},
+			}, "", `.echo[0].uses "dne" not found`,
+		},
+		{
+			"unsupported scheme in uses",
+			strings.NewReader(`
+echo:
+  - uses: ssh://dne
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "ssh://dne",
+				}},
+			}, "", `.echo[0].uses "ssh" is not one of [file, http, https, pkg]`,
+		},
 	}
 
 	for _, tc := range testCases {

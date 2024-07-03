@@ -52,9 +52,23 @@ func Validate(wf Workflow) error {
 			return fmt.Errorf("task name %q is invalid", name)
 		}
 
-		ids := make(map[string]int)
+		ids := make(map[string]int, len(task))
 
 		for idx, step := range task {
+			// ensure that only one of run or uses or eval fields is set
+			// if more than one is set, return an error
+			// if none are set, return an error
+			switch {
+			case step.Uses != "" && step.Run != "":
+				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
+			case step.Uses != "" && step.Eval != "":
+				return fmt.Errorf(".%s[%d] has both eval and uses fields set", name, idx)
+			case step.Run != "" && step.Eval != "":
+				return fmt.Errorf(".%s[%d] has both run and eval fields set", name, idx)
+			case step.Uses == "" && step.Run == "" && step.Eval == "":
+				return fmt.Errorf(".%s[%d] must have one of [eval, run, uses] fields set", name, idx)
+			}
+
 			if step.ID != "" {
 				if ok := TaskNamePattern.MatchString(step.ID); !ok {
 					return fmt.Errorf(".%s[%d].id %q is invalid", name, idx, step.ID)
@@ -73,6 +87,9 @@ func Validate(wf Workflow) error {
 				}
 
 				if u.Scheme == "" {
+					// if step.Uses == name {
+					// 	return fmt.Errorf(".%s[%d].uses cannot reference itself", name, idx)
+					// }
 					_, ok := wf.Find(step.Uses)
 					if !ok {
 						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
@@ -81,23 +98,9 @@ func Validate(wf Workflow) error {
 					schemes := []string{"file", "http", "https", "pkg"}
 
 					if !slices.Contains(schemes, u.Scheme) {
-						return fmt.Errorf(".%s[%d].uses %q scheme is not one of [%s]", name, idx, step.Uses, strings.Join(schemes, ", "))
+						return fmt.Errorf(".%s[%d].uses %q is not one of [%s]", name, idx, u.Scheme, strings.Join(schemes, ", "))
 					}
 				}
-			}
-
-			// ensure that only one of run or uses or eval fields is set
-			// if more than one is set, return an error
-			// if none are set, return an error
-			switch {
-			case step.Uses != "" && step.Run != "":
-				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
-			case step.Uses != "" && step.Eval != "":
-				return fmt.Errorf(".%s[%d] has both eval and uses fields set", name, idx)
-			case step.Run != "" && step.Eval != "":
-				return fmt.Errorf(".%s[%d] has both run and eval fields set", name, idx)
-			case step.Uses == "" && step.Run == "" && step.Eval == "":
-				return fmt.Errorf(".%s[%d] must have one of [eval, run, uses] fields set", name, idx)
 			}
 		}
 	}
