@@ -9,12 +9,12 @@ import (
 	"io"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 
 	"github.com/goccy/go-yaml"
 	"github.com/xeipuuv/gojsonschema"
-	"golang.org/x/exp/slices"
 )
 
 // TaskNamePattern is a regular expression for valid task names, it is also used for step IDs
