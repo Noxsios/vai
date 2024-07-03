@@ -397,20 +397,15 @@ echo:
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			wf, err := Read(tc.r)
-			require.Equal(t, tc.wf, wf)
+			wf, err := ReadAndValidate(tc.r)
 			if tc.expectedReadErr != "" {
 				require.EqualError(t, err, tc.expectedReadErr)
-				return
-			}
-			require.NoError(t, err)
-
-			err = Validate(wf)
-			if tc.expectedValidateErr != "" {
+			} else if tc.expectedValidateErr != "" {
 				require.EqualError(t, err, tc.expectedValidateErr)
 			} else {
 				require.NoError(t, err)
 			}
+			require.Equal(t, tc.wf, wf)
 		})
 	}
 }
