@@ -32,17 +32,17 @@ func SetLogLevel(level log.Level) {
 func printScript(prefix, script string) {
 	script = strings.TrimSpace(script)
 
+	customStyles := log.DefaultStyles()
+	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
+	logger.SetStyles(customStyles)
+	defer logger.SetStyles(log.DefaultStyles())
+
 	if termenv.EnvNoColor() {
 		for _, line := range strings.Split(script, "\n") {
 			logger.Printf("%s %s", prefix, line)
 		}
 		return
 	}
-
-	customStyles := log.DefaultStyles()
-	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
-	logger.SetStyles(customStyles)
-	defer logger.SetStyles(log.DefaultStyles())
 
 	var buf strings.Builder
 	style := "catppuccin-latte"

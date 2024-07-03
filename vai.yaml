@@ -17,8 +17,8 @@ test-short:
       short: true
 
 clean:
-  - run: rm -r bin/
-  - run: rm -r coverage.out
+  - run: rm -r bin/ || true
+  - run: rm coverage.out || true
 
 lint:
   - run: golangci-lint run ./...
