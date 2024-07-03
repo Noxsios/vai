@@ -15,7 +15,6 @@ import (
 )
 
 func TestHTTPFetcher(t *testing.T) {
-
 	fetcher := NewHTTPFetcher()
 	ctx := context.Background()
 	hw := `echo: [run: "Hello, World!"]`
@@ -31,6 +30,9 @@ func TestHTTPFetcher(t *testing.T) {
 		_, _ = w.Write([]byte("not found"))
 	}
 	server := httptest.NewServer(http.HandlerFunc(handler))
+	t.Cleanup(func() {
+		server.Close()
+	})
 
 	rc, err := fetcher.Fetch(ctx, server.URL+"/hello-world.yaml")
 	require.NoError(t, err)
@@ -43,4 +45,8 @@ func TestHTTPFetcher(t *testing.T) {
 	rc, err = fetcher.Fetch(ctx, server.URL)
 	require.EqualError(t, err, fmt.Sprintf("failed to fetch %s: 404 Not Found", server.URL))
 	require.Nil(t, rc)
+
+	server.Close()
+	rc, err = fetcher.Fetch(ctx, server.URL+"/hello-world.yaml")
+	require.EqualError(t, err, fmt.Sprintf("Get \"%s/hello-world.yaml\": dial tcp %s: connect: connection refused", server.URL, server.Listener.Addr()))
 }
