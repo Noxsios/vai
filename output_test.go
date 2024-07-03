@@ -89,6 +89,18 @@ c=d`),
 			},
 			expectedErr: "",
 		},
+		{
+			name:        "bad read seeker: fail on read",
+			rs:          &badReadSeeker{failOnRead: true},
+			expected:    nil,
+			expectedErr: "read failed",
+		},
+		{
+			name:        "bad read seeker: fail on read",
+			rs:          &badReadSeeker{failOnSeek: true},
+			expected:    nil,
+			expectedErr: "seek failed",
+		},
 	}
 
 	for _, tc := range testCases {

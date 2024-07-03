@@ -4,6 +4,7 @@
 package vai
 
 import (
+	"fmt"
 	"io"
 	"regexp"
 	"strings"
@@ -19,14 +20,14 @@ type badReadSeeker struct {
 
 func (b badReadSeeker) Read(_ []byte) (n int, err error) {
 	if b.failOnRead {
-		return 0, io.ErrUnexpectedEOF
+		return 0, fmt.Errorf("read failed")
 	}
 	return 0, nil
 }
 
 func (b badReadSeeker) Seek(_ int64, _ int) (int64, error) {
 	if b.failOnSeek {
-		return 0, io.ErrUnexpectedEOF
+		return 0, fmt.Errorf("seek failed")
 	}
 	return 0, nil
 }
@@ -244,12 +245,12 @@ echo:
 		{
 			"bad reader",
 			&badReadSeeker{failOnRead: true},
-			Workflow(nil), "unexpected EOF", "",
+			Workflow(nil), "read failed", "",
 		},
 		{
 			"bad seeker",
 			&badReadSeeker{failOnSeek: true},
-			Workflow(nil), "unexpected EOF", "",
+			Workflow(nil), "seek failed", "",
 		},
 		{
 			"bad task name",
