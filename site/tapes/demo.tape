@@ -14,7 +14,7 @@ Type "cat <<EOF > vai.yaml" Enter
 Type "echo:" Enter
 Type '  - run: echo "\$MESSAGE"' Enter
 Type "    with:" Enter
-Type "      message: \${{ input }}" Enter
+Type "      message: \input" Enter
 Type "" Enter
 Type "remote-echo:" Enter
 Type "  - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml" Enter

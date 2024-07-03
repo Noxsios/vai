@@ -56,7 +56,6 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			script := tengo.NewScript([]byte(step.Eval))
 			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
 
-			logger.Debug("!!", "current", templated)
 			for k, v := range templated {
 				if err := script.Add(k, v); err != nil {
 					return err

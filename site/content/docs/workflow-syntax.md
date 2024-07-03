@@ -268,7 +268,7 @@ color:
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: ${{ from "color-selector" "selected-color" }}
+      selected: from("color-selector", "selected-color")
 ```
 
 {{< /tab >}}
@@ -282,7 +282,7 @@ color:
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: ${{ from "color-selector" "selected-color" }}
+      selected: from("color-selector", "selected-color")
 ```
 
 {{< /tab >}}
