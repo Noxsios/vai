@@ -17,8 +17,6 @@ var logger = log.NewWithOptions(os.Stderr, log.Options{
 	ReportTimestamp: false,
 })
 
-var _loggerColorProfile termenv.Profile
-
 // Logger returns the global logger.
 func Logger() *log.Logger {
 	return logger
@@ -29,19 +27,13 @@ func SetLogLevel(level log.Level) {
 	logger.SetLevel(level)
 }
 
-// SetColorProfile sets the global color profile.
-func SetColorProfile(p termenv.Profile) {
-	_loggerColorProfile = p
-	logger.SetColorProfile(p)
-}
-
+// very side effect heavy
+// should rethink this
 func printScript(prefix, script string) {
-	printColor := _loggerColorProfile != termenv.Ascii
-	if !printColor {
+	script = strings.TrimSpace(script)
+
+	if termenv.EnvNoColor() {
 		for _, line := range strings.Split(script, "\n") {
-			if strings.TrimSpace(line) == "" {
-				continue
-			}
 			logger.Printf("%s %s", prefix, line)
 		}
 		return
@@ -62,16 +54,14 @@ func printScript(prefix, script string) {
 		lang = "go"
 	}
 	if err := quick.Highlight(&buf, script, lang, "terminal256", style); err != nil {
-		logger.Printf("error highlighting source code: %v", err)
+		logger.Debugf("failed to highlight: %v", err)
+		for _, line := range strings.Split(script, "\n") {
+			logger.Printf("%s %s", prefix, line)
+		}
+		return
 	}
 
 	for _, line := range strings.Split(buf.String(), "\n") {
-		// if the line is empty, skip it
-		// if the line is a reset color code, skip it
-		if strings.TrimSpace(line) == "" || strings.TrimSpace(line) == "\x1b[0m" {
-			logger.Printf("%s", line)
-			continue
-		}
 		logger.Printf("%s %s", prefix, line)
 	}
 }

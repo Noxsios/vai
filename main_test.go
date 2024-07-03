@@ -7,17 +7,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/muesli/termenv"
 	"github.com/noxsios/vai"
 	"github.com/noxsios/vai/cmd"
 	"github.com/rogpeppe/go-internal/testscript"
 )
 
 func TestMain(m *testing.M) {
-	// disable colors for testing
-	vai.SetColorProfile(termenv.Ascii)
-	defer vai.SetColorProfile(0)
-
 	os.Exit(testscript.RunMain(m, map[string]func() int{
 		"vai": cmd.Main,
 	}))
@@ -32,6 +27,7 @@ func TestCLI(t *testing.T) {
 		Dir: "testdata",
 		Setup: func(env *testscript.Env) error {
 			env.Setenv(vai.CacheEnvVar, t.TempDir())
+			env.Setenv("NO_COLOR", "true")
 			return nil
 		},
 	})

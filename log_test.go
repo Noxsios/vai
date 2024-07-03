@@ -8,9 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +34,6 @@ func TestPrintScript(t *testing.T) {
 		script   string
 		prefix   string
 		expected string
-		color    bool
 	}{
 		{
 			name:     "simple eval",
@@ -53,28 +51,7 @@ func TestPrintScript(t *testing.T) {
 			name:     "multiline",
 			script:   "echo hello\necho world\n\necho !",
 			prefix:   "$",
-			expected: "$ echo hello\n$ echo world\n$ echo !\n",
-		},
-		{
-			name:     "simple eval with color",
-			script:   `h := "hello"`,
-			prefix:   ">",
-			expected: "\x1b[38;5;188m> \x1b[38;5;189mh\x1b[0m\x1b[38;5;189m \x1b[0m\x1b[1m\x1b[38;5;116m:=\x1b[0m\x1b[38;5;189m \x1b[0m\x1b[38;5;150m\"hello\"\x1b[0m\x1b[0m\n",
-			color:    true,
-		},
-		{
-			name:     "simple shell with color",
-			script:   "echo hello",
-			prefix:   "$",
-			expected: "\x1b[38;5;188m$ \x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m hello\x1b[0m\x1b[0m\n",
-			color:    true,
-		},
-		{
-			name:     "multiline with color",
-			script:   "echo hello\necho world\n\necho !",
-			prefix:   "$",
-			expected: "\x1b[38;5;188m$ \x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m hello\x1b[0m\n\x1b[38;5;188m$ \x1b[0m\x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m world\x1b[0m\n\x1b[38;5;188m$ \x1b[0m\x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m !\x1b[0m\x1b[0m\n",
-			color:    true,
+			expected: "$ echo hello\n$ echo world\n$ \n$ echo !\n",
 		},
 	}
 
@@ -82,27 +59,13 @@ func TestPrintScript(t *testing.T) {
 	logger.SetOutput(&buf)
 	t.Cleanup(func() {
 		logger.SetOutput(os.Stderr)
-		SetColorProfile(lipgloss.ColorProfile())
 	})
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if tc.color {
-				SetColorProfile(termenv.ANSI256)
-			} else {
-				SetColorProfile(termenv.Ascii)
-			}
 			printScript(tc.prefix, tc.script)
-			require.Equal(t, tc.expected, buf.String())
+			require.Equal(t, tc.expected, ansi.Strip(buf.String()))
 			buf.Reset()
 		})
 	}
-}
-
-func TestSetColorProfile(t *testing.T) {
-	SetColorProfile(termenv.Ascii)
-	require.Equal(t, termenv.Ascii, _loggerColorProfile)
-
-	SetColorProfile(lipgloss.ColorProfile())
-	require.Equal(t, lipgloss.ColorProfile(), _loggerColorProfile)
 }
