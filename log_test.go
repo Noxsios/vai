@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/require"
@@ -70,4 +71,12 @@ func TestPrintScript(t *testing.T) {
 			buf.Reset()
 		})
 	}
+}
+
+func TestSetColorProfile(t *testing.T) {
+	SetColorProfile(termenv.Ascii)
+	require.Equal(t, termenv.Ascii, _loggerColorProfile)
+
+	SetColorProfile(lipgloss.ColorProfile())
+	require.Equal(t, lipgloss.ColorProfile(), _loggerColorProfile)
 }
