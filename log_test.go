@@ -35,6 +35,7 @@ func TestPrintScript(t *testing.T) {
 		script   string
 		prefix   string
 		expected string
+		color    bool
 	}{
 		{
 			name:     "simple eval",
@@ -54,18 +55,43 @@ func TestPrintScript(t *testing.T) {
 			prefix:   "$",
 			expected: "$ echo hello\n$ echo world\n$ echo !\n",
 		},
+		{
+			name:     "simple eval with color",
+			script:   `h := "hello"`,
+			prefix:   ">",
+			expected: "\x1b[38;5;188m> \x1b[38;5;189mh\x1b[0m\x1b[38;5;189m \x1b[0m\x1b[1m\x1b[38;5;116m:=\x1b[0m\x1b[38;5;189m \x1b[0m\x1b[38;5;150m\"hello\"\x1b[0m\x1b[0m\n",
+			color:    true,
+		},
+		{
+			name:     "simple shell with color",
+			script:   "echo hello",
+			prefix:   "$",
+			expected: "\x1b[38;5;188m$ \x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m hello\x1b[0m\x1b[0m\n",
+			color:    true,
+		},
+		{
+			name:     "multiline with color",
+			script:   "echo hello\necho world\n\necho !",
+			prefix:   "$",
+			expected: "\x1b[38;5;188m$ \x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m hello\x1b[0m\n\x1b[38;5;188m$ \x1b[0m\x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m world\x1b[0m\n\x1b[38;5;188m$ \x1b[0m\x1b[38;5;116mecho\x1b[0m\x1b[38;5;189m !\x1b[0m\x1b[0m\n",
+			color:    true,
+		},
 	}
 
 	var buf strings.Builder
 	logger.SetOutput(&buf)
-	_loggerColorProfile = termenv.Ascii
 	t.Cleanup(func() {
 		logger.SetOutput(os.Stderr)
-		_loggerColorProfile = 0
+		SetColorProfile(lipgloss.ColorProfile())
 	})
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.color {
+				SetColorProfile(termenv.ANSI256)
+			} else {
+				SetColorProfile(termenv.Ascii)
+			}
 			printScript(tc.prefix, tc.script)
 			require.Equal(t, tc.expected, buf.String())
 			buf.Reset()

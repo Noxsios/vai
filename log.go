@@ -36,8 +36,8 @@ func SetColorProfile(p termenv.Profile) {
 }
 
 func printScript(prefix, script string) {
-	noColor := _loggerColorProfile == termenv.Ascii
-	if noColor {
+	printColor := _loggerColorProfile != termenv.Ascii
+	if !printColor {
 		for _, line := range strings.Split(script, "\n") {
 			if strings.TrimSpace(line) == "" {
 				continue
