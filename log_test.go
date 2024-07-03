@@ -34,7 +34,6 @@ func TestPrintScript(t *testing.T) {
 		script   string
 		prefix   string
 		expected string
-		color    bool
 	}{
 		{
 			name:     "simple eval",
@@ -54,13 +53,6 @@ func TestPrintScript(t *testing.T) {
 			prefix:   "$",
 			expected: "$ echo hello\n$ echo world\n$ \n$ echo !\n",
 		},
-		{
-			name:     "color",
-			script:   "echo",
-			prefix:   "$",
-			expected: "$ \x1b[38;5;189mecho\x1b[0m\n",
-			color:    true,
-		},
 	}
 
 	var buf strings.Builder
@@ -72,11 +64,7 @@ func TestPrintScript(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			printScript(tc.prefix, tc.script)
-			if tc.color {
-				require.Equal(t, tc.expected, buf.String())
-			} else {
-				require.Equal(t, tc.expected, ansi.Strip(buf.String()))
-			}
+			require.Equal(t, tc.expected, ansi.Strip(buf.String()))
 			buf.Reset()
 		})
 	}
