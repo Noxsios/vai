@@ -49,7 +49,7 @@ var _schemaOnce sync.Once
 func Validate(wf Workflow) error {
 	for name, task := range wf {
 		if ok := TaskNamePattern.MatchString(name); !ok {
-			return fmt.Errorf("task name %q is invalid", name)
+			return fmt.Errorf("task name %q does not satisfy %q", name, TaskNamePattern.String())
 		}
 
 		ids := make(map[string]int, len(task))
@@ -71,7 +71,7 @@ func Validate(wf Workflow) error {
 
 			if step.ID != "" {
 				if ok := TaskNamePattern.MatchString(step.ID); !ok {
-					return fmt.Errorf(".%s[%d].id %q is invalid", name, idx, step.ID)
+					return fmt.Errorf(".%s[%d].id %q does not satisfy %q", name, idx, step.ID, TaskNamePattern.String())
 				}
 
 				if _, ok := ids[step.ID]; ok {
@@ -83,7 +83,7 @@ func Validate(wf Workflow) error {
 			if step.Uses != "" {
 				u, err := url.Parse(step.Uses)
 				if err != nil {
-					return fmt.Errorf(".%s[%d].uses %q is invalid", name, idx, step.Uses)
+					return fmt.Errorf(".%s[%d].uses %w", name, idx, err)
 				}
 
 				if u.Scheme == "" {

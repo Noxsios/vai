@@ -261,7 +261,7 @@ echo:
 				"2-echo": Task{Step{
 					Run: "echo",
 				}},
-			}, "", `task name "2-echo" is invalid`,
+			}, "", `task name "2-echo" does not satisfy "^[_a-zA-Z][a-zA-Z0-9_-]*$"`,
 		},
 		{
 			"bad step id",
@@ -275,7 +275,7 @@ echo:
 					Run: "echo",
 					ID:  "&1337",
 				}},
-			}, "", `.echo[0].id "&1337" is invalid`,
+			}, "", `.echo[0].id "&1337" does not satisfy "^[_a-zA-Z][a-zA-Z0-9_-]*$"`,
 		},
 		{
 			"duplicate step ids",
@@ -365,6 +365,30 @@ echo:
 				}},
 			}, "", `.echo[0].uses "ssh" is not one of [file, http, https, pkg]`,
 		},
+		{
+			"must have one of run, uses, or eval",
+			strings.NewReader(`
+echo:
+  - id: echo-5
+			`),
+			Workflow{
+				"echo": Task{Step{
+					ID: "echo-5",
+				}},
+			}, "", `.echo[0] must have one of [eval, run, uses] fields set`,
+		},
+		{
+			"uses is an invalid url",
+			strings.NewReader(`
+echo:
+  - uses: 'https://vai.razzle.cloud|'
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: `https://vai.razzle.cloud|`,
+				}},
+			}, "", `.echo[0].uses parse "https://vai.razzle.cloud|": invalid character "|" in host name`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -374,14 +398,18 @@ echo:
 
 			wf, err := Read(tc.r)
 			require.Equal(t, tc.wf, wf)
-			if err != nil {
+			if tc.expectedReadErr != "" {
 				require.EqualError(t, err, tc.expectedReadErr)
 				return
+			} else {
+				require.NoError(t, err)
 			}
 
 			err = Validate(wf)
-			if err != nil {
+			if tc.expectedValidateErr != "" {
 				require.EqualError(t, err, tc.expectedValidateErr)
+			} else {
+				require.NoError(t, err)
 			}
 		})
 	}
