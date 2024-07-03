@@ -66,7 +66,10 @@ func printScript(prefix, script string) {
 	}
 
 	for _, line := range strings.Split(buf.String(), "\n") {
-		if strings.TrimSpace(line) == "" {
+		// if the line is empty, skip it
+		// if the line is a reset color code, skip it
+		if strings.TrimSpace(line) == "" || strings.TrimSpace(line) == "\x1b[0m" {
+			logger.Printf("%s", line)
 			continue
 		}
 		logger.Printf("%s %s", prefix, line)

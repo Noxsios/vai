@@ -401,9 +401,8 @@ echo:
 			if tc.expectedReadErr != "" {
 				require.EqualError(t, err, tc.expectedReadErr)
 				return
-			} else {
-				require.NoError(t, err)
 			}
+			require.NoError(t, err)
 
 			err = Validate(wf)
 			if tc.expectedValidateErr != "" {
