@@ -29,16 +29,12 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 		return fmt.Errorf("task %q not found", taskName)
 	}
 
-	persist := make(With)
 	outputs := make(CommandOutputs)
 
 	for _, step := range task {
-		templated, toPersist, err := PerformLookups(outer, step.With, outputs)
+		templated, err := PerformLookups(outer, step.With, outputs)
 		if err != nil {
 			return err
-		}
-		for _, k := range toPersist {
-			persist[k] = templated[k]
 		}
 
 		if step.Uses != "" {
@@ -60,6 +56,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			script := tengo.NewScript([]byte(step.Eval))
 			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
 
+			logger.Debug("!!", "current", templated)
 			for k, v := range templated {
 				if err := script.Add(k, v); err != nil {
 					return err

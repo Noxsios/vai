@@ -250,26 +250,6 @@ remote-echo:
 vai remote-echo
 ```
 
-## Persist variables between steps
-
-Setting a variable with `persist` will persist it for the remaining steps in the task and can be overridden per-step.
-
-```yaml {filename="vai.yaml",hl_lines=[4]}
-set-name:
-  - run: echo "Setting name to $NAME"
-    with:
-      name: ${{ input | persist }}
-  - run: echo "Hello, $NAME"
-  - run: echo "$NAME can be overridden per-step, but will persist between steps"
-    with:
-      name: "World"
-  - run: echo "See? $NAME"
-```
-
-```sh
-vai set-name --with name="Universe"
-```
-
 ## Passing outputs
 
 This leverages the same mechanism as GitHub Actions.

@@ -17,7 +17,6 @@ func TestPerformLookups(t *testing.T) {
 		local             With
 		previous          CommandOutputs
 		expectedTemplated With
-		expectedPersisted []string
 		expectedError     string
 	}{
 		{
@@ -60,23 +59,6 @@ func TestPerformLookups(t *testing.T) {
 			},
 		},
 		{
-			name: "persisted lookups",
-			input: With{
-				"foo": "bar",
-			},
-			local: With{
-				"foo": "input | persist()",
-				"c":   "'d'",
-				"e":   `"" | persist()`,
-			},
-			expectedPersisted: []string{"foo", "e"},
-			expectedTemplated: With{
-				"foo": "bar",
-				"c":   "d",
-				"e":   "",
-			},
-		},
-		{
 			name: "lookup from previous outputs",
 			previous: CommandOutputs{
 				"step-1": map[string]string{
@@ -114,15 +96,6 @@ func TestPerformLookups(t *testing.T) {
  | ^`,
 		},
 		{
-			name: "no value to persist",
-			local: With{
-				"foo": `input | persist()`,
-			},
-			expectedError: `no value to persist (1:9)
- | input | persist()
- | ........^`,
-		},
-		{
 			name: "invalid syntax",
 			previous: CommandOutputs{
 				"step-1": map[string]string{
@@ -156,12 +129,11 @@ func TestPerformLookups(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			templated, persisted, err := PerformLookups(tc.input, tc.local, tc.previous)
+			templated, err := PerformLookups(tc.input, tc.local, tc.previous)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedError)
 			}
 			require.Equal(t, tc.expectedTemplated, templated)
-			require.ElementsMatch(t, tc.expectedPersisted, persisted)
 		})
 	}
 }
