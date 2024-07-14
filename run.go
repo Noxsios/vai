@@ -11,12 +11,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/alecthomas/chroma/v2/quick"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
 	"github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/stdlib"
-	"github.com/muesli/termenv"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -33,16 +29,12 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 		return fmt.Errorf("task %q not found", taskName)
 	}
 
-	persist := make(With)
 	outputs := make(CommandOutputs)
 
 	for _, step := range task {
-		templated, toPersist, err := PerformLookups(outer, step.With, outputs)
+		templated, err := PerformLookups(outer, step.With, outputs)
 		if err != nil {
 			return err
-		}
-		for _, k := range toPersist {
-			persist[k] = templated[k]
 		}
 
 		if step.Uses != "" {
@@ -104,7 +96,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 				switch v := v.(type) {
 				case string:
 					val = v
-				case int:
+				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 					val = fmt.Sprintf("%d", v)
 				case bool:
 					val = fmt.Sprintf("%t", v)
@@ -145,42 +137,4 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 func toEnvVar(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
-}
-
-func printScript(prefix, script string) {
-	noColor := _loggerColorProfile == termenv.Ascii
-	if noColor {
-		for _, line := range strings.Split(script, "\n") {
-			if strings.TrimSpace(line) == "" {
-				continue
-			}
-			logger.Printf("%s %s", prefix, line)
-		}
-		return
-	}
-
-	customStyles := log.DefaultStyles()
-	customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#2f333a", Dark: "#d0d0d0"})
-	logger.SetStyles(customStyles)
-	defer logger.SetStyles(log.DefaultStyles())
-
-	var buf strings.Builder
-	style := "catppuccin-latte"
-	if lipgloss.HasDarkBackground() {
-		style = "catppuccin-frappe"
-	}
-	lang := "shell"
-	if prefix == ">" {
-		lang = "go"
-	}
-	if err := quick.Highlight(&buf, script, lang, "terminal256", style); err != nil {
-		logger.Printf("error highlighting source code: %v", err)
-	}
-
-	for _, line := range strings.Split(buf.String(), "\n") {
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		logger.Printf("%s %s", prefix, line)
-	}
 }

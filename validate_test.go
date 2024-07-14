@@ -4,6 +4,7 @@
 package vai
 
 import (
+	"fmt"
 	"io"
 	"regexp"
 	"strings"
@@ -19,14 +20,14 @@ type badReadSeeker struct {
 
 func (b badReadSeeker) Read(_ []byte) (n int, err error) {
 	if b.failOnRead {
-		return 0, io.ErrUnexpectedEOF
+		return 0, fmt.Errorf("read failed")
 	}
 	return 0, nil
 }
 
 func (b badReadSeeker) Seek(_ int64, _ int) (int64, error) {
 	if b.failOnSeek {
-		return 0, io.ErrUnexpectedEOF
+		return 0, fmt.Errorf("seek failed")
 	}
 	return 0, nil
 }
@@ -244,12 +245,12 @@ echo:
 		{
 			"bad reader",
 			&badReadSeeker{failOnRead: true},
-			Workflow(nil), "unexpected EOF", "",
+			Workflow(nil), "read failed", "",
 		},
 		{
 			"bad seeker",
 			&badReadSeeker{failOnSeek: true},
-			Workflow(nil), "unexpected EOF", "",
+			Workflow(nil), "seek failed", "",
 		},
 		{
 			"bad task name",
@@ -261,7 +262,7 @@ echo:
 				"2-echo": Task{Step{
 					Run: "echo",
 				}},
-			}, "", `task name "2-echo" is invalid`,
+			}, "", `task name "2-echo" does not satisfy "^[_a-zA-Z][a-zA-Z0-9_-]*$"`,
 		},
 		{
 			"bad step id",
@@ -275,7 +276,7 @@ echo:
 					Run: "echo",
 					ID:  "&1337",
 				}},
-			}, "", `.echo[0].id "&1337" is invalid`,
+			}, "", `.echo[0].id "&1337" does not satisfy "^[_a-zA-Z][a-zA-Z0-9_-]*$"`,
 		},
 		{
 			"duplicate step ids",
@@ -313,6 +314,82 @@ echo:
 				}},
 			}, "", `.echo[0] has both run and uses fields set`,
 		},
+		{
+			"incorrect double usage of run and eval",
+			strings.NewReader(`
+echo:
+  - run: echo
+    eval: 1+1
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Run:  "echo",
+					Eval: "1+1",
+				}},
+			}, "", `.echo[0] has both run and eval fields set`,
+		},
+		{
+			"incorrect double usage of uses and eval",
+			strings.NewReader(`
+echo:
+  - uses: dne
+    eval: 1+1
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "dne",
+					Eval: "1+1",
+				}},
+			}, "", `.echo[0] has both eval and uses fields set`,
+		},
+		{
+			"task not found",
+			strings.NewReader(`
+echo:
+  - uses: dne
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "dne",
+				}},
+			}, "", `.echo[0].uses "dne" not found`,
+		},
+		{
+			"unsupported scheme in uses",
+			strings.NewReader(`
+echo:
+  - uses: ssh://dne
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: "ssh://dne",
+				}},
+			}, "", `.echo[0].uses "ssh" is not one of [file, http, https, pkg]`,
+		},
+		{
+			"must have one of run, uses, or eval",
+			strings.NewReader(`
+echo:
+  - id: echo-5
+			`),
+			Workflow{
+				"echo": Task{Step{
+					ID: "echo-5",
+				}},
+			}, "", `.echo[0] must have one of [eval, run, uses] fields set`,
+		},
+		{
+			"uses is an invalid url",
+			strings.NewReader(`
+echo:
+  - uses: 'https://vai.razzle.cloud|'
+			`),
+			Workflow{
+				"echo": Task{Step{
+					Uses: `https://vai.razzle.cloud|`,
+				}},
+			}, "", `.echo[0].uses parse "https://vai.razzle.cloud|": invalid character "|" in host name`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -320,17 +397,15 @@ echo:
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			wf, err := Read(tc.r)
-			require.Equal(t, tc.wf, wf)
-			if err != nil {
+			wf, err := ReadAndValidate(tc.r)
+			if tc.expectedReadErr != "" {
 				require.EqualError(t, err, tc.expectedReadErr)
-				return
-			}
-
-			err = Validate(wf)
-			if err != nil {
+			} else if tc.expectedValidateErr != "" {
 				require.EqualError(t, err, tc.expectedValidateErr)
+			} else {
+				require.NoError(t, err)
 			}
+			require.Equal(t, tc.wf, wf)
 		})
 	}
 }

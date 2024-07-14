@@ -17,7 +17,6 @@ func TestParseOutputFile(t *testing.T) {
 		rs          io.ReadSeeker
 		expected    map[string]string
 		expectedErr string
-		initialRead int
 	}{
 		{
 			name:        "empty file",
@@ -89,17 +88,24 @@ c=d`),
 			},
 			expectedErr: "",
 		},
+		{
+			name:        "bad read seeker: fail on read",
+			rs:          &badReadSeeker{failOnRead: true},
+			expected:    nil,
+			expectedErr: "read failed",
+		},
+		{
+			name:        "bad read seeker: fail on read",
+			rs:          &badReadSeeker{failOnSeek: true},
+			expected:    nil,
+			expectedErr: "seek failed",
+		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
-			if tc.initialRead != 0 {
-				_, err := tc.rs.Seek(0, tc.initialRead)
-				require.NoError(t, err)
-			}
 
 			outputs, err := ParseOutput(tc.rs)
 			if err != nil {

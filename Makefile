@@ -6,17 +6,9 @@
 build:
 	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
 
-test:
-	go test -race -cover -coverprofile=coverage.out -failfast -timeout 3m ./...
-
-test-short:
-	go test -race -cover -coverprofile=coverage.out -failfast -timeout 3m ./... -short
-
-clean:
-	rm -rf bin/
+alias:
+	@echo "alias vai='$(PWD)/bin/vai'" >>  ~/.config/fish/config.fish
+	@echo "VAI_COMPLETION=true vai completion fish | source" >> ~/.config/fish/config.fish
 
 hello-world:
 	echo "Hello, World!"
-
-benchmark:
-	hyperfine './bin/vai hello-world' 'make hello-world' -N --warmup 10

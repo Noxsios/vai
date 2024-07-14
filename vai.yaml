@@ -1,4 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 # yaml-language-server: $schema=vai.schema.json
+
+test:
+  - run: |
+      go test -race -covermode=atomic -coverprofile=coverage.out -failfast -timeout 3m ./... -short="$SHORT"
+    with:
+      short: input ?? false
+
+test-short:
+  - uses: test
+    with:
+      short: true
+
+view-cov:
+  - run: go tool cover -html=coverage.out
+
+clean:
+  - run: rm -r bin/ || true
+  - run: rm coverage.out || true
+
+lint:
+  - run: golangci-lint run ./...
 
 hello-world:
   - run: echo "Hello, World!"
+
+benchmark:
+  - run: hyperfine './bin/vai hello-world' 'make hello-world' -N --warmup 10
