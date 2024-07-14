@@ -26,7 +26,7 @@ go install github.com/noxsios/vai/cmd/vai@main
 
 ## Example
 
-![demo](https://github.com/Noxsios/vai/assets/50058333/850b79e5-4ebf-4b59-8e29-95102f50d759)
+![demo](https://github.com/user-attachments/assets/b11527b0-c4af-4f0c-b280-0fe18507a22c)
 
 Checkout more examples in the [docs](https://vai.razzle.cloud/docs/).
 
