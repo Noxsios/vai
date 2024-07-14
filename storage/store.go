@@ -93,14 +93,15 @@ type Store struct {
 
 	fs afero.Fs
 
-	sync sync.RWMutex
+	mu sync.RWMutex
 }
 
 // New creates a new store at the given path.
 func New(fs afero.Fs) (*Store, error) {
 	index := NewCacheIndex()
 
-	if _, err := fs.Stat(IndexFileName); os.IsNotExist(err) {
+	_, err := fs.Stat(IndexFileName)
+	if os.IsNotExist(err) {
 		f, err := fs.Create(IndexFileName)
 		if err != nil {
 			return nil, err
@@ -113,15 +114,15 @@ func New(fs afero.Fs) (*Store, error) {
 		}
 	} else if err != nil {
 		return nil, err
-	} else {
-		b, err := afero.ReadFile(fs, IndexFileName)
-		if err != nil {
-			return nil, err
-		}
+	}
 
-		if err := json.Unmarshal(b, index); err != nil {
-			return nil, err
-		}
+	b, err := afero.ReadFile(fs, IndexFileName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(b, index); err != nil {
+		return nil, err
 	}
 
 	return &Store{
@@ -132,8 +133,8 @@ func New(fs afero.Fs) (*Store, error) {
 
 // Fetch retrieves a workflow from the store
 func (s *Store) Fetch(desc Descriptor) (io.ReadCloser, error) {
-	s.sync.RLock()
-	defer s.sync.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	desc, ok := s.index.Find(desc)
 	if !ok {
@@ -150,8 +151,8 @@ func (s *Store) Fetch(desc Descriptor) (io.ReadCloser, error) {
 
 // Store a workflow in the store.
 func (s *Store) Store(r io.Reader) error {
-	s.sync.Lock()
-	defer s.sync.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	hasher := sha256.New()
 
@@ -184,8 +185,8 @@ func (s *Store) Store(r io.Reader) error {
 
 // Delete a workflow from the store.
 func (s *Store) Delete(desc Descriptor) error {
-	s.sync.Lock()
-	defer s.sync.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	desc, ok := s.index.Find(desc)
 	if !ok {
@@ -208,8 +209,8 @@ func (s *Store) Delete(desc Descriptor) error {
 
 // Exists checks if a workflow exists in the store.
 func (s *Store) Exists(desc Descriptor) (bool, error) {
-	s.sync.RLock()
-	defer s.sync.RUnlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	desc, ok := s.index.Find(desc)
 	if !ok {
