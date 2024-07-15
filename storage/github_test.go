@@ -16,7 +16,7 @@ func TestGitHubFetcher(t *testing.T) {
 		t.Skip("skipping tests that require network access")
 	}
 
-	uses := "pkg:github/noxsios/vai@main?task=hello-world#vai.yaml"
+	uses := "pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml"
 
 	ctx := context.Background()
 
@@ -24,8 +24,8 @@ func TestGitHubFetcher(t *testing.T) {
 
 	desc, err := client.Describe(ctx, uses)
 	require.NoError(t, err)
-	require.Equal(t, "89385d0bd4358fa98a3724eb6cd4f33819b90012201ab2f27c08ba2d19a85919", desc.Hex)
-	require.Equal(t, int64(92), desc.Size)
+	require.Equal(t, "53df01bd752c536a52836ccf988f656c3e4ed9d728aabed9974ac62453488840", desc.Hex)
+	require.Equal(t, int64(122), desc.Size)
 
 	rc, err := client.Fetch(ctx, uses)
 	require.NoError(t, err)
@@ -33,9 +33,12 @@ func TestGitHubFetcher(t *testing.T) {
 	b, err := io.ReadAll(rc)
 	require.NoError(t, err)
 
-	require.Equal(t, `# yaml-language-server: $schema=vai.schema.json
+	require.Equal(t, `# yaml-language-server: $schema=../vai.schema.json
 
-hello-world:
-  - run: echo "Hello, World!"
+echo:
+  - run: |
+      echo "$MESSAGE"
+    with:
+      message: input
 `, string(b))
 }

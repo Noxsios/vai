@@ -4,10 +4,11 @@
 package vai
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 
-	"github.com/expr-lang/expr"
+	"github.com/d5/tengo/v2"
 )
 
 // WithEntry is a single entry in a With map
@@ -21,7 +22,7 @@ type WithEntry any
 type With map[string]WithEntry
 
 // PerformLookups evaluates the expressions in the local With map
-func PerformLookups(outer, local With, previousOutputs CommandOutputs) (With, error) {
+func PerformLookups(ctx context.Context, outer, local With, previousOutputs CommandOutputs) (With, error) {
 	if len(local) == 0 {
 		return local, nil
 	}
@@ -31,6 +32,11 @@ func PerformLookups(outer, local With, previousOutputs CommandOutputs) (With, er
 	r := make(With, len(local))
 
 	for k, v := range local {
+		if _, ok := v.(string); !ok {
+			r[k] = v
+			continue
+		}
+
 		env := map[string]interface{}{
 			"os":       runtime.GOOS,
 			"arch":     runtime.GOARCH,
@@ -38,50 +44,27 @@ func PerformLookups(outer, local With, previousOutputs CommandOutputs) (With, er
 			"input":    outer[k],
 		}
 
-		from := expr.Function("from", func(params ...any) (any, error) {
-			stepName := params[0].(string)
-			id := params[1].(string)
+		steps := map[string]tengo.Object{}
 
-			stepOutputs, ok := previousOutputs[stepName]
-			if !ok {
-				return "", fmt.Errorf("no outputs for step %q", stepName)
+		for k, v := range previousOutputs {
+			obj, err := tengo.FromInterface(v)
+			if err != nil {
+				return nil, err
 			}
-
-			v, ok := stepOutputs[id]
-			if ok {
-				return v, nil
-			}
-			return "", fmt.Errorf("no output %q from %q", id, stepName)
-		},
-			new(func(string, string) (string, error)),
-		)
-
-		var script string
-
-		switch v := v.(type) {
-		case string:
-			script = v
-		case int, bool, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-			// no need to evaluate
-			r[k] = v
-			continue
-		default:
-			// should never happen in CLI due to schema validation
-			return nil, fmt.Errorf("unsupported type %T for key %q", v, k)
+			steps[k] = obj
 		}
 
-		program, err := expr.Compile(script, expr.Env(env), from)
+		env["steps"] = steps
+
+		out, err := tengo.Eval(ctx,
+			// we can safely assume that v is a string here
+			v.(string),
+			env)
 		if err != nil {
 			return nil, err
 		}
-
-		out, err := expr.Run(program, env)
-		if err != nil {
-			return nil, err
-		}
-		// ensure output is not nil
 		if out == nil {
-			return nil, fmt.Errorf("expression %q evaluated to <nil>", script)
+			return nil, fmt.Errorf("expression evaluated to <nil>:\n\t%s", v.(string))
 		}
 		r[k] = out
 	}
