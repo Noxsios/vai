@@ -41,8 +41,9 @@ bump-and-tag:
       version.patch += 1
       version.prerelease = ""
       version.metadata = ""
-      fmt.println(semver.to_string(version))
-      vai_output["next"] = version
+      next := semver.to_string(version)
+      fmt.println(next)
+      vai_output["next"] = next
     with:
       latest: steps["fetch-tags"].latest
     id: bump-version
