@@ -217,7 +217,7 @@ vai echo --with message="Hello, World!"
 remote-echo:
   - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
-      message: "Hello, World!"
+      message: '"Hello, World!"'
 ```
 
 {{< /tab >}}
@@ -228,7 +228,7 @@ remote-echo:
 remote-echo:
   - uses: pkg:gitlab/noxsios/vai@main?task=echo#testdata/simple.yaml
     with:
-      message: "Hello, World!"
+      message: '"Hello, World!"'
 ```
 
 {{< /tab >}}
@@ -239,7 +239,7 @@ remote-echo:
 remote-echo:
   - uses: https://raw.githubusercontent.com/noxsios/vai/main/testdata/simple.yaml?task=echo
     with:
-      message: "Hello, World!"
+      message: '"Hello, World!"'
 ```
 
 {{< /tab >}}
@@ -268,7 +268,7 @@ color:
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: from("color-selector", "selected-color")
+      selected: steps["color-selector"]["selected-color"]
 ```
 
 {{< /tab >}}
@@ -282,7 +282,7 @@ color:
     id: color-selector
   - run: echo "The selected color is $SELECTED"
     with:
-      selected: from("color-selector", "selected-color")
+      selected: steps["color-selector"]["selected-color"]
 ```
 
 {{< /tab >}}
