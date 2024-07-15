@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+
+// Package modv provides extra tengo modules for vai.
 package modv
 
 import (
@@ -5,6 +9,7 @@ import (
 	"github.com/d5/tengo/v2"
 )
 
+// SemverModule is a map of semver-related functions.
 var SemverModule = map[string]tengo.Object{
 	"new_version": &tengo.UserFunction{
 		Name:  "new_version",
@@ -48,5 +53,6 @@ func semverNewVersion(args ...tengo.Object) (tengo.Object, error) {
 			"metadata": &tengo.String{
 				Value: v.Metadata(),
 			},
-		}}, nil
+		},
+	}, nil
 }
