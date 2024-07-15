@@ -31,7 +31,7 @@ benchmark:
 
 bump-and-tag:
   - run: |
-      git fetch --tags
+      git fetch --tags --quiet
       echo latest=$(git describe --tags $(git rev-list --tags --max-count=1)) >> $VAI_OUTPUT
     id: fetch-tags
   - eval: |
@@ -39,8 +39,11 @@ bump-and-tag:
       semver := import("semver")
       version := semver.new_version(latest)
       version.patch += 1
-      fmt.println(version)
-      vai_output["next"] = version
+      version.prerelease = ""
+      version.metadata = ""
+      next := semver.to_string(version)
+      fmt.println(next)
+      vai_output["next"] = next
     with:
       latest: steps["fetch-tags"].latest
     id: bump-version
