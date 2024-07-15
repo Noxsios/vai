@@ -6,6 +6,7 @@ package vai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/stdlib"
+	"github.com/noxsios/vai/modv"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -32,7 +34,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 	outputs := make(CommandOutputs)
 
 	for _, step := range task {
-		templated, err := PerformLookups(outer, step.With, outputs)
+		templated, err := PerformLookups(ctx, outer, step.With, outputs)
 		if err != nil {
 			return err
 		}
@@ -54,7 +56,9 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			printScript(">", step.Eval)
 
 			script := tengo.NewScript([]byte(step.Eval))
-			script.SetImports(stdlib.GetModuleMap(stdlib.AllModuleNames()...))
+			mods := stdlib.GetModuleMap(stdlib.AllModuleNames()...)
+			mods.AddBuiltinModule("semver", modv.SemverModule)
+			script.SetImports(mods)
 
 			for k, v := range templated {
 				if err := script.Add(k, v); err != nil {
@@ -72,13 +76,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 				return err
 			}
 			if step.ID != "" {
-				out := compiled.Get("vai_output").Map()
-				for k, v := range out {
-					if outputs[step.ID] == nil {
-						outputs[step.ID] = make(map[string]string)
-					}
-					outputs[step.ID][k] = fmt.Sprintf("%v", v)
-				}
+				outputs[step.ID] = compiled.Get("vai_output").Map()
 			}
 		}
 
@@ -100,6 +98,13 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 					val = fmt.Sprintf("%d", v)
 				case bool:
 					val = fmt.Sprintf("%t", v)
+				default:
+					// JSON marshal all other types
+					b, err := json.Marshal(v)
+					if err != nil {
+						return err
+					}
+					val = string(b)
 				}
 
 				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), val))
@@ -127,7 +132,10 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 					continue
 				}
 				// TODO: conflicted about whether to save the contents of the file or just the file path
-				outputs[step.ID] = out
+				outputs[step.ID] = make(map[string]any)
+				for k, v := range out {
+					outputs[step.ID][k] = v
+				}
 			}
 		}
 	}

@@ -4,6 +4,7 @@
 package vai
 
 import (
+	"context"
 	"runtime"
 	"testing"
 
@@ -50,8 +51,8 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "value",
 			},
 			local: With{
-				"foo": "input ?? \"value\"",
-				"bar": "input ?? \"default\"",
+				"foo": "input || \"value\"",
+				"bar": "input || \"default\"",
 			},
 			expectedTemplated: With{
 				"foo": "value",
@@ -61,12 +62,12 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `from("step-1","bar")`,
+				"foo": `steps["step-1"].bar`,
 			},
 			expectedTemplated: With{
 				"foo": "baz",
@@ -75,53 +76,40 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - no outputs from step",
 			local: With{
-				"foo": `from("step-1","bar")`,
+				"foo": `steps["step-1"].bar`,
 			},
-			expectedError: `no outputs for step "step-1" (1:1)
- | from("step-1","bar")
- | ^`,
+			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].bar",
 		},
 		{
 			name: "lookup from previous outputs - output from step not found",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `from("step-1","dne")`,
+				"foo": `steps["step-1"].dne`,
 			},
-			expectedError: `no output "dne" from "step-1" (1:1)
- | from("step-1","dne")
- | ^`,
+			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].dne",
 		},
 		{
 			name: "invalid syntax",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
 				"foo": `input | persist`,
 			},
-			expectedError: `unexpected token EOF (1:15)
- | input | persist
- | ..............^`,
-		},
-		{
-			name: "impossible - complex data structure",
-			local: With{
-				"foo": struct{ a string }{a: "bar"},
-			},
-			expectedError: `unsupported type struct { a string } for key "foo"`,
+			expectedError: "script run: Compile Error: unresolved reference 'persist'\n\tat (main):1:21",
 		},
 		{
 			name: "eval to nil",
 			local: With{
 				"foo": "input",
 			},
-			expectedError: `expression "input" evaluated to <nil>`,
+			expectedError: "expression evaluated to <nil>:\n\tinput",
 		},
 	}
 
@@ -129,7 +117,7 @@ func TestPerformLookups(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			templated, err := PerformLookups(tc.input, tc.local, tc.previous)
+			templated, err := PerformLookups(context.TODO(), tc.input, tc.local, tc.previous)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedError)
 			}
