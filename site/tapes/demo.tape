@@ -21,9 +21,9 @@ Type "remote-echo:" Enter
 Type "  - uses: pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml" Enter
 Type "    with:" Enter
 Type "      message: "
-Type '"'
-Type "'hello from main'
-Type '"' Enter
+Type "'"
+Type '"hello from main"'
+Type "'" Enter
 Type "EOF" Enter
 Ctrl+L
 Show

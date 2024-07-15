@@ -93,9 +93,9 @@ All three can be used interchangeably within a task, and interoperate cleanly wi
 
 ## Passing inputs
 
-`with` is a map of [Expr](https://expr-lang.org/) expressions.
+`with` is a map of [Tengo](https://github.com/d5/tengo) expressions.
 
-On top of the standard Expr functions and behavior, Vai provides a few additional helpers:
+On top of the builtin behavior, Vai provides a few additional helpers:
 
 - `input`: the value passed to the task at that key
   - If the task is top-level (called via CLI), `with` values are received from the `--with` flag.
@@ -113,7 +113,7 @@ echo:
     with:
       name: input
       # default to "now" if input is nil
-      date: input ?? "now"
+      date: input || "now"
   - run: echo "The current OS is $OS, architecture is $ARCH, platform is $PLATFORM"
     with:
       os: os
@@ -143,7 +143,7 @@ echo:
     with:
       name: input
       # default to "now" if input is nil
-      date: input ?? "now"
+      date: input || "now"
 ```
 
 ```sh
@@ -168,7 +168,7 @@ hello:
   - run: echo "Hello There!"
   - uses: general-kenobi
     with:
-      response: "'Your move'"
+      response: Your move
 ```
 
 ```sh
