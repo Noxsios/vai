@@ -262,11 +262,6 @@ The `id` field is used to reference the output in subsequent steps.
 {{< tab >}}
 
 ```yaml {filename="vai.yaml"}
-
-{{< tabs items="run,eval" >}}
-{{< tab >}}
-
-```yaml {filename="vai.yaml"}
 color:
   - run: |
       echo "selected-color=green" >> $VAI_OUTPUT
