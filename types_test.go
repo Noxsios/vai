@@ -11,9 +11,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// helloWorldWorkflow is a simple workflow that prints "Hello World!"
 // do not make changes to this variable within tests
-var helloWorldWorkflow = Workflow{"default": {Step{Run: "echo 'Hello World!'"}}, "a-task": {Step{Run: "echo 'task a'"}}, "task-b": {Step{Run: "echo 'task b'"}}}
+var helloWorldWorkflow = Workflow{
+	"default": {Step{Run: "echo 'Hello World!'"}},
+	"a-task":  {Step{Run: "echo 'task a'"}},
+	"task-b":  {Step{Run: "echo 'task b'"}},
+}
 
 func TestWorkflowFind(t *testing.T) {
 	task, ok := helloWorldWorkflow.Find(DefaultTaskName)

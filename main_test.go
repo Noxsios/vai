@@ -27,6 +27,7 @@ func TestCLI(t *testing.T) {
 		Dir: "testdata",
 		Setup: func(env *testscript.Env) error {
 			env.Setenv(vai.CacheEnvVar, t.TempDir())
+			env.Setenv("NO_COLOR", "true")
 			return nil
 		},
 	})

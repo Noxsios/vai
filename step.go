@@ -9,13 +9,15 @@ import (
 
 // Step is a single step in a task
 //
-// While a step can have both `run` and `uses` fields, only one of them can be set
+// While a step can have any combination of `run`, `eval`, and `uses` fields, only one of them should be set
 // at a time.
 //
 // This is enforced by JSON schema validation.
 type Step struct {
 	// Run is the command/script to run
 	Run string `json:"run,omitempty"`
+	// Eval is an expression to evaluate with tengo
+	Eval string `json:"eval,omitempty"`
 	// Uses is a reference to another task
 	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
@@ -40,6 +42,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Location of a remote task to call conforming to the purl spec",
+	})
+	props.Set("eval", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Expression to evaluate with tengo",
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
@@ -83,6 +89,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type: "string",
 	})
 	runProps.Set("uses", not)
+	runProps.Set("eval", not)
 	oneOfRun := &jsonschema.Schema{
 		Required:   []string{"run"},
 		Properties: runProps,
@@ -90,6 +97,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 	usesProps := jsonschema.NewProperties()
 	usesProps.Set("run", not)
+	usesProps.Set("eval", not)
 	usesProps.Set("uses", &jsonschema.Schema{
 		Type: "string",
 	})
@@ -98,9 +106,21 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Properties: usesProps,
 	}
 
+	evalProps := jsonschema.NewProperties()
+	evalProps.Set("run", not)
+	evalProps.Set("uses", not)
+	evalProps.Set("eval", &jsonschema.Schema{
+		Type: "string",
+	})
+	oneOfEval := &jsonschema.Schema{
+		Required:   []string{"eval"},
+		Properties: evalProps,
+	}
+
 	schema.Properties = props
 	schema.OneOf = []*jsonschema.Schema{
 		oneOfRun,
 		oneOfUses,
+		oneOfEval,
 	}
 }

@@ -24,12 +24,14 @@ import (
 
 // NewRootCmd creates the root command for the vai CLI.
 func NewRootCmd() *cobra.Command {
-	var w map[string]string
-	var level string
-	var ver bool
-	var list bool
-	var filename string
-	var timeout time.Duration
+	var (
+		w        map[string]string
+		level    string
+		ver      bool
+		list     bool
+		filename string
+		timeout  time.Duration
+	)
 
 	root := &cobra.Command{
 		Use:   "vai",
@@ -170,12 +172,12 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	root.Flags().StringToStringVarP(&w, "with", "w", nil, "key=value pairs to pass to the called task(s)")
-	root.Flags().StringVarP(&level, "log-level", "l", "info", "log level")
-	root.Flags().BoolVarP(&ver, "version", "V", false, "print version")
-	root.Flags().BoolVar(&list, "list", false, "list available tasks")
-	root.Flags().StringVarP(&filename, "file", "f", "", "read file as workflow definition")
-	root.Flags().DurationVarP(&timeout, "timeout", "t", time.Hour, "timeout for task execution")
+	root.Flags().StringToStringVarP(&w, "with", "w", nil, "Pass key=value pairs to the called task(s)")
+	root.Flags().StringVarP(&level, "log-level", "l", "info", "Set log level")
+	root.Flags().BoolVarP(&ver, "version", "V", false, "Print version number and exit")
+	root.Flags().BoolVar(&list, "list", false, "Print list of available tasks and exit")
+	root.Flags().StringVarP(&filename, "file", "f", "", "Read file as workflow definition")
+	root.Flags().DurationVarP(&timeout, "timeout", "t", time.Hour, "Maximum time allowed for execution")
 
 	return root
 }

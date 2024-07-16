@@ -6,13 +6,15 @@ package vai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/log"
+	"github.com/d5/tengo/v2"
+	"github.com/d5/tengo/v2/stdlib"
+	"github.com/noxsios/vai/modv"
 	"github.com/noxsios/vai/storage"
 )
 
@@ -29,16 +31,12 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 		return fmt.Errorf("task %q not found", taskName)
 	}
 
-	persist := make(With)
 	outputs := make(CommandOutputs)
 
 	for _, step := range task {
-		templated, toPersist, err := PerformLookups(outer, step.With, outputs)
+		templated, err := PerformLookups(ctx, outer, step.With, outputs)
 		if err != nil {
 			return err
-		}
-		for _, k := range toPersist {
-			persist[k] = templated[k]
 		}
 
 		if step.Uses != "" {
@@ -54,6 +52,34 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			continue
 		}
 
+		if step.Eval != "" {
+			printScript(">", step.Eval)
+
+			script := tengo.NewScript([]byte(step.Eval))
+			mods := stdlib.GetModuleMap(stdlib.AllModuleNames()...)
+			mods.AddBuiltinModule("semver", modv.SemverModule)
+			script.SetImports(mods)
+
+			for k, v := range templated {
+				if err := script.Add(k, v); err != nil {
+					return err
+				}
+			}
+			// this addition will not trigger any error conditions from tengo.FromInterface
+			_ = script.Add("vai_output", map[string]interface{}{})
+
+			compiled, err := script.Compile()
+			if err != nil {
+				return err
+			}
+			if err := compiled.RunContext(ctx); err != nil {
+				return err
+			}
+			if step.ID != "" {
+				outputs[step.ID] = compiled.Get("vai_output").Map()
+			}
+		}
+
 		if step.Run != "" {
 			outFile, err := os.CreateTemp("", "vai-output-*")
 			if err != nil {
@@ -64,7 +90,24 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 
 			env := os.Environ()
 			for k, v := range templated {
-				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), v))
+				var val string
+				switch v := v.(type) {
+				case string:
+					val = v
+				case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+					val = fmt.Sprintf("%d", v)
+				case bool:
+					val = fmt.Sprintf("%t", v)
+				default:
+					// JSON marshal all other types
+					b, err := json.Marshal(v)
+					if err != nil {
+						return err
+					}
+					val = string(b)
+				}
+
+				env = append(env, fmt.Sprintf("%s=%s", toEnvVar(k), val))
 			}
 			env = append(env, fmt.Sprintf("VAI_OUTPUT=%s", outFile.Name()))
 			// TODO: handle other shells
@@ -74,20 +117,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
 
-			customStyles := log.DefaultStyles()
-			customStyles.Message = lipgloss.NewStyle().Foreground(lipgloss.Color("#2f333a"))
-			logger.SetStyles(customStyles)
-
-			lines := strings.Split(step.Run, "\n")
-			for _, line := range lines {
-				trimmed := strings.TrimSpace(line)
-				if trimmed == "" {
-					continue
-				}
-				logger.Printf("$ %s", trimmed)
-			}
-
-			logger.SetStyles(log.DefaultStyles())
+			printScript("$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err
@@ -102,7 +132,10 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 					continue
 				}
 				// TODO: conflicted about whether to save the contents of the file or just the file path
-				outputs[step.ID] = out
+				outputs[step.ID] = make(map[string]any)
+				for k, v := range out {
+					outputs[step.ID][k] = v
+				}
 			}
 		}
 	}

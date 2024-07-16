@@ -4,4 +4,4 @@ echo:
   - run: |
       echo "$MESSAGE"
     with:
-      message: ${{ input }}
+      message: input

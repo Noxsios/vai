@@ -4,6 +4,7 @@
 package vai
 
 import (
+	"context"
 	"runtime"
 	"testing"
 
@@ -17,7 +18,6 @@ func TestPerformLookups(t *testing.T) {
 		local             With
 		previous          CommandOutputs
 		expectedTemplated With
-		expectedPersisted []string
 		expectedError     string
 	}{
 		{
@@ -29,16 +29,20 @@ func TestPerformLookups(t *testing.T) {
 				"key": "value",
 			},
 			local: With{
-				"key":      "${{ input }}",
-				"os":       "${{ .OS }}",
-				"arch":     "${{ .ARCH }}",
-				"platform": "${{ .PLATFORM }}",
+				"key":      "input",
+				"os":       "os",
+				"arch":     "arch",
+				"platform": "platform",
+				"boolean":  true,
+				"int":      1,
 			},
 			expectedTemplated: With{
 				"key":      "value",
 				"os":       runtime.GOOS,
 				"arch":     runtime.GOARCH,
 				"platform": runtime.GOOS + "/" + runtime.GOARCH,
+				"boolean":  true,
+				"int":      1,
 			},
 		},
 		{
@@ -47,8 +51,8 @@ func TestPerformLookups(t *testing.T) {
 				"foo": "value",
 			},
 			local: With{
-				"foo": "${{ input | default \"default\" }}",
-				"bar": "${{ input | default \"default\" }}",
+				"foo": "input || \"value\"",
+				"bar": "input || \"default\"",
 			},
 			expectedTemplated: With{
 				"foo": "value",
@@ -56,33 +60,14 @@ func TestPerformLookups(t *testing.T) {
 			},
 		},
 		{
-			name: "persisted lookups",
-			input: With{
-				"foo": "bar",
-			},
-			local: With{
-				"foo": "${{ input | persist }}",
-				"a":   "b${{ persist }}",
-				"c":   "d",
-				"e":   "${{ persist }}",
-			},
-			expectedPersisted: []string{"foo", "a", "e"},
-			expectedTemplated: With{
-				"foo": "bar",
-				"a":   "b",
-				"c":   "d",
-				"e":   "",
-			},
-		},
-		{
 			name: "lookup from previous outputs",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `steps["step-1"].bar`,
 			},
 			expectedTemplated: With{
 				"foo": "baz",
@@ -91,33 +76,40 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - no outputs from step",
 			local: With{
-				"foo": `${{ from "step-1" "bar" }}`,
+				"foo": `steps["step-1"].bar`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].bar",
 		},
 		{
 			name: "lookup from previous outputs - output from step not found",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `${{ from "step-1" "dne" }}`,
+				"foo": `steps["step-1"].dne`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
+			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].dne",
 		},
 		{
 			name: "invalid syntax",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `${{ input`,
+				"foo": `input | persist`,
 			},
-			expectedError: `template: expression evaluator:1: unclosed action`,
+			expectedError: "script run: Compile Error: unresolved reference 'persist'\n\tat (main):1:21",
+		},
+		{
+			name: "eval to nil",
+			local: With{
+				"foo": "input",
+			},
+			expectedError: "expression evaluated to <nil>:\n\tinput",
 		},
 	}
 
@@ -125,12 +117,11 @@ func TestPerformLookups(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			templated, persisted, err := PerformLookups(tc.input, tc.local, tc.previous)
+			templated, err := PerformLookups(context.TODO(), tc.input, tc.local, tc.previous)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedError)
 			}
 			require.Equal(t, tc.expectedTemplated, templated)
-			require.ElementsMatch(t, tc.expectedPersisted, persisted)
 		})
 	}
 }

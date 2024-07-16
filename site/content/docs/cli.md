@@ -26,7 +26,7 @@ Available:
 
 ## "default" task
 
-The task named `default` in a Vai workflow is the default task that will be run when no task is specified.
+The task named `default` in a Vai workflow is the task that will be run when no task is specified.
 
 ```sh
 $ vai

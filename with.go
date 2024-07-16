@@ -4,10 +4,11 @@
 package vai
 
 import (
+	"context"
 	"fmt"
 	"runtime"
-	"strings"
-	"text/template"
+
+	"github.com/d5/tengo/v2"
 )
 
 // WithEntry is a single entry in a With map
@@ -20,80 +21,54 @@ type WithEntry any
 // as `foo=bar` to the command.
 type With map[string]WithEntry
 
-// PerformLookups performs the following:
-//
-// 1. Templating: executes the `input`, `default`, `persist`, and `from` functions against the `input` and `local` With maps
-//
-// 2. Merging: merges the `persisted` and `local` With maps, with `local` taking precedence
-func PerformLookups(input, local With, previousOutputs CommandOutputs) (With, []string, error) {
+// PerformLookups evaluates the expressions in the local With map
+func PerformLookups(ctx context.Context, outer, local With, previousOutputs CommandOutputs) (With, error) {
 	if len(local) == 0 {
-		return local, nil, nil
+		return local, nil
 	}
 
-	logger.Debug("templating", "input", input, "local", local)
+	logger.Debug("templating", "input", outer, "local", local)
 
 	r := make(With, len(local))
-	toPersist := make([]string, 0, len(local))
 
 	for k, v := range local {
-		val := fmt.Sprintf("%s", v)
-		fm := template.FuncMap{
-			"input": func() string {
-				v, ok := input[k]
-				if !ok || v == "" {
-					return ""
-				}
-				return fmt.Sprintf("%s", v)
-			},
-			"default": func(def, curr string) string {
-				if len(curr) == 0 {
-					return def
-				}
-				return curr
-			},
-			"persist": func(s ...string) string {
-				toPersist = append(toPersist, k)
-				if len(s) == 0 {
-					return ""
-				}
-				return s[0]
-			},
-			"from": func(stepName, id string) (string, error) {
-				stepOutputs, ok := previousOutputs[stepName]
-				if !ok {
-					return "", fmt.Errorf("no outputs for step %q", stepName)
-				}
-
-				v, ok := stepOutputs[id]
-				if ok {
-					return v, nil
-				}
-				return "", fmt.Errorf("no output %q from %q", id, stepName)
-			},
+		if _, ok := v.(string); !ok {
+			r[k] = v
+			continue
 		}
-		tmpl := template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}")
-		tmpl.Funcs(fm)
-		tmpl, err := tmpl.Parse(val)
+
+		env := map[string]interface{}{
+			"os":       runtime.GOOS,
+			"arch":     runtime.GOARCH,
+			"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+			"input":    outer[k],
+		}
+
+		steps := map[string]tengo.Object{}
+
+		for k, v := range previousOutputs {
+			obj, err := tengo.FromInterface(v)
+			if err != nil {
+				return nil, err
+			}
+			steps[k] = obj
+		}
+
+		env["steps"] = steps
+
+		out, err := tengo.Eval(ctx,
+			// we can safely assume that v is a string here
+			v.(string),
+			env)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		var templated strings.Builder
-
-		if err := tmpl.Execute(&templated, struct {
-			OS       string
-			ARCH     string
-			PLATFORM string
-		}{
-			OS:       runtime.GOOS,
-			ARCH:     runtime.GOARCH,
-			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		}); err != nil {
-			return nil, nil, err
+		if out == nil {
+			return nil, fmt.Errorf("expression evaluated to <nil>:\n\t%s", v.(string))
 		}
-		result := templated.String()
-		r[k] = result
+		r[k] = out
 	}
 
 	logger.Debug("templated", "result", r)
-	return r, toPersist, nil
+	return r, nil
 }

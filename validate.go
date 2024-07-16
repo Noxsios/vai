@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"regexp"
+	"slices"
+	"strings"
 	"sync"
 
 	"github.com/goccy/go-yaml"
@@ -46,15 +49,29 @@ var _schemaOnce sync.Once
 func Validate(wf Workflow) error {
 	for name, task := range wf {
 		if ok := TaskNamePattern.MatchString(name); !ok {
-			return fmt.Errorf("task name %q is invalid", name)
+			return fmt.Errorf("task name %q does not satisfy %q", name, TaskNamePattern.String())
 		}
 
-		ids := make(map[string]int)
+		ids := make(map[string]int, len(task))
 
 		for idx, step := range task {
+			// ensure that only one of run or uses or eval fields is set
+			// if more than one is set, return an error
+			// if none are set, return an error
+			switch {
+			case step.Uses != "" && step.Run != "":
+				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
+			case step.Uses != "" && step.Eval != "":
+				return fmt.Errorf(".%s[%d] has both eval and uses fields set", name, idx)
+			case step.Run != "" && step.Eval != "":
+				return fmt.Errorf(".%s[%d] has both run and eval fields set", name, idx)
+			case step.Uses == "" && step.Run == "" && step.Eval == "":
+				return fmt.Errorf(".%s[%d] must have one of [eval, run, uses] fields set", name, idx)
+			}
+
 			if step.ID != "" {
 				if ok := TaskNamePattern.MatchString(step.ID); !ok {
-					return fmt.Errorf(".%s[%d].id %q is invalid", name, idx, step.ID)
+					return fmt.Errorf(".%s[%d].id %q does not satisfy %q", name, idx, step.ID, TaskNamePattern.String())
 				}
 
 				if _, ok := ids[step.ID]; ok {
@@ -63,13 +80,27 @@ func Validate(wf Workflow) error {
 				ids[step.ID] = idx
 			}
 
-			// TODO: re-add step.Uses validation for:
-			// - local
-			// - http/https
-			// - pURL
+			if step.Uses != "" {
+				u, err := url.Parse(step.Uses)
+				if err != nil {
+					return fmt.Errorf(".%s[%d].uses %w", name, idx, err)
+				}
 
-			if step.Uses != "" && step.Run != "" {
-				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
+				if u.Scheme == "" {
+					// if step.Uses == name {
+					// 	return fmt.Errorf(".%s[%d].uses cannot reference itself", name, idx)
+					// }
+					_, ok := wf.Find(step.Uses)
+					if !ok {
+						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
+					}
+				} else {
+					schemes := []string{"file", "http", "https", "pkg"}
+
+					if !slices.Contains(schemes, u.Scheme) {
+						return fmt.Errorf(".%s[%d].uses %q is not one of [%s]", name, idx, u.Scheme, strings.Join(schemes, ", "))
+					}
+				}
 			}
 		}
 	}
