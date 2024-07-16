@@ -9,7 +9,7 @@ import (
 
 // Step is a single step in a task
 //
-// While a step can have both `run` and `uses` fields, only one of them can be set
+// While a step can have any combination of `run`, `eval`, and `uses` fields, only one of them should be set
 // at a time.
 //
 // This is enforced by JSON schema validation.

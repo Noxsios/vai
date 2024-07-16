@@ -2,7 +2,7 @@
 title: Workflow Syntax
 ---
 
-A Vai workflow is any YAML file that conforms to the [`vai` schema](./schema-validation.md#raw-schema).
+A Vai workflow is any YAML file that conforms to the [`vai` schema](../schema-validation#raw-schema).
 
 Unless specified, the default file name is `vai.yaml`.
 
@@ -168,7 +168,7 @@ hello:
   - run: echo "Hello There!"
   - uses: general-kenobi
     with:
-      response: Your move
+      response: '"Your move"'
 ```
 
 ```sh
@@ -179,7 +179,7 @@ vai hello
 
 Calling a task from a local file takes two arguments: the file path (required) and the task name (optional).
 
-`file:<filepath>?task=<taskname>`
+`file:<relative filepath>?task=<taskname>`
 
 If the filepath is a directory, `vai.yaml` is appended to the path.
 
@@ -256,7 +256,7 @@ This leverages the same mechanism as GitHub Actions.
 
 The `id` field is used to reference the output in subsequent steps.
 
-The `from` function is used to reference the output from a previous step.
+`steps` is a map of step IDs to their outputs. Values can be accessed through either bracket or dot notation.
 
 {{< tabs items="run,eval" >}}
 {{< tab >}}

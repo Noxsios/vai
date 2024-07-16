@@ -58,7 +58,7 @@ The majority of Vai's [workflow schema](../schema-validation#raw-schema) was eit
 
 GitHub orchestrates `jobs`, which are collections of either `run` or `uses` steps.
 
-Vai orchestrates `tasks`, which are collections of either `run` or `uses` steps.
+Vai orchestrates `tasks`, which are collections of either `run`, `eval` or `uses` steps.
 
 The main differences between these two:
 
