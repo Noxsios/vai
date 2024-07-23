@@ -17,7 +17,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai"
-	"github.com/noxsios/vai/storage"
+	"github.com/noxsios/vai/uses"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -154,7 +154,7 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
-			store, err := storage.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
+			store, err := uses.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
 			if err != nil {
 				return err
 			}

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
-package storage
+package uses
 
 import (
 	"bytes"

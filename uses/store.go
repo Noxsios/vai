@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
-// Package storage provides a cache+clients for storing and retrieving remote workflows.
-package storage
+// Package uses provides a cache+clients for storing and retrieving remote workflows.
+package uses
 
 import (
 	"bytes"

@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/noxsios/vai/storage"
+	"github.com/noxsios/vai/uses"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ import (
 func TestExecuteUses(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := storage.New(fs)
+	store, err := uses.New(fs)
 	require.NoError(t, err)
 
 	workflowFoo := Workflow{"default": {Step{Run: "echo 'foo'"}, Step{Uses: "file:bar/baz.yaml?task=baz"}}}

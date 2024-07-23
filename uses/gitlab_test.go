@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
-package storage
+package uses
 
 import (
 	"context"
@@ -11,21 +11,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGitHubFetcher(t *testing.T) {
+func TestGitLabFetcher(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping tests that require network access")
 	}
 
-	uses := "pkg:github/noxsios/vai@main?task=echo#testdata/simple.yaml"
+	uses := "pkg:gitlab/noxsios/vai@main?task=hello-world#vai.yaml"
 
 	ctx := context.Background()
 
-	client := NewGitHubClient()
+	client, err := NewGitLabClient("")
+	require.NoError(t, err)
 
 	desc, err := client.Describe(ctx, uses)
 	require.NoError(t, err)
-	require.Equal(t, "53df01bd752c536a52836ccf988f656c3e4ed9d728aabed9974ac62453488840", desc.Hex)
-	require.Equal(t, int64(122), desc.Size)
+	require.Equal(t, "89385d0bd4358fa98a3724eb6cd4f33819b90012201ab2f27c08ba2d19a85919", desc.Hex)
+	require.Equal(t, int64(92), desc.Size)
 
 	rc, err := client.Fetch(ctx, uses)
 	require.NoError(t, err)
@@ -33,12 +34,9 @@ func TestGitHubFetcher(t *testing.T) {
 	b, err := io.ReadAll(rc)
 	require.NoError(t, err)
 
-	require.Equal(t, `# yaml-language-server: $schema=../vai.schema.json
+	require.Equal(t, `# yaml-language-server: $schema=vai.schema.json
 
-echo:
-  - run: |
-      echo "$MESSAGE"
-    with:
-      message: input
+hello-world:
+  - run: echo "Hello, World!"
 `, string(b))
 }
