@@ -21,7 +21,7 @@ import (
 func TestExecuteUses(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := uses.New(fs)
+	store, err := uses.NewStore(fs)
 	require.NoError(t, err)
 
 	workflowFoo := Workflow{"default": {Step{Run: "echo 'foo'"}, Step{Uses: "file:bar/baz.yaml?task=baz"}}}

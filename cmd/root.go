@@ -154,7 +154,7 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
-			store, err := uses.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
+			store, err := uses.NewStore(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
 			if err != nil {
 				return err
 			}

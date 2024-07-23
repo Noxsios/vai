@@ -16,7 +16,7 @@ import (
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := uses.New(fs)
+	store, err := uses.NewStore(fs)
 	require.NoError(t, err)
 	with := With{}
 
