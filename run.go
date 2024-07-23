@@ -53,7 +53,7 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 		}
 
 		if step.Eval != "" {
-			printScript(">", step.Eval)
+			printScript(ctx, ">", step.Eval)
 
 			script := tengo.NewScript([]byte(step.Eval))
 			mods := stdlib.GetModuleMap(stdlib.AllModuleNames()...)
@@ -117,7 +117,7 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
 
-			printScript("$", step.Run)
+			printScript(ctx, "$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err

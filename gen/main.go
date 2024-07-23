@@ -45,9 +45,9 @@ func run(root string) error {
 
 // main is the entry point for the application
 func main() {
-	logger := vai.Logger()
 	// usage: `go run gen/main.go`
 	if err := run(""); err != nil {
-		logger.Fatal(err)
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
 	}
 }

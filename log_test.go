@@ -4,7 +4,7 @@
 package vai
 
 import (
-	"os"
+	"context"
 	"strings"
 	"testing"
 
@@ -12,21 +12,6 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/require"
 )
-
-// purposefully minimal, 99% of features are tested by charmbracelet/log
-func TestLogger(t *testing.T) {
-	l := Logger()
-	require.NotNil(t, l)
-	require.Equal(t, l, logger)
-
-	defaultLevel := l.GetLevel()
-
-	defer SetLogLevel(defaultLevel)
-
-	SetLogLevel(log.DebugLevel)
-
-	require.Equal(t, log.DebugLevel, l.GetLevel())
-}
 
 func TestPrintScript(t *testing.T) {
 	testCases := []struct {
@@ -56,14 +41,11 @@ func TestPrintScript(t *testing.T) {
 	}
 
 	var buf strings.Builder
-	logger.SetOutput(&buf)
-	t.Cleanup(func() {
-		logger.SetOutput(os.Stderr)
-	})
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			printScript(tc.prefix, tc.script)
+			ctx := log.WithContext(context.TODO(), log.New(&buf))
+			printScript(ctx, tc.prefix, tc.script)
 			require.Equal(t, tc.expected, ansi.Strip(buf.String()))
 			buf.Reset()
 		})

@@ -240,7 +240,7 @@ echo:
 			`),
 			Workflow{
 				"echo": Task(nil),
-			}, "", "schema validation failed",
+			}, "", "echo: Invalid type. Expected: array, given: null",
 		},
 		{
 			"bad reader",

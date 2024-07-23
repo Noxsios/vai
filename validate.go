@@ -5,6 +5,7 @@ package vai
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -125,11 +126,12 @@ func Validate(wf Workflow) error {
 		return nil
 	}
 
+	var resErr error
 	for _, err := range result.Errors() {
-		logger.Error(err.String())
+		resErr = errors.Join(resErr, fmt.Errorf(err.String()))
 	}
 
-	return fmt.Errorf("schema validation failed")
+	return resErr
 }
 
 // ReadAndValidate reads and validates a workflow

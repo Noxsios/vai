@@ -107,7 +107,7 @@ func TestExecuteUses(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, f := range files {
-		if f.Name() == storage.IndexFileName {
+		if f.Name() == uses.IndexFileName {
 			continue
 		}
 
@@ -118,7 +118,7 @@ func TestExecuteUses(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, f.Name(), fmt.Sprintf("%x", hasher.Sum(nil)))
 
-		desc := storage.Descriptor{Hex: f.Name(), Size: f.Size()}
+		desc := uses.Descriptor{Hex: f.Name(), Size: f.Size()}
 
 		rc, err := store.Fetch(desc)
 		require.NoError(t, err)

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path/filepath"
 
+	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai/uses"
 	"github.com/package-url/packageurl-go"
 )
@@ -19,6 +20,7 @@ const CacheEnvVar = "VAI_CACHE"
 
 // ExecuteUses runs a task from a remote workflow source.
 func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, prev string) error {
+	logger := log.FromContext(ctx)
 	logger.Debug("using", "task", u)
 
 	uri, err := url.Parse(u)

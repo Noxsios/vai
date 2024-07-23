@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/charmbracelet/log"
 	"github.com/d5/tengo/v2"
 )
 
@@ -26,6 +27,8 @@ func PerformLookups(ctx context.Context, outer, local With, previousOutputs Comm
 	if len(local) == 0 {
 		return local, nil
 	}
+
+	logger := log.FromContext(ctx)
 
 	logger.Debug("templating", "input", outer, "local", local)
 
