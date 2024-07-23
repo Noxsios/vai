@@ -17,7 +17,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/noxsios/vai"
-	"github.com/noxsios/vai/storage"
+	"github.com/noxsios/vai/uses"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
@@ -53,18 +53,20 @@ func NewRootCmd() *cobra.Command {
 
 			return wf.OrderedTaskNames(), cobra.ShellCompDirectiveNoFileComp
 		},
-		PreRunE: func(_ *cobra.Command, _ []string) error {
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			l, err := log.ParseLevel(level)
 			if err != nil {
 				return err
 			}
-			vai.SetLogLevel(l)
+			logger := log.FromContext(cmd.Context())
+			logger.SetLevel(l)
 			return nil
 		},
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			logger := vai.Logger()
+			ctx := cmd.Context()
+			logger := log.FromContext(ctx)
 
 			if ver && len(args) == 0 {
 				bi, ok := debug.ReadBuildInfo()
@@ -129,8 +131,6 @@ func NewRootCmd() *cobra.Command {
 				args = append(args, vai.DefaultTaskName)
 			}
 
-			ctx := cmd.Context()
-
 			if timeout > 0 {
 				var cancel context.CancelFunc
 				ctx, cancel = context.WithTimeout(ctx, timeout)
@@ -154,7 +154,7 @@ func NewRootCmd() *cobra.Command {
 				}
 			}
 
-			store, err := storage.New(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
+			store, err := uses.NewStore(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
 			if err != nil {
 				return err
 			}
@@ -193,8 +193,11 @@ func Main() int {
 	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
 
-	logger := vai.Logger()
+	var logger = log.NewWithOptions(os.Stderr, log.Options{
+		ReportTimestamp: false,
+	})
 
+	ctx = log.WithContext(ctx, logger)
 	if err := cli.ExecuteContext(ctx); err != nil {
 		logger.Print("")
 		logger.Error(err)

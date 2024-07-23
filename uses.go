@@ -10,7 +10,8 @@ import (
 	"net/url"
 	"path/filepath"
 
-	"github.com/noxsios/vai/storage"
+	"github.com/charmbracelet/log"
+	"github.com/noxsios/vai/uses"
 	"github.com/package-url/packageurl-go"
 )
 
@@ -18,16 +19,17 @@ import (
 const CacheEnvVar = "VAI_CACHE"
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with With, prev string) error {
-	logger.Debug("using", "task", uses)
+func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, prev string) error {
+	logger := log.FromContext(ctx)
+	logger.Debug("using", "task", u)
 
-	uri, err := url.Parse(uses)
+	uri, err := url.Parse(u)
 	if err != nil {
 		return err
 	}
 
 	if uri.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %q", uses)
+		return fmt.Errorf("must contain a scheme: %q", u)
 	}
 
 	previous, err := url.Parse(prev)
@@ -47,13 +49,19 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 			// turn relative paths into absolute references
 			next = previous
 			next.Path = filepath.Join(filepath.Dir(previous.Path), uri.Opaque)
+			if next.Path == "." {
+				next.Path = DefaultFileName
+			}
 		case "pkg":
-			pURL, err := packageurl.FromString(uses)
+			pURL, err := packageurl.FromString(prev)
 			if err != nil {
 				return err
 			}
 			// turn relative paths into absolute references
 			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), uri.Opaque)
+			if pURL.Subpath == "." {
+				pURL.Subpath = DefaultFileName
+			}
 			next, _ = url.Parse(pURL.String())
 		default:
 			dir := filepath.Dir(previous.Opaque)
@@ -70,28 +78,28 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 		}
 
 		if next != nil {
-			logger.Debug("merged", "previous", previous, "uses", uses, "next", next)
-			uses = next.String()
+			logger.Debug("merged", "previous", previous, "uses", u, "next", next)
+			u = next.String()
 		}
 	}
 
 	if next == nil {
-		next, _ = url.Parse(uses)
+		next, _ = url.Parse(u)
 	}
 
 	if uri.Scheme == "pkg" {
 		// dogsledding the error here since we know it's a package URL
-		pURL, _ := packageurl.FromString(uses)
+		pURL, _ := packageurl.FromString(u)
 		if pURL.Subpath == "" {
 			pURL.Subpath = DefaultFileName
 		}
 		if pURL.Version == "" {
 			pURL.Version = "main"
 		}
-		uses = pURL.String()
+		u = pURL.String()
 	}
 
-	fetcher, err := storage.SelectFetcher(uri, previous)
+	fetcher, err := uses.SelectFetcher(uri, previous)
 	if err != nil {
 		return err
 	}
@@ -100,8 +108,8 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 
 	var f io.ReadCloser
 
-	if downloader, ok := fetcher.(storage.Downloader); ok {
-		desc, err := downloader.Describe(ctx, uses)
+	if downloader, ok := fetcher.(uses.Downloader); ok {
+		desc, err := downloader.Describe(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -112,8 +120,8 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 		}
 
 		if !exists {
-			logger.Debug("caching", "task", uses)
-			rc, err := downloader.Fetch(ctx, uses)
+			logger.Debug("caching", "task", u)
+			rc, err := downloader.Fetch(ctx, u)
 			if err != nil {
 				return err
 			}
@@ -130,7 +138,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 		}
 		defer f.Close()
 	} else {
-		f, err = fetcher.Fetch(ctx, uses)
+		f, err = fetcher.Fetch(ctx, u)
 		if err != nil {
 			return err
 		}
@@ -138,7 +146,7 @@ func ExecuteUses(ctx context.Context, store *storage.Store, uses string, with Wi
 	}
 
 	if f == nil {
-		return fmt.Errorf("failed to fetch %s referenced by %s", uses, prev)
+		return fmt.Errorf("failed to fetch %s referenced by %s", u, prev)
 	}
 
 	wf, err := ReadAndValidate(f)

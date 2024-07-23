@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/goccy/go-yaml"
-	"github.com/noxsios/vai/storage"
+	"github.com/noxsios/vai/uses"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ import (
 func TestExecuteUses(t *testing.T) {
 	ctx := context.Background()
 	fs := afero.NewMemMapFs()
-	store, err := storage.New(fs)
+	store, err := uses.NewStore(fs)
 	require.NoError(t, err)
 
 	workflowFoo := Workflow{"default": {Step{Run: "echo 'foo'"}, Step{Uses: "file:bar/baz.yaml?task=baz"}}}
@@ -98,6 +98,14 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
 	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
+	err = ExecuteUses(ctx, store, "file:..?task=hello-world", with, "pkg:")
+	require.EqualError(t, err, `purl is missing type or name`)
+
+	if !testing.Short() {
+		err = ExecuteUses(ctx, store, "file:..?task=hello-world", with, "pkg:github/noxsios/vai#testdata/hello-world.yaml")
+		require.NoError(t, err)
+	}
+
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
 	err = ExecuteUses(ctx, store, server.URL+"/foo.yaml", with, "file:test")
@@ -107,7 +115,7 @@ func TestExecuteUses(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, f := range files {
-		if f.Name() == storage.IndexFileName {
+		if f.Name() == uses.IndexFileName {
 			continue
 		}
 
@@ -118,7 +126,7 @@ func TestExecuteUses(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, f.Name(), fmt.Sprintf("%x", hasher.Sum(nil)))
 
-		desc := storage.Descriptor{Hex: f.Name(), Size: f.Size()}
+		desc := uses.Descriptor{Hex: f.Name(), Size: f.Size()}
 
 		rc, err := store.Fetch(desc)
 		require.NoError(t, err)

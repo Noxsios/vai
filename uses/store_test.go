@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
-package storage
+package uses
 
 import (
 	"bytes"
@@ -71,7 +71,7 @@ var shaMap = map[string]string{
 
 func TestStore(t *testing.T) {
 	fs := afero.NewMemMapFs()
-	store, err := New(fs)
+	store, err := NewStore(fs)
 	require.NoError(t, err)
 
 	// store initializes with empty index
@@ -142,7 +142,7 @@ func TestStore(t *testing.T) {
 	require.EqualError(t, err, "descriptor not found")
 
 	// store can be re-initialized just fine
-	store, err = New(fs)
+	store, err = NewStore(fs)
 	require.NoError(t, err)
 
 	// cause a mismatch between index and fs, causing cache corruption

@@ -4,7 +4,7 @@
 package vai
 
 import (
-	"os"
+	"context"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/quick"
@@ -13,23 +13,10 @@ import (
 	"github.com/muesli/termenv"
 )
 
-var logger = log.NewWithOptions(os.Stderr, log.Options{
-	ReportTimestamp: false,
-})
-
-// Logger returns the global logger.
-func Logger() *log.Logger {
-	return logger
-}
-
-// SetLogLevel sets the global log level.
-func SetLogLevel(level log.Level) {
-	logger.SetLevel(level)
-}
-
 // very side effect heavy
 // should rethink this
-func printScript(prefix, script string) {
+func printScript(ctx context.Context, prefix, script string) {
+	logger := log.FromContext(ctx)
 	script = strings.TrimSpace(script)
 
 	if termenv.EnvNoColor() {

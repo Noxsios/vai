@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"runtime"
 
+	"github.com/charmbracelet/log"
 	"github.com/d5/tengo/v2"
 )
 
@@ -27,12 +28,15 @@ func PerformLookups(ctx context.Context, outer, local With, previousOutputs Comm
 		return local, nil
 	}
 
+	logger := log.FromContext(ctx)
+
 	logger.Debug("templating", "input", outer, "local", local)
 
 	r := make(With, len(local))
 
 	for k, v := range local {
-		if _, ok := v.(string); !ok {
+		val, ok := v.(string)
+		if !ok {
 			r[k] = v
 			continue
 		}
@@ -56,15 +60,12 @@ func PerformLookups(ctx context.Context, outer, local With, previousOutputs Comm
 
 		env["steps"] = steps
 
-		out, err := tengo.Eval(ctx,
-			// we can safely assume that v is a string here
-			v.(string),
-			env)
+		out, err := tengo.Eval(ctx, val, env)
 		if err != nil {
 			return nil, err
 		}
 		if out == nil {
-			return nil, fmt.Errorf("expression evaluated to <nil>:\n\t%s", v.(string))
+			return nil, fmt.Errorf("expression evaluated to <nil>:\n\t%s", val)
 		}
 		r[k] = out
 	}

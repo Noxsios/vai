@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
-// Package storage provides a cache+clients for storing and retrieving remote workflows.
-package storage
+// Package uses provides a cache+clients for storing and retrieving remote workflows.
+package uses
 
 import (
 	"bytes"
@@ -96,8 +96,8 @@ type Store struct {
 	mu sync.RWMutex
 }
 
-// New creates a new store at the given path.
-func New(fs afero.Fs) (*Store, error) {
+// NewStore creates a new store at the given path.
+func NewStore(fs afero.Fs) (*Store, error) {
 	index := NewCacheIndex()
 
 	_, err := fs.Stat(IndexFileName)

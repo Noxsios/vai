@@ -15,13 +15,13 @@ import (
 	"github.com/d5/tengo/v2"
 	"github.com/d5/tengo/v2/stdlib"
 	"github.com/noxsios/vai/modv"
-	"github.com/noxsios/vai/storage"
+	"github.com/noxsios/vai/uses"
 )
 
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string, outer With, origin string) error {
+func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, outer With, origin string) error {
 	if taskName == "" {
 		taskName = DefaultTaskName
 	}
@@ -53,7 +53,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 		}
 
 		if step.Eval != "" {
-			printScript(">", step.Eval)
+			printScript(ctx, ">", step.Eval)
 
 			script := tengo.NewScript([]byte(step.Eval))
 			mods := stdlib.GetModuleMap(stdlib.AllModuleNames()...)
@@ -117,7 +117,7 @@ func Run(ctx context.Context, store *storage.Store, wf Workflow, taskName string
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
 
-			printScript("$", step.Run)
+			printScript(ctx, "$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err
