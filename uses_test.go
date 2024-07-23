@@ -98,6 +98,9 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
 	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
+	err = ExecuteUses(ctx, store, "file:..?task=hello-world", with, "pkg:")
+	require.EqualError(t, err, `purl is missing type or name`)
+
 	if !testing.Short() {
 		err = ExecuteUses(ctx, store, "file:..?task=hello-world", with, "pkg:github/noxsios/vai#testdata/hello-world.yaml")
 		require.NoError(t, err)

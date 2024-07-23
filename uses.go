@@ -49,13 +49,19 @@ func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, pr
 			// turn relative paths into absolute references
 			next = previous
 			next.Path = filepath.Join(filepath.Dir(previous.Path), uri.Opaque)
+			if next.Path == "." {
+				next.Path = DefaultFileName
+			}
 		case "pkg":
-			pURL, err := packageurl.FromString(u)
+			pURL, err := packageurl.FromString(prev)
 			if err != nil {
 				return err
 			}
 			// turn relative paths into absolute references
 			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), uri.Opaque)
+			if pURL.Subpath == "." {
+				pURL.Subpath = DefaultFileName
+			}
 			next, _ = url.Parse(pURL.String())
 		default:
 			dir := filepath.Dir(previous.Opaque)
