@@ -98,6 +98,12 @@ func TestExecuteUses(t *testing.T) {
 	err = ExecuteUses(ctx, store, "pkg:bitbucket/owner/repo", with, "file:test")
 	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
+	// pkg:github/noxsios/vai?task=call-up#testdata/hello-world.yaml
+	if !testing.Short() {
+		err = ExecuteUses(ctx, store, "file:..?task=hello-world", with, "pkg:github/noxsios/vai#testdata/hello-world.yaml")
+		require.NoError(t, err)
+	}
+
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
 	err = ExecuteUses(ctx, store, server.URL+"/foo.yaml", with, "file:test")
