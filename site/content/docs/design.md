@@ -89,11 +89,14 @@ Each protocol scheme is mapped to its respective fetcher:
 
 Where possible, remote workflows are cached locally by their SHA256. Subsequent fetches can pull from cache if using SHA-pinning.
 
-<!--
 ## Testing
 
-- testscript
-- testify
-- fuzzing
-- coverage as a goal
--->
+Vai is my first project written with a core goal of comprehensive E2E _and_ unit testing.
+
+For unit testing I rely upon `github.com/stretchr/testify`'s `require` assertions.
+
+All regexes used are covered in fuzz tests (they need a little bit more polish though tbh).
+
+For E2E / CLI testing I discovered the `testscript` package within the `github.com/rogpeppe/go-internal` module.
+
+This package allows for running CLI tests from the standard `go test` runner, and even impacts line coverage. See `main_test.go` and the `testdata` directory for a deeper dive!
