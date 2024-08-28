@@ -19,7 +19,7 @@ import (
 const CacheEnvVar = "VAI_CACHE"
 
 // ExecuteUses runs a task from a remote workflow source.
-func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, prev string) error {
+func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, prev string, dry bool) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("using", "task", u)
 
@@ -156,5 +156,5 @@ func ExecuteUses(ctx context.Context, store *uses.Store, u string, with With, pr
 
 	taskName := uri.Query().Get("task")
 
-	return Run(ctx, store, wf, taskName, with, next.String())
+	return Run(ctx, store, wf, taskName, with, next.String(), dry)
 }
