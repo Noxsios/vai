@@ -21,11 +21,11 @@ func TestRun(t *testing.T) {
 	with := With{}
 
 	// simple happy path
-	err = Run(ctx, store, helloWorldWorkflow, "", with, "file:test")
+	err = Run(ctx, store, helloWorldWorkflow, "", with, "file:test", false)
 	require.NoError(t, err)
 
 	// fast failure for 404
-	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test")
+	err = Run(ctx, store, helloWorldWorkflow, "does not exist", with, "file:test", false)
 	require.EqualError(t, err, "task \"does not exist\" not found")
 
 	t.Run("fail on timeout - eval", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestRun(t *testing.T) {
 times := import("times")
 times.sleep(3 * times.second)
 `}},
-		}, "timeout-eval", with, "file:test")
+		}, "timeout-eval", with, "file:test", false)
 		require.EqualError(t, err, "context deadline exceeded")
 	})
 
@@ -47,7 +47,7 @@ times.sleep(3 * times.second)
 		defer cancel()
 		err = Run(ctx, store, Workflow{
 			"timeout-run": {Step{Run: "sleep 3"}},
-		}, "timeout-run", with, "file:test")
+		}, "timeout-run", with, "file:test", false)
 		require.EqualError(t, err, "signal: killed")
 	})
 
@@ -62,7 +62,7 @@ fmt.printf("bool: %t, int: %d\n", b, i)
 				"i": 42,
 			}},
 			},
-		}, "", with, "file:test")
+		}, "", with, "file:test", false)
 		require.NoError(t, err)
 	})
 
@@ -76,7 +76,7 @@ echo "bool: $B, int: $I"
 				"i": 42,
 			}},
 			},
-		}, "", with, "file:test")
+		}, "", with, "file:test", false)
 		require.NoError(t, err)
 	})
 }
