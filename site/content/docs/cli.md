@@ -24,6 +24,13 @@ Available:
 - test
 ```
 
+## Dry run
+
+When the `--dry-run` flag is set, Vai will evaluate `uses` imports and `with` expressions but will _not_
+execute any code in `eval` or `run`.
+
+This allows for debugging, as well as viewing the contents of remote workflows without executing them.
+
 ## "default" task
 
 The task named `default` in a Vai workflow is the task that will be run when no task is specified.
@@ -32,6 +39,8 @@ The task named `default` in a Vai workflow is the task that will be run when no 
 $ vai
 # is equivalent to
 $ vai default
+# but this will only run the 'hello-world' task
+$ vai hello-world
 ```
 
 ## Run multiple tasks
