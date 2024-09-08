@@ -1,0 +1,9 @@
+exec vai --dry-run
+cmp stderr stderr.txt
+stdout ''
+
+-- stderr.txt --
+$ echo "default"
+-- vai.yaml --
+default:
+  - run: echo "default"

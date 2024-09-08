@@ -31,6 +31,7 @@ func NewRootCmd() *cobra.Command {
 		list     bool
 		filename string
 		timeout  time.Duration
+		dry      bool
 	)
 
 	root := &cobra.Command{
@@ -161,7 +162,7 @@ func NewRootCmd() *cobra.Command {
 			rootOrigin := "file:" + filename
 
 			for _, call := range args {
-				if err := vai.Run(ctx, store, wf, call, with, rootOrigin); err != nil {
+				if err := vai.Run(ctx, store, wf, call, with, rootOrigin, dry); err != nil {
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 						return fmt.Errorf("task %q timed out", call)
 					}
@@ -178,6 +179,7 @@ func NewRootCmd() *cobra.Command {
 	root.Flags().BoolVar(&list, "list", false, "Print list of available tasks and exit")
 	root.Flags().StringVarP(&filename, "file", "f", "", "Read file as workflow definition")
 	root.Flags().DurationVarP(&timeout, "timeout", "t", time.Hour, "Maximum time allowed for execution")
+	root.Flags().BoolVar(&dry, "dry-run", false, "Don't actually run anything; just print")
 
 	return root
 }

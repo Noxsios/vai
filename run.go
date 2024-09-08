@@ -21,7 +21,7 @@ import (
 // Run executes a task in a workflow with the given inputs.
 //
 // For all `uses` steps, this function will be called recursively.
-func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, outer With, origin string) error {
+func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, outer With, origin string, dry bool) error {
 	if taskName == "" {
 		taskName = DefaultTaskName
 	}
@@ -41,12 +41,12 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 
 		if step.Uses != "" {
 			if _, ok := wf.Find(step.Uses); ok {
-				if err := Run(ctx, store, wf, step.Uses, templated, origin); err != nil {
+				if err := Run(ctx, store, wf, step.Uses, templated, origin, dry); err != nil {
 					return err
 				}
 				continue
 			}
-			if err := ExecuteUses(ctx, store, step.Uses, templated, origin); err != nil {
+			if err := ExecuteUses(ctx, store, step.Uses, templated, origin, dry); err != nil {
 				return err
 			}
 			continue
@@ -54,6 +54,9 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 
 		if step.Eval != "" {
 			printScript(ctx, ">", step.Eval)
+			if dry {
+				continue
+			}
 
 			script := tengo.NewScript([]byte(step.Eval))
 			mods := stdlib.GetModuleMap(stdlib.AllModuleNames()...)
@@ -81,6 +84,11 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 		}
 
 		if step.Run != "" {
+			printScript(ctx, "$", step.Run)
+			if dry {
+				continue
+			}
+
 			outFile, err := os.CreateTemp("", "vai-output-*")
 			if err != nil {
 				return err
@@ -116,8 +124,6 @@ func Run(ctx context.Context, store *uses.Store, wf Workflow, taskName string, o
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 			cmd.Stdin = os.Stdin
-
-			printScript(ctx, "$", step.Run)
 
 			if err := cmd.Run(); err != nil {
 				return err
