@@ -128,7 +128,7 @@ func Validate(wf Workflow) error {
 
 	var resErr error
 	for _, err := range result.Errors() {
-		resErr = errors.Join(resErr, fmt.Errorf(err.String()))
+		resErr = errors.Join(resErr, errors.New(err.String()))
 	}
 
 	return resErr
