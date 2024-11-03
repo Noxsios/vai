@@ -17,9 +17,9 @@ id-with-no-output:
   - eval: |
       vai_output["color"] = "green"
       id: color-selector
-    - run: echo "The selected color is $SELECTED"
-      with:
-        selected: steps["color-selector"]["selected-color"]
+  - run: echo "The selected color is $SELECTED"
+    with:
+      selected: steps["color-selector"]["selected-color"]
 -- stderr.txt --
 > vai_output["selected-color"] = "green"
 $ echo "The selected color is $SELECTED"
