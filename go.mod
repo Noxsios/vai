@@ -26,7 +26,7 @@ require (
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
-	github.com/xanzy/go-gitlab v0.112.0
+	github.com/xanzy/go-gitlab v0.113.0
 	github.com/xeipuuv/gojsonschema v1.2.0
 )
 
