@@ -17,7 +17,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/charmbracelet/x/ansi v0.5.2
 	github.com/d5/tengo/v2 v2.17.0
-	github.com/goccy/go-yaml v1.13.6
+	github.com/goccy/go-yaml v1.15.6
 	github.com/google/go-github/v62 v62.0.0
 	github.com/invopop/jsonschema v0.12.0
 	github.com/muesli/termenv v0.15.2
@@ -46,7 +46,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
