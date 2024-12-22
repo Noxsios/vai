@@ -227,7 +227,7 @@ func TestReadAndValidate(t *testing.T) {
 			strings.NewReader(`
 echo:
   - run: echo
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Run: "echo",
@@ -237,7 +237,7 @@ echo:
 			"malformed YAML",
 			strings.NewReader(`
 echo:
-			`),
+`),
 			Workflow{
 				"echo": Task(nil),
 			}, "", "echo: Invalid type. Expected: array, given: null",
@@ -257,7 +257,7 @@ echo:
 			strings.NewReader(`
 2-echo:
   - run: echo
-			`),
+`),
 			Workflow{
 				"2-echo": Task{Step{
 					Run: "echo",
@@ -270,7 +270,7 @@ echo:
 echo:
   - run: echo
     id: "&1337"
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Run: "echo",
@@ -286,7 +286,7 @@ echo:
     id: id-123
   - run: echo again
     id: id-123
-			`),
+`),
 			Workflow{
 				"echo": Task{
 					{
@@ -306,7 +306,7 @@ echo:
 echo:
   - run: echo
     uses: file:dne
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Run:  "echo",
@@ -320,7 +320,7 @@ echo:
 echo:
   - run: echo
     eval: 1+1
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Run:  "echo",
@@ -334,7 +334,7 @@ echo:
 echo:
   - uses: dne
     eval: 1+1
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Uses: "dne",
@@ -347,7 +347,7 @@ echo:
 			strings.NewReader(`
 echo:
   - uses: dne
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Uses: "dne",
@@ -359,7 +359,7 @@ echo:
 			strings.NewReader(`
 echo:
   - uses: ssh://dne
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Uses: "ssh://dne",
@@ -371,7 +371,7 @@ echo:
 			strings.NewReader(`
 echo:
   - id: echo-5
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					ID: "echo-5",
@@ -383,7 +383,7 @@ echo:
 			strings.NewReader(`
 echo:
   - uses: 'https://vai.razzle.cloud|'
-			`),
+`),
 			Workflow{
 				"echo": Task{Step{
 					Uses: `https://vai.razzle.cloud|`,
