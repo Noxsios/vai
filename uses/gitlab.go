@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/package-url/packageurl-go"
-	"github.com/xanzy/go-gitlab"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // GitLabClient is a client for fetching files from GitLab
