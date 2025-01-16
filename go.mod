@@ -17,7 +17,7 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/charmbracelet/x/ansi v0.6.0
 	github.com/d5/tengo/v2 v2.17.0
-	github.com/goccy/go-yaml v1.15.13
+	github.com/goccy/go-yaml v1.15.14
 	github.com/google/go-github/v62 v62.0.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/muesli/termenv v0.15.2
