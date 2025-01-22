@@ -15,7 +15,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.15.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
-	github.com/charmbracelet/x/ansi v0.6.0
+	github.com/charmbracelet/x/ansi v0.7.0
 	github.com/d5/tengo/v2 v2.17.0
 	github.com/goccy/go-yaml v1.15.15
 	github.com/google/go-github/v62 v62.0.0
