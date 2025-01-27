@@ -15,7 +15,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.15.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.0
-	github.com/charmbracelet/x/ansi v0.6.0
+	github.com/charmbracelet/x/ansi v0.8.0
 	github.com/d5/tengo/v2 v2.17.0
 	github.com/goccy/go-yaml v1.15.15
 	github.com/google/go-github/v62 v62.0.0
@@ -46,7 +46,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
