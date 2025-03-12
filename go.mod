@@ -14,7 +14,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/alecthomas/chroma/v2 v2.15.0
 	github.com/charmbracelet/lipgloss v1.0.0
-	github.com/charmbracelet/log v0.4.0
+	github.com/charmbracelet/log v0.4.1
 	github.com/charmbracelet/x/ansi v0.8.0
 	github.com/d5/tengo/v2 v2.17.0
 	github.com/goccy/go-yaml v1.15.23
