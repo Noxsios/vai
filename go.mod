@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/chroma/v2 v2.15.0
 	github.com/charmbracelet/lipgloss v1.0.0
 	github.com/charmbracelet/log v0.4.1
+	github.com/charmbracelet/x/ansi v0.4.2
 	github.com/goccy/go-yaml v1.15.23
 	github.com/google/go-github/v62 v62.0.0
 	github.com/invopop/jsonschema v0.13.0
@@ -23,7 +24,6 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
-	github.com/charmbracelet/x/ansi v0.4.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
