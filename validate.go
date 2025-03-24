@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,6 +22,9 @@ import (
 // TaskNamePattern is a regular expression for valid task names, it is also used for step IDs
 var TaskNamePattern = regexp.MustCompile("^[_a-zA-Z][a-zA-Z0-9_-]*$")
 
+// InputNamePattern is a regular expression for valid input names
+var InputNamePattern = TaskNamePattern //regexp.MustCompile("^\\$[A-Z_]+[A-Z0-9_]*$")
+
 // EnvVariablePattern is a regular expression for valid environment variable names
 var EnvVariablePattern = regexp.MustCompile("^[a-zA-Z_]+[a-zA-Z0-9_]*$")
 
@@ -29,18 +33,37 @@ func Read(r io.Reader) (Workflow, error) {
 	if rs, ok := r.(io.Seeker); ok {
 		_, err := rs.Seek(0, io.SeekStart)
 		if err != nil {
-			return nil, err
+			return Workflow{}, err
 		}
 	}
 
-	b, err := io.ReadAll(r)
+	first, second, err := SplitYAMLDocuments(r)
 	if err != nil {
-		return nil, err
+		return Workflow{}, err
 	}
 
-	wf := Workflow{}
+	var inputs map[string]InputParameter
+	var tasks TaskMap
 
-	return wf, yaml.Unmarshal(b, &wf)
+	if len(second) > 0 {
+		if err := yaml.Unmarshal(first, &inputs); err != nil {
+			return Workflow{}, err
+		}
+		if err := yaml.Unmarshal(second, &tasks); err != nil {
+			return Workflow{}, err
+		}
+	} else {
+		if err := yaml.Unmarshal(first, &tasks); err != nil {
+			return Workflow{}, err
+		}
+	}
+
+	wf := Workflow{
+		Inputs: inputs,
+		Tasks:  tasks,
+	}
+
+	return wf, nil
 }
 
 var _schema string
@@ -48,7 +71,11 @@ var _schemaOnce sync.Once
 
 // Validate validates a workflow
 func Validate(wf Workflow) error {
-	for name, task := range wf {
+	if len(wf.Tasks) == 0 {
+		return errors.New("no tasks available")
+	}
+
+	for name, task := range wf.Tasks {
 		if ok := TaskNamePattern.MatchString(name); !ok {
 			return fmt.Errorf("task name %q does not satisfy %q", name, TaskNamePattern.String())
 		}
@@ -56,18 +83,14 @@ func Validate(wf Workflow) error {
 		ids := make(map[string]int, len(task))
 
 		for idx, step := range task {
-			// ensure that only one of run or uses or eval fields is set
-			// if more than one is set, return an error
-			// if none are set, return an error
+			// ensure that only one of run or uses fields is set
 			switch {
+			// both
 			case step.Uses != "" && step.Run != "":
 				return fmt.Errorf(".%s[%d] has both run and uses fields set", name, idx)
-			case step.Uses != "" && step.Eval != "":
-				return fmt.Errorf(".%s[%d] has both eval and uses fields set", name, idx)
-			case step.Run != "" && step.Eval != "":
-				return fmt.Errorf(".%s[%d] has both run and eval fields set", name, idx)
-			case step.Uses == "" && step.Run == "" && step.Eval == "":
-				return fmt.Errorf(".%s[%d] must have one of [eval, run, uses] fields set", name, idx)
+			// neither
+			case step.Uses == "" && step.Run == "":
+				return fmt.Errorf(".%s[%d] must have one of [run, uses] fields set", name, idx)
 			}
 
 			if step.ID != "" {
@@ -91,7 +114,7 @@ func Validate(wf Workflow) error {
 					// if step.Uses == name {
 					// 	return fmt.Errorf(".%s[%d].uses cannot reference itself", name, idx)
 					// }
-					_, ok := wf.Find(step.Uses)
+					_, ok := wf.Tasks.Find(step.Uses)
 					if !ok {
 						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
 					}
@@ -117,7 +140,22 @@ func Validate(wf Workflow) error {
 
 	schemaLoader := gojsonschema.NewStringLoader(_schema)
 
-	result, err := gojsonschema.Validate(schemaLoader, gojsonschema.NewGoLoader(wf))
+	if len(wf.Inputs) > 0 {
+		result, err := gojsonschema.Validate(schemaLoader, gojsonschema.NewGoLoader(wf.Inputs))
+		if err != nil {
+			return err
+		}
+
+		if !result.Valid() {
+			var resErr error
+			for _, err := range result.Errors() {
+				resErr = errors.Join(resErr, errors.New(err.String()))
+			}
+			return resErr
+		}
+	}
+
+	result, err := gojsonschema.Validate(schemaLoader, gojsonschema.NewGoLoader(wf.Tasks))
 	if err != nil {
 		return err
 	}
@@ -138,7 +176,29 @@ func Validate(wf Workflow) error {
 func ReadAndValidate(r io.Reader) (Workflow, error) {
 	wf, err := Read(r)
 	if err != nil {
-		return nil, err
+		return Workflow{}, err
 	}
 	return wf, Validate(wf)
+}
+
+// SplitYAMLDocuments reads from r until it finds the YAML document separator "\n---\n",
+// then returns two byte slices: one for the content before the separator and one for the content after.
+// If the separator is not found, the second slice will be empty.
+func SplitYAMLDocuments(r io.Reader) ([]byte, []byte, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	separator := []byte("\n---\n")
+	index := bytes.Index(data, separator)
+
+	if index == -1 {
+		return data, nil, nil
+	}
+
+	firstPart := data[:index]
+	secondPart := data[index+len(separator):]
+
+	return firstPart, secondPart, nil
 }

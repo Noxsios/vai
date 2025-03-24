@@ -1,20 +1,20 @@
-! exec vai
-stderr 'ERRO open vai.yaml: no such file or directory'
+! exec maru2
+stderr 'ERRO open tasks.yaml: no such file or directory'
 
-exec vai -f vai-other.yaml
+exec maru2 -f maru2-other.yaml
 stdout default
 stderr '\$\ echo "default"'
 
-mv vai-other.yaml vai.yaml
+mv maru2-other.yaml tasks.yaml
 
-exec vai
+exec maru2
 stdout default
 stderr '\$\ echo "default"'
 
-exec vai default
+exec maru2 default
 stdout default
 stderr '\$\ echo "default"'
 
--- vai-other.yaml --
+-- maru2-other.yaml --
 default:
   - run: echo "default"

@@ -1,8 +1,16 @@
-exec vai hello-world default echo --with name=Jeff
+exec maru2 hello-world default echo --with name=Jeff
 cmp stderr stderr.txt
 cmp stdout stdout.txt
 
--- vai.yaml --
+-- tasks.yaml --
+
+name:
+  description: "Name to greet"
+
+date:
+  description: "Date to use"
+  default: "now"
+---
 default:
   - run: echo "default"
 
@@ -10,19 +18,12 @@ hello-world:
   - run: echo "Hello, World!"
 
 echo:
-  - run: echo "Hello, $NAME, today is $DATE"
-    with:
-      name: input
-      # default to "now" if not provided
-      date: input || "now"
-  - uses: hello-world
+  - run: echo "Hello, ${{ input "name" }}, today is $INPUT_DATE"
 -- stderr.txt --
 $ echo "Hello, World!"
 $ echo "default"
-$ echo "Hello, $NAME, today is $DATE"
-$ echo "Hello, World!"
+$ echo "Hello, Jeff, today is $INPUT_DATE"
 -- stdout.txt --
 Hello, World!
 default
 Hello, Jeff, today is now
-Hello, World!

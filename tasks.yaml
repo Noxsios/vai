@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=maru2.schema.json
+text:
+  description: Text to echo
+  default: "Hello, world!"
+  required: true
+---
+# yaml-language-server: $schema=maru2.schema.json
+default:
+  - uses: echo
+    with:
+      text: input was '${{ input "text" }}'
+  - run: |
+      echo "$INPUT_TEXT"
+      echo "${{ input "text" }}"
+  - run: echo "bar=baz" >> $MARU2_OUTPUT
+    id: foo
+  - run: |
+      echo "got: ${{ from "foo" "bar" }}"
+
+echo:
+  - run: echo "${{ input "text" }}"
+
+test:
+  - run: go test -race -cover -coverprofile=coverage.out -failfast -timeout 3m ./...
+
+simple:
+  - uses: file:testdata/simple.yaml?task=hello-world
+
+complex-imports:
+  - uses: pkg:github/defenseunicorns/maru2@main?task=echo#testdata/simple.yaml
+  - uses: https://raw.githubusercontent.com/defenseunicorns/maru2/main/testdata/simple.yaml?task=echo
+  - uses: pkg:gitlab/defenseunicorns/maru2?base=https://gitlab.example.com

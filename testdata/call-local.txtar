@@ -1,8 +1,8 @@
-exec vai hello
+exec maru2 hello
 cmp stderr stderr.txt
 cmp stdout stdout.txt
 
--- vai.yaml --
+-- tasks.yaml --
 general-kenobi:
   - run: echo "General Kenobi"
 

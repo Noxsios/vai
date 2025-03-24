@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ import (
 )
 
 // CommandOutputs is a map of step IDs to their outputs.
-type CommandOutputs map[string]map[string]any
+type CommandOutputs map[string]map[string]string
 
 // ParseOutput parses the output file of a step
 //

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"cmp"
@@ -14,28 +14,34 @@ import (
 const DefaultTaskName = "default"
 
 // DefaultFileName is the default file name
-const DefaultFileName = "vai.yaml"
+const DefaultFileName = "tasks.yaml"
+
+// Workflow is a wrapper struct around the input map and task map
+//
+// It represents a "tasks.yaml" file
+type Workflow struct {
+	Inputs map[string]InputParameter `json:"inputs,omitempty"`
+	Tasks  TaskMap                   `json:"tasks,omitempty"`
+}
 
 // Task is a list of steps
 type Task []Step
 
-// Workflow is a map of tasks, where the key is the task name
-//
-// This is the main structure that represents `vai.yaml` and other vai workflow files
-type Workflow map[string]Task
+// TaskMap is a map of tasks, where the key is the task name
+type TaskMap map[string]Task
 
 // Find returns a task by name
-func (wf Workflow) Find(call string) (Task, bool) {
-	task, ok := wf[call]
+func (tm TaskMap) Find(call string) (Task, bool) {
+	task, ok := tm[call]
 	return task, ok
 }
 
 // OrderedTaskNames returns a list of task names in alphabetical order
 //
 // The default task is always first
-func (wf Workflow) OrderedTaskNames() []string {
-	names := make([]string, 0, len(wf))
-	for k := range wf {
+func (tm TaskMap) OrderedTaskNames() []string {
+	names := make([]string, 0, len(tm))
+	for k := range tm {
 		names = append(names, k)
 	}
 	slices.SortStableFunc(names, func(a, b string) int {
@@ -50,22 +56,51 @@ func (wf Workflow) OrderedTaskNames() []string {
 	return names
 }
 
-// WorkFlowSchema returns a JSON schema for a vai workflow
+// WorkFlowSchema returns a JSON schema for a maru2 workflow
 func WorkFlowSchema() *jsonschema.Schema {
 	reflector := jsonschema.Reflector{}
 	reflector.ExpandedStruct = true
-	schema := reflector.Reflect(&Workflow{})
+	schema := reflector.Reflect(&TaskMap{})
 
-	schema.PatternProperties = map[string]*jsonschema.Schema{
-		TaskNamePattern.String(): {
-			Ref:         "#/$defs/Task",
-			Description: "Name of the task",
-		},
-	}
+	schema.ID = "https://raw.githubusercontent.com/defenseunicorns/maru2/main/maru2.schema.json"
 
-	schema.ID = "https://raw.githubusercontent.com/Noxsios/vai/main/vai.schema.json"
+	inputSchema := reflector.Reflect(&InputParameter{})
+	inputSchema.ID = jsonschema.EmptyID
+	inputSchema.Description = "Input parameter for the workflow"
+	schema.Definitions["Input"] = inputSchema
+
+	// schema.Definitions["Inputs"] = &jsonschema.Schema{
+	// 	Type: "object",
+	// 	PatternProperties: map[string]*jsonschema.Schema{
+	// 		EnvVariablePattern.String(): &jsonschema.Schema{
+	// 			Ref: "#/$defs/Input",
+	// 		},
+	// 	},
+	// }
 
 	schema.AdditionalProperties = jsonschema.FalseSchema
+	schema.PatternProperties = map[string]*jsonschema.Schema{
+		"^x-": &jsonschema.Schema{
+			Type: "object",
+		},
+		TaskNamePattern.String(): {
+			If: &jsonschema.Schema{
+				Type: "array",
+			},
+			Then: &jsonschema.Schema{
+				Description: "Name of the task",
+				Ref:         "#/$defs/Task",
+			},
+			Else: &jsonschema.Schema{
+				If: &jsonschema.Schema{
+					Type: "object",
+				},
+				Then: &jsonschema.Schema{
+					Ref: "#/$defs/Input",
+				},
+			},
+		},
+	}
 
 	return schema
 }

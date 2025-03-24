@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
-	"context"
 	"runtime"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,50 +24,50 @@ func TestPerformLookups(t *testing.T) {
 			name: "no lookups",
 		},
 		{
+			name: "invalid template",
+			local: With{
+				"foo": `${{ input`,
+			},
+			expectedError: "template: expression evaluator:1: unclosed action",
+		},
+		{
 			name: "simple lookup + builtins",
 			input: With{
 				"key": "value",
 			},
 			local: With{
-				"key":      "input",
-				"os":       "os",
-				"arch":     "arch",
-				"platform": "platform",
-				"boolean":  true,
+				"key":      "${{ input \"key\" }}",
+				"os":       "${{ .OS }}",
+				"arch":     "${{ .ARCH }}",
+				"platform": "${{ .PLATFORM }}",
 				"int":      1,
+				"bool":     false,
 			},
 			expectedTemplated: With{
 				"key":      "value",
 				"os":       runtime.GOOS,
 				"arch":     runtime.GOARCH,
 				"platform": runtime.GOOS + "/" + runtime.GOARCH,
-				"boolean":  true,
 				"int":      1,
+				"bool":     false,
 			},
 		},
 		{
-			name: "lookup with defaults",
-			input: With{
-				"foo": "value",
-			},
+			name: "missing input",
 			local: With{
-				"foo": "input || \"value\"",
-				"bar": "input || \"default\"",
+				"key": `${{ input "foo" }}`,
 			},
-			expectedTemplated: With{
-				"foo": "value",
-				"bar": "default",
-			},
+			expectedError: "template: expression evaluator:1:4: executing \"expression evaluator\" at <input \"foo\">: error calling input: \"foo\" does not exist in the map of inputs",
 		},
 		{
 			name: "lookup from previous outputs",
 			previous: CommandOutputs{
-				"step-1": map[string]any{
+				"step-1": map[string]string{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `steps["step-1"].bar`,
+				"foo": `${{ from "step-1" "bar" }}`,
 			},
 			expectedTemplated: With{
 				"foo": "baz",
@@ -76,40 +76,28 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - no outputs from step",
 			local: With{
-				"foo": `steps["step-1"].bar`,
+				"foo": `${{ from "step-1" "bar" }}`,
 			},
-			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].bar",
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+		},
+		{
+			name: "lookup from previous outputs - missing arg",
+			local: With{
+				"foo": `${{ from "step-1" }}`,
+			},
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from>: wrong number of args for from: want 2 got 1`,
 		},
 		{
 			name: "lookup from previous outputs - output from step not found",
 			previous: CommandOutputs{
-				"step-1": map[string]any{
+				"step-1": map[string]string{
 					"bar": "baz",
 				},
 			},
 			local: With{
-				"foo": `steps["step-1"].dne`,
+				"foo": `${{ from "step-1" "dne" }}`,
 			},
-			expectedError: "expression evaluated to <nil>:\n\tsteps[\"step-1\"].dne",
-		},
-		{
-			name: "invalid syntax",
-			previous: CommandOutputs{
-				"step-1": map[string]any{
-					"bar": "baz",
-				},
-			},
-			local: With{
-				"foo": `input | persist`,
-			},
-			expectedError: "script run: Compile Error: unresolved reference 'persist'\n\tat (main):1:21",
-		},
-		{
-			name: "eval to nil",
-			local: With{
-				"foo": "input",
-			},
-			expectedError: "expression evaluated to <nil>:\n\tinput",
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
 		},
 	}
 
@@ -117,11 +105,13 @@ func TestPerformLookups(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			templated, err := PerformLookups(context.TODO(), tc.input, tc.local, tc.previous)
+			templated, err := TemplateWith(t.Context(), tc.input, tc.local, tc.previous)
 			if err != nil {
 				require.EqualError(t, err, tc.expectedError)
+			} else {
+				require.NoError(t, err)
 			}
-			require.Equal(t, tc.expectedTemplated, templated)
+			assert.Equal(t, tc.expectedTemplated, templated)
 		})
 	}
 }

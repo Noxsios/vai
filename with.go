@@ -1,75 +1,111 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"context"
 	"fmt"
 	"runtime"
+	"strings"
+	"text/template"
 
 	"github.com/charmbracelet/log"
-	"github.com/d5/tengo/v2"
 )
-
-// WithEntry is a single entry in a With map
-type WithEntry any
 
 // With is a map of string keys and WithEntry values used to pass parameters to called tasks and within steps
 //
 // Each key will be mapped to an equivalent environment variable
 // when the command is run. eg. `with: {foo: bar}` will be passed
 // as `foo=bar` to the command.
-type With map[string]WithEntry
+type With map[string]any
 
-// PerformLookups evaluates the expressions in the local With map
-func PerformLookups(ctx context.Context, outer, local With, previousOutputs CommandOutputs) (With, error) {
-	if len(local) == 0 {
-		return local, nil
+func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *template.Template {
+	fm := template.FuncMap{
+		"input": func(in string) (any, error) {
+			v, ok := input[in]
+			if !ok {
+				return "", fmt.Errorf("%q does not exist in the map of inputs", in)
+			}
+			return v, nil
+		},
+		"from": func(stepName, id string) (string, error) {
+			stepOutputs, ok := previousOutputs[stepName]
+			if !ok {
+				return "", fmt.Errorf("no outputs for step %q", stepName)
+			}
+
+			v, ok := stepOutputs[id]
+			if ok {
+				return v, nil
+			}
+			return "", fmt.Errorf("no output %q from %q", id, stepName)
+		},
 	}
+	return template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}").Funcs(fm)
+}
 
+func TemplateWith(ctx context.Context, input, local With, previousOutputs CommandOutputs) (With, error) {
 	logger := log.FromContext(ctx)
+	logger.Debug("templating", "input", input, "local", local)
 
-	logger.Debug("templating", "input", outer, "local", local)
+	if len(local) == 0 {
+		return input, nil
+	}
 
 	r := make(With, len(local))
 
 	for k, v := range local {
 		val, ok := v.(string)
+		// if the val is not a string we can skip templating
 		if !ok {
 			r[k] = v
 			continue
 		}
-
-		env := map[string]interface{}{
-			"os":       runtime.GOOS,
-			"arch":     runtime.GOARCH,
-			"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-			"input":    outer[k],
-		}
-
-		steps := map[string]tengo.Object{}
-
-		for k, v := range previousOutputs {
-			obj, err := tengo.FromInterface(v)
-			if err != nil {
-				return nil, err
-			}
-			steps[k] = obj
-		}
-
-		env["steps"] = steps
-
-		out, err := tengo.Eval(ctx, val, env)
+		tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(val)
 		if err != nil {
 			return nil, err
 		}
-		if out == nil {
-			return nil, fmt.Errorf("expression evaluated to <nil>:\n\t%s", val)
+
+		var result strings.Builder
+
+		if err := tmpl.Execute(&result, struct {
+			OS       string
+			ARCH     string
+			PLATFORM string
+		}{
+			OS:       runtime.GOOS,
+			ARCH:     runtime.GOARCH,
+			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+		}); err != nil {
+			return nil, err
 		}
-		r[k] = out
+		r[k] = result.String()
 	}
 
 	logger.Debug("templated", "result", r)
+
 	return r, nil
+}
+
+// TemplateRun
+func TemplateRun(run string, input With, previousOutputs CommandOutputs) (string, error) {
+	tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(run)
+	if err != nil {
+		return "", err
+	}
+	var result strings.Builder
+
+	if err := tmpl.Execute(&result, struct {
+		OS       string
+		ARCH     string
+		PLATFORM string
+	}{
+		OS:       runtime.GOOS,
+		ARCH:     runtime.GOARCH,
+		PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
+	}); err != nil {
+		return "", err
+	}
+	return result.String(), nil
 }

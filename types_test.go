@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"encoding/json"
@@ -11,38 +11,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// helloWorldWorkflow is a simple workflow that prints "Hello World!"
 // do not make changes to this variable within tests
 var helloWorldWorkflow = Workflow{
-	"default": {Step{Run: "echo 'Hello World!'"}},
-	"a-task":  {Step{Run: "echo 'task a'"}},
-	"task-b":  {Step{Run: "echo 'task b'"}},
+	Tasks: TaskMap{
+		"default": {Step{Run: "echo 'Hello World!'"}},
+		"a-task":  {Step{Run: "echo 'task a'"}},
+		"task-b":  {Step{Run: "echo 'task b'"}},
+	},
 }
 
 func TestWorkflowFind(t *testing.T) {
-	task, ok := helloWorldWorkflow.Find(DefaultTaskName)
+	task, ok := helloWorldWorkflow.Tasks.Find(DefaultTaskName)
 	require.True(t, ok)
 
 	require.Len(t, task, 1)
 	require.Equal(t, "echo 'Hello World!'", task[0].Run)
 
-	task, ok = helloWorldWorkflow.Find("foo")
+	task, ok = helloWorldWorkflow.Tasks.Find("foo")
 	require.Nil(t, task)
 	require.False(t, ok)
 }
 
 func TestOrderedTaskNames(t *testing.T) {
-	names := helloWorldWorkflow.OrderedTaskNames()
+	names := helloWorldWorkflow.Tasks.OrderedTaskNames()
 	expected := []string{"default", "a-task", "task-b"}
 	require.ElementsMatch(t, expected, names)
 
-	wf := Workflow{"foo": nil, "bar": nil, "baz": nil, "default": nil}
-	names = wf.OrderedTaskNames()
+	wf := Workflow{Tasks: TaskMap{"foo": nil, "bar": nil, "baz": nil, "default": nil}}
+	names = wf.Tasks.OrderedTaskNames()
 	expected = []string{"default", "bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 
-	delete(wf, "default")
+	delete(wf.Tasks, "default")
 
-	names = wf.OrderedTaskNames()
+	names = wf.Tasks.OrderedTaskNames()
 	expected = []string{"bar", "baz", "foo"}
 	require.ElementsMatch(t, expected, names)
 }
@@ -55,7 +58,7 @@ func TestWorkflowSchemaGen(t *testing.T) {
 	b, err := json.Marshal(schema)
 	require.NoError(t, err)
 
-	current, err := os.ReadFile("vai.schema.json")
+	current, err := os.ReadFile("maru2.schema.json")
 	require.NoError(t, err)
 
 	require.JSONEq(t, string(current), string(b))

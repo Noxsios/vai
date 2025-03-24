@@ -1,6 +1,6 @@
-! exec vai sleep --timeout 2s
+! exec maru2 sleep --timeout 2s
 stderr 'ERRO task "sleep" timed out'
 
--- vai.yaml --
+-- tasks.yaml --
 sleep:
-  - run: sleep 5
+  - run: sleep 10

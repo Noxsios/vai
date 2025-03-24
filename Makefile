@@ -1,14 +1,19 @@
 # SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+# SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
 .DEFAULT_GOAL := build
 
 build:
-	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/vai
+	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/maru2
+
+clean:
+	rm -rf bin/
 
 alias:
-	@echo "alias vai='$(PWD)/bin/vai'" >>  ~/.config/fish/config.fish
-	@echo "VAI_COMPLETION=true vai completion fish | source" >> ~/.config/fish/config.fish
+	@echo "alias maru2='$(PWD)/bin/maru2'" >>  ~/.config/fish/config.fish
+	@echo "MARU_COMPLETION=true maru2 completion fish | source" >> ~/.config/fish/config.fish
 
 hello-world:
 	echo "Hello, World!"
+
+.PHONY: build clean alias hello-world

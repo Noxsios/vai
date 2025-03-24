@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
 // Package cmd provides the root command for the vai CLI.
 package cmd
@@ -10,19 +10,16 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"runtime/debug"
 	"syscall"
 	"time"
 
 	"github.com/charmbracelet/log"
-	"github.com/noxsios/vai"
-	"github.com/noxsios/vai/uses"
-	"github.com/spf13/afero"
+	"github.com/defenseunicorns/maru2"
 	"github.com/spf13/cobra"
 )
 
-// NewRootCmd creates the root command for the vai CLI.
+// NewRootCmd creates the root command for the maru2 CLI.
 func NewRootCmd() *cobra.Command {
 	var (
 		w        map[string]string
@@ -35,11 +32,11 @@ func NewRootCmd() *cobra.Command {
 	)
 
 	root := &cobra.Command{
-		Use:   "vai",
+		Use:   "maru",
 		Short: "A simple task runner",
 		ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 			if filename == "" {
-				filename = vai.DefaultFileName
+				filename = maru2.DefaultFileName
 			}
 			f, err := os.Open(filename)
 			if err != nil {
@@ -47,12 +44,12 @@ func NewRootCmd() *cobra.Command {
 			}
 			defer f.Close()
 
-			wf, err := vai.ReadAndValidate(f)
+			wf, err := maru2.ReadAndValidate(f)
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 
-			return wf.OrderedTaskNames(), cobra.ShellCompDirectiveNoFileComp
+			return wf.Tasks.OrderedTaskNames(), cobra.ShellCompDirectiveNoFileComp
 		},
 		PreRunE: func(cmd *cobra.Command, _ []string) error {
 			l, err := log.ParseLevel(level)
@@ -78,7 +75,7 @@ func NewRootCmd() *cobra.Command {
 				return nil
 			}
 
-			if cmpl, ok := os.LookupEnv("VAI_COMPLETION"); ok && cmpl == "true" && len(args) == 2 && args[0] == "completion" {
+			if cmpl, ok := os.LookupEnv("MARU2_COMPLETION"); ok && cmpl == "true" && len(args) == 2 && args[0] == "completion" {
 				switch args[1] {
 				case "bash":
 					return cmd.GenBashCompletion(os.Stdout)
@@ -94,7 +91,7 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			if filename == "" {
-				filename = vai.DefaultFileName
+				filename = maru2.DefaultFileName
 			}
 
 			f, err := os.Open(filename)
@@ -103,13 +100,13 @@ func NewRootCmd() *cobra.Command {
 			}
 			defer f.Close()
 
-			wf, err := vai.ReadAndValidate(f)
+			wf, err := maru2.ReadAndValidate(f)
 			if err != nil {
 				return err
 			}
 
 			if list {
-				names := wf.OrderedTaskNames()
+				names := wf.Tasks.OrderedTaskNames()
 
 				if len(names) == 0 {
 					return fmt.Errorf("no tasks available")
@@ -123,13 +120,13 @@ func NewRootCmd() *cobra.Command {
 				return nil
 			}
 
-			with := make(vai.With)
+			with := make(maru2.With, len(w))
 			for k, v := range w {
 				with[k] = v
 			}
 
 			if len(args) == 0 {
-				args = append(args, vai.DefaultTaskName)
+				args = append(args, maru2.DefaultTaskName)
 			}
 
 			if timeout > 0 {
@@ -138,31 +135,10 @@ func NewRootCmd() *cobra.Command {
 				defer cancel()
 			}
 
-			var cacheDirectory string
-
-			if cache, ok := os.LookupEnv(vai.CacheEnvVar); ok {
-				cacheDirectory = cache
-			} else {
-				home, err := os.UserHomeDir()
-				if err != nil {
-					return err
-				}
-
-				cacheDirectory = filepath.Join(home, ".vai", "cache")
-
-				if err := os.MkdirAll(cacheDirectory, 0777); err != nil {
-					return err
-				}
-			}
-
-			store, err := uses.NewStore(afero.NewBasePathFs(afero.NewOsFs(), cacheDirectory))
-			if err != nil {
-				return err
-			}
 			rootOrigin := "file:" + filename
 
 			for _, call := range args {
-				if err := vai.Run(ctx, store, wf, call, with, rootOrigin, dry); err != nil {
+				if err := maru2.Run(ctx, wf, call, with, rootOrigin, dry); err != nil {
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 						return fmt.Errorf("task %q timed out", call)
 					}
@@ -184,7 +160,7 @@ func NewRootCmd() *cobra.Command {
 	return root
 }
 
-// Main executes the root command for the vai CLI.
+// Main executes the root command for the maru2 CLI.
 //
 // It returns 0 on success, 1 on failure and logs any errors.
 func Main() int {

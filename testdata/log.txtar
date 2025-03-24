@@ -1,7 +1,7 @@
-! exec vai -l dne
+! exec maru2 -l dne
 stderr 'ERRO invalid level: "dne"'
 
-exec vai --log-level debug
+exec maru2 --log-level debug
 cmp stderr stderr.txt
 cmp stdout stdout.txt
 
@@ -9,6 +9,6 @@ cmp stdout stdout.txt
 $ echo "default"
 -- stdout.txt --
 default
--- vai.yaml --
+-- tasks.yaml --
 default:
   - run: echo "default"

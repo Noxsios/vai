@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../maru2.schema.json
 default:
   - run: echo 'Hello World!'
 

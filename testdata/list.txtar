@@ -1,12 +1,12 @@
-exec vai --list
+exec maru2 --list
 cmp stderr stderr.txt
 
-exec rm vai.yaml
-exec touch vai.yaml
-! exec vai --list
+exec rm tasks.yaml
+exec touch tasks.yaml
+! exec maru2 --list
 stderr 'ERRO no tasks available'
 
--- vai.yaml --
+-- tasks.yaml --
 default:
   - run: echo "default"
 

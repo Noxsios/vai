@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func printScript(ctx context.Context, prefix, script string) {
 	script = strings.TrimSpace(script)
 
 	if termenv.EnvNoColor() {
-		for _, line := range strings.Split(script, "\n") {
+		for line := range strings.SplitSeq(script, "\n") {
 			logger.Printf("%s %s", prefix, line)
 		}
 		return
@@ -37,13 +37,13 @@ func printScript(ctx context.Context, prefix, script string) {
 	}
 	if err := quick.Highlight(&buf, script, lang, "terminal256", style); err != nil {
 		logger.Debugf("failed to highlight: %v", err)
-		for _, line := range strings.Split(script, "\n") {
+		for line := range strings.SplitSeq(script, "\n") {
 			logger.Printf("%s %s", prefix, line)
 		}
 		return
 	}
 
-	for _, line := range strings.Split(buf.String(), "\n") {
+	for line := range strings.SplitSeq(buf.String(), "\n") {
 		logger.Printf("%s %s", prefix, line)
 	}
 }

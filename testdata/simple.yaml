@@ -1,7 +1,14 @@
-# yaml-language-server: $schema=../vai.schema.json
+# yaml-language-server: $schema=../maru2.schema.json
+
+message:
+  required: false
+  description: message to echo
+---
+# yaml-language-server: $schema=../maru2.schema.json
 
 echo:
   - run: |
-      echo "$MESSAGE"
-    with:
-      message: input
+      echo "$INPUT_MESSAGE"
+
+hello-world:
+  - uses: file:hello-world.yaml

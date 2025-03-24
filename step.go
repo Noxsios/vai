@@ -1,23 +1,47 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
 
-package vai
+package maru2
 
 import (
 	"github.com/invopop/jsonschema"
 )
 
+// InputParameter represents a single input parameter for a task, to be used w/ `with`
+type InputParameter struct {
+	Description       string `json:"description" jsonschema:"description=Description of the parameter,required"`
+	DeprecatedMessage string `json:"deprecatedMessage,omitempty" jsonschema:"description=Message to display when the parameter is deprecated"`
+	Required          bool   `json:"required,omitempty" jsonschema:"description=Whether the parameter is required,default=true"`
+	Default           any    `json:"default,omitempty" jsonschema:"description=Default value for the parameter"`
+}
+
+// JSONSchemaExtend extends the JSON schema for a step
+func (InputParameter) JSONSchemaExtend(schema *jsonschema.Schema) {
+	schema.Properties.Set("default", &jsonschema.Schema{
+		Description: "Default value for the parameter",
+		OneOf: []*jsonschema.Schema{
+			{
+				Type: "string",
+			},
+			{
+				Type: "boolean",
+			},
+			{
+				Type: "integer",
+			},
+		},
+	})
+}
+
 // Step is a single step in a task
 //
-// While a step can have any combination of `run`, `eval`, and `uses` fields, only one of them should be set
+// While a step can have any combination of `run`, and `uses` fields, only one of them should be set
 // at a time.
 //
 // This is enforced by JSON schema validation.
 type Step struct {
 	// Run is the command/script to run
 	Run string `json:"run,omitempty"`
-	// Eval is an expression to evaluate with tengo
-	Eval string `json:"eval,omitempty"`
 	// Uses is a reference to another task
 	Uses string `json:"uses,omitempty"`
 	// With is a map of additional parameters for the step/task call
@@ -42,10 +66,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Location of a remote task to call conforming to the purl spec",
-	})
-	props.Set("eval", &jsonschema.Schema{
-		Type:        "string",
-		Description: "Expression to evaluate with tengo",
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
@@ -89,7 +109,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type: "string",
 	})
 	runProps.Set("uses", not)
-	runProps.Set("eval", not)
 	oneOfRun := &jsonschema.Schema{
 		Required:   []string{"run"},
 		Properties: runProps,
@@ -97,7 +116,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 	usesProps := jsonschema.NewProperties()
 	usesProps.Set("run", not)
-	usesProps.Set("eval", not)
 	usesProps.Set("uses", &jsonschema.Schema{
 		Type: "string",
 	})
@@ -106,21 +124,9 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Properties: usesProps,
 	}
 
-	evalProps := jsonschema.NewProperties()
-	evalProps.Set("run", not)
-	evalProps.Set("uses", not)
-	evalProps.Set("eval", &jsonschema.Schema{
-		Type: "string",
-	})
-	oneOfEval := &jsonschema.Schema{
-		Required:   []string{"eval"},
-		Properties: evalProps,
-	}
-
 	schema.Properties = props
 	schema.OneOf = []*jsonschema.Schema{
 		oneOfRun,
 		oneOfUses,
-		oneOfEval,
 	}
 }
