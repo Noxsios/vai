@@ -1,15 +1,15 @@
-exec vai -l debug
+exec maru2 -l debug
 stdout 'default\ndefault\ncallback\n'
 
--- vai.yaml --
+-- tasks.yaml --
 default:
   - run: echo "default"
-  - uses: file:dir/vai-other.yaml
+  - uses: file:dir/maru2-other.yaml
 
 callback:
   - run: echo "callback"
 
--- dir/vai-other.yaml --
+-- dir/maru2-other.yaml --
 default:
   - run: echo "default"
   - uses: file:../?task=callback

@@ -1,9 +1,9 @@
-exec vai --dry-run
+exec maru2 --dry-run
 cmp stderr stderr.txt
 stdout ''
 
 -- stderr.txt --
 $ echo "default"
--- vai.yaml --
+-- tasks.yaml --
 default:
   - run: echo "default"
