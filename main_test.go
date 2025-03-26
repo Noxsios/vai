@@ -12,9 +12,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	os.Exit(testscript.RunMain(m, map[string]func() int{
-		"maru2": cmd.Main,
-	}))
+	testscript.Main(m, map[string]func(){
+		"maru2": func() {
+			code := cmd.Main()
+			os.Exit(code)
+		},
+	})
 }
 
 func TestSimple(t *testing.T) {

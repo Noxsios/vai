@@ -105,7 +105,7 @@ c=d`),
 			if err != nil {
 				require.EqualError(t, err, tc.expectedErr)
 			}
-			require.Equal(t, len(tc.expected), len(outputs))
+			require.Len(t, outputs, len(tc.expected))
 			for k, v := range tc.expected {
 				require.Equal(t, v, outputs[k])
 			}

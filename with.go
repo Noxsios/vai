@@ -45,6 +45,7 @@ func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *tem
 	return template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}").Funcs(fm)
 }
 
+// TemplateWith templates a With map with the given input and previous outputs
 func TemplateWith(ctx context.Context, input, local With, previousOutputs CommandOutputs) (With, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("templating", "input", input, "local", local)
@@ -88,7 +89,7 @@ func TemplateWith(ctx context.Context, input, local With, previousOutputs Comman
 	return r, nil
 }
 
-// TemplateRun
+// TemplateRun templates a run command with the given input and previous outputs
 func TemplateRun(run string, input With, previousOutputs CommandOutputs) (string, error) {
 	tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(run)
 	if err != nil {

@@ -29,18 +29,15 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 
 	outputs := make(CommandOutputs)
 
-	withDefaults := outer
-	for k, v := range wf.Inputs {
-		// TODO: actually think of a strategy
-		name := strings.TrimLeft(strings.ToLower(k), "$")
-		if v.Required && withDefaults[name] == nil && v.Default == nil {
-			return fmt.Errorf("missing required input: %s", k)
+	withDefaults := outer // --with/with: + defaults
+	for name, input := range wf.Inputs {
+		if input.Required && withDefaults[name] == nil && input.Default == nil {
+			return fmt.Errorf("missing required input: %s", name)
 		}
 		if withDefaults[name] == nil {
-			withDefaults[name] = v.Default
+			withDefaults[name] = input.Default
 		}
 	}
-	// --with + defaults
 
 	for _, step := range task {
 		if step.Uses != "" {

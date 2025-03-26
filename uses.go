@@ -14,6 +14,7 @@ import (
 	"github.com/package-url/packageurl-go"
 )
 
+// ExecuteUses executes a task from a given URI.
 func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool) error {
 	logger := log.FromContext(ctx)
 	logger.Debug("using", "task", u)
