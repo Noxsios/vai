@@ -20,8 +20,8 @@ const DefaultFileName = "tasks.yaml"
 //
 // It represents a "tasks.yaml" file
 type Workflow struct {
-	Inputs map[string]InputParameter `json:"inputs,omitempty"`
-	Tasks  TaskMap                   `json:"tasks,omitempty"`
+	Inputs InputMap `json:"inputs,omitempty"`
+	Tasks  TaskMap  `json:"tasks,omitempty"`
 }
 
 // Task is a list of steps

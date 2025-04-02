@@ -206,7 +206,7 @@ echo:
   - run: echo
 `),
 			Workflow{
-				Inputs: map[string]InputParameter(nil),
+				Inputs: InputMap(nil),
 				Tasks: TaskMap{
 					"echo": Task{Step{
 						Run: "echo",
@@ -219,7 +219,7 @@ echo:
 echo:
 `),
 			Workflow{
-				Inputs: map[string]InputParameter(nil),
+				Inputs: InputMap(nil),
 				Tasks: TaskMap{
 					"echo": Task(nil),
 				},
@@ -232,7 +232,7 @@ echo:
   - run: echo
 `),
 			Workflow{
-				Inputs: map[string]InputParameter(nil),
+				Inputs: InputMap(nil),
 				Tasks: TaskMap{"2-echo": Task{Step{
 					Run: "echo",
 				}}},
@@ -246,7 +246,7 @@ echo:
     id: "&1337"
 `),
 			Workflow{
-				Inputs: map[string]InputParameter(nil),
+				Inputs: InputMap(nil),
 				Tasks: TaskMap{"echo": Task{Step{
 					Run: "echo",
 					ID:  "&1337",

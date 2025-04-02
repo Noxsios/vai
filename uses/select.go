@@ -45,7 +45,6 @@ func SelectFetcher(uri, previous *url.URL) (Fetcher, error) {
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println(previous)
 			switch pURL.Type {
 			case "github":
 				return NewGitHubClient(), nil

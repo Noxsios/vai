@@ -37,30 +37,50 @@ func Read(r io.Reader) (Workflow, error) {
 		}
 	}
 
-	first, second, err := SplitYAMLDocuments(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return Workflow{}, err
 	}
 
-	var inputs map[string]InputParameter
-	var tasks TaskMap
+	var wf Workflow
+	wf.Inputs = make(InputMap)
+	wf.Tasks = make(TaskMap)
 
-	if len(second) > 0 {
-		if err := yaml.Unmarshal(first, &inputs); err != nil {
-			return Workflow{}, err
-		}
-		if err := yaml.Unmarshal(second, &tasks); err != nil {
-			return Workflow{}, err
-		}
-	} else {
-		if err := yaml.Unmarshal(first, &tasks); err != nil {
-			return Workflow{}, err
-		}
+	var tempMap map[string]any
+	if err := yaml.Unmarshal(data, &tempMap); err != nil {
+		return Workflow{}, err
 	}
 
-	wf := Workflow{
-		Inputs: inputs,
-		Tasks:  tasks,
+	for key, value := range tempMap {
+		// Skip x- prefixed keys (extensions)
+		if strings.HasPrefix(key, "x-") {
+			continue
+		}
+
+		// Check if the value is an array (task) or an object (input parameter)
+		switch v := value.(type) {
+		case []any:
+			taskBytes, err := yaml.Marshal(v)
+			if err != nil {
+				return Workflow{}, err
+			}
+			var task Task
+			if err := yaml.Unmarshal(taskBytes, &task); err != nil {
+				return Workflow{}, err
+			}
+			wf.Tasks[key] = task
+
+		case map[string]any:
+			inputBytes, err := yaml.Marshal(v)
+			if err != nil {
+				return Workflow{}, err
+			}
+			var input InputParameter
+			if err := yaml.Unmarshal(inputBytes, &input); err != nil {
+				return Workflow{}, err
+			}
+			wf.Inputs[key] = input
+		}
 	}
 
 	return wf, nil
