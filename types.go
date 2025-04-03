@@ -102,5 +102,61 @@ func WorkFlowSchema() *jsonschema.Schema {
 		},
 	}
 
+	// Add examples of complete workflows
+	schema.Examples = []interface{}{
+		// Simple workflow with one input and default task
+		map[string]interface{}{
+			"text": map[string]interface{}{
+				"description": "Text to echo",
+				"default":     "Hello, world!",
+				"required":    true,
+			},
+			"default": []interface{}{
+				map[string]interface{}{
+					"run": "echo \"$INPUT_TEXT\"",
+				},
+				map[string]interface{}{
+					"run": "echo \"${{ input \"text\" }}\"",
+				},
+			},
+		},
+		// More complex workflow with multiple tasks and builtin usage
+		map[string]interface{}{
+			"message": map[string]interface{}{
+				"description": "Message to display",
+				"default":     "Hello from maru2!",
+				"required":    true,
+			},
+			"flag": map[string]interface{}{
+				"description": "Optional flag",
+				"default":     false,
+				"required":    false,
+			},
+			"default": []interface{}{
+				map[string]interface{}{
+					"uses": "builtin:echo",
+					"with": map[string]interface{}{
+						"text": "${{ input \"message\" }}",
+					},
+				},
+			},
+			"complex-task": []interface{}{
+				map[string]interface{}{
+					"uses": "builtin:complex@v1",
+					"with": map[string]interface{}{
+						"inner": map[string]interface{}{
+							"text": "Nested value",
+						},
+						"flag": "${{ input \"flag\" }}",
+					},
+				},
+				map[string]interface{}{
+					"run": "echo \"Task complete\"",
+					"id":  "completion",
+				},
+			},
+		},
+	}
+
 	return schema
 }

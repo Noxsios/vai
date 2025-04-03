@@ -28,6 +28,10 @@ func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool
 		return fmt.Errorf("must contain a scheme: %q", u)
 	}
 
+	if uri.Scheme == "builtin" {
+		return ExecuteBuiltin(ctx, u, with, dry)
+	}
+
 	previous, err := url.Parse(prev)
 	if err != nil {
 		return err

@@ -65,18 +65,22 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	props.Set("run", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Command/script to run",
+		Examples:    []interface{}{"echo 'Hello World'", "cat file.txt | grep pattern"},
 	})
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Location of a remote task to call conforming to the purl spec",
+		Examples:    []interface{}{"builtin:echo", "pkg:github/defenseunicorns/maru2@main?task=echo"},
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Unique identifier for the step",
+		Examples:    []interface{}{"setup", "build", "test"},
 	})
 	props.Set("name", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Human-readable name for the step",
+		Examples:    []interface{}{"Setup environment", "Build application", "Run tests"},
 	})
 
 	oneOfStringIntBool := &jsonschema.Schema{
@@ -126,6 +130,92 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Required:   []string{"uses"},
 		Properties: usesProps,
 	}
+
+	// Create conditional schemas for all builtins
+	var allBuiltinSchemas []*jsonschema.Schema
+
+	// Add schema for each builtin
+	for name, builtin := range Builtins {
+		builtinSchema := &jsonschema.Schema{
+			If: &jsonschema.Schema{
+				Properties: jsonschema.NewProperties(),
+			},
+			Then: &jsonschema.Schema{
+				Properties: jsonschema.NewProperties(),
+			},
+		}
+
+		// Set the "uses" pattern to match this builtin
+		builtinSchema.If.Properties.Set("uses", &jsonschema.Schema{
+			Type:    "string",
+			Pattern: "^builtin:" + name + "(@.*)?$",
+		})
+
+		// Create a schema for the "with" property based on the builtin's parameters
+		withSchema := &jsonschema.Schema{
+			Type:                 "object",
+			AdditionalProperties: jsonschema.FalseSchema,
+			Properties:           jsonschema.NewProperties(),
+		}
+
+		// Add properties for each parameter in the builtin
+		var required []string
+
+		for paramName, param := range builtin.Params {
+			paramSchema := &jsonschema.Schema{
+				Description: param.Description,
+			}
+
+			// Set the appropriate type based on the default value
+			if param.Default != nil {
+				switch v := param.Default.(type) {
+				case string:
+					paramSchema.Type = "string"
+					paramSchema.Default = v
+					paramSchema.Description = param.Description
+				case int:
+					paramSchema.Type = "integer"
+					paramSchema.Default = v
+					paramSchema.Description = param.Description
+				case bool:
+					paramSchema.Type = "boolean"
+					paramSchema.Default = v
+					paramSchema.Description = param.Description
+				default:
+					// For complex types, use oneOf
+					paramSchema = oneOfStringIntBool
+					paramSchema.Description = param.Description
+				}
+			} else {
+				// If no default, use oneOf
+				paramSchema = oneOfStringIntBool
+				paramSchema.Description = param.Description
+			}
+
+			withSchema.Properties.Set(paramName, paramSchema)
+			
+			if param.Required {
+				required = append(required, paramName)
+			}
+		}
+
+		withSchema.Required = required
+
+		// Set the "with" schema in the Then clause
+		thenProps := jsonschema.NewProperties()
+		thenProps.Set("with", withSchema)
+		builtinSchema.Then.Properties = thenProps
+		
+		if len(required) > 0 {
+			builtinSchema.Then.Required = []string{"with"}
+		}
+
+		// Add to the list of builtin schemas
+		allBuiltinSchemas = append(allBuiltinSchemas, builtinSchema)
+	}
+
+	// Add the conditional schemas to the oneOfUses schema
+	oneOfUses.AllOf = allBuiltinSchemas
 
 	schema.Properties = props
 	schema.OneOf = []*jsonschema.Schema{

@@ -139,7 +139,7 @@ func Validate(wf Workflow) error {
 						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
 					}
 				} else {
-					schemes := []string{"file", "http", "https", "pkg"}
+					schemes := []string{"file", "http", "https", "pkg", "builtin"}
 
 					if !slices.Contains(schemes, u.Scheme) {
 						return fmt.Errorf(".%s[%d].uses %q is not one of [%s]", name, idx, u.Scheme, strings.Join(schemes, ", "))

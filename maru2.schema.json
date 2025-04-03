@@ -56,6 +56,98 @@
           ]
         },
         {
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "uses": {
+                    "type": "string",
+                    "pattern": "^builtin:echo(@.*)?$"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "properties": {
+                      "text": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ],
+                        "description": "URL to fetch"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "text"
+                    ]
+                  }
+                },
+                "required": [
+                  "with"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "uses": {
+                    "type": "string",
+                    "pattern": "^builtin:fetch(@.*)?$"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "properties": {
+                      "url": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ],
+                        "description": "URL to fetch"
+                      },
+                      "method": {
+                        "type": "string",
+                        "description": "HTTP method to use",
+                        "default": "GET"
+                      },
+                      "timeout": {
+                        "type": "integer",
+                        "description": "Timeout in seconds",
+                        "default": 30
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "url"
+                    ]
+                  }
+                },
+                "required": [
+                  "with"
+                ]
+              }
+            }
+          ],
           "properties": {
             "run": {
               "not": true
@@ -72,19 +164,37 @@
       "properties": {
         "run": {
           "type": "string",
-          "description": "Command/script to run"
+          "description": "Command/script to run",
+          "examples": [
+            "echo 'Hello World'",
+            "cat file.txt | grep pattern"
+          ]
         },
         "uses": {
           "type": "string",
-          "description": "Location of a remote task to call conforming to the purl spec"
+          "description": "Location of a remote task to call conforming to the purl spec",
+          "examples": [
+            "builtin:echo",
+            "pkg:github/defenseunicorns/maru2@main?task=echo"
+          ]
         },
         "id": {
           "type": "string",
-          "description": "Unique identifier for the step"
+          "description": "Unique identifier for the step",
+          "examples": [
+            "setup",
+            "build",
+            "test"
+          ]
         },
         "name": {
           "type": "string",
-          "description": "Human-readable name for the step"
+          "description": "Human-readable name for the step",
+          "examples": [
+            "Setup environment",
+            "Build application",
+            "Run tests"
+          ]
         },
         "with": {
           "patternProperties": {
@@ -99,7 +209,8 @@
                 {
                   "type": "integer"
                 }
-              ]
+              ],
+              "description": "URL to fetch"
             }
           },
           "additionalProperties": false,
@@ -144,5 +255,57 @@
     }
   },
   "additionalProperties": false,
-  "type": "object"
+  "type": "object",
+  "examples": [
+    {
+      "default": [
+        {
+          "run": "echo \"$INPUT_TEXT\""
+        },
+        {
+          "run": "echo \"${{ input \"text\" }}\""
+        }
+      ],
+      "text": {
+        "default": "Hello, world!",
+        "description": "Text to echo",
+        "required": true
+      }
+    },
+    {
+      "complex-task": [
+        {
+          "uses": "builtin:complex@v1",
+          "with": {
+            "flag": "${{ input \"flag\" }}",
+            "inner": {
+              "text": "Nested value"
+            }
+          }
+        },
+        {
+          "id": "completion",
+          "run": "echo \"Task complete\""
+        }
+      ],
+      "default": [
+        {
+          "uses": "builtin:echo",
+          "with": {
+            "text": "${{ input \"message\" }}"
+          }
+        }
+      ],
+      "flag": {
+        "default": false,
+        "description": "Optional flag",
+        "required": false
+      },
+      "message": {
+        "default": "Hello from maru2!",
+        "description": "Message to display",
+        "required": true
+      }
+    }
+  ]
 }
