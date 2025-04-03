@@ -62,56 +62,6 @@
                 "properties": {
                   "uses": {
                     "type": "string",
-                    "pattern": "^builtin:fetch(@.*)?$"
-                  }
-                }
-              },
-              "then": {
-                "properties": {
-                  "with": {
-                    "properties": {
-                      "url": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "integer"
-                          }
-                        ],
-                        "description": "Text to echo"
-                      },
-                      "method": {
-                        "type": "string",
-                        "description": "HTTP method to use",
-                        "default": "GET"
-                      },
-                      "timeout": {
-                        "type": "integer",
-                        "description": "Timeout in seconds",
-                        "default": 30
-                      }
-                    },
-                    "additionalProperties": false,
-                    "type": "object",
-                    "required": [
-                      "url"
-                    ]
-                  }
-                },
-                "required": [
-                  "with"
-                ]
-              }
-            },
-            {
-              "if": {
-                "properties": {
-                  "uses": {
-                    "type": "string",
                     "pattern": "^builtin:echo(@.*)?$"
                   }
                 }
@@ -131,14 +81,62 @@
                           {
                             "type": "integer"
                           }
-                        ],
-                        "description": "Text to echo"
+                        ]
                       }
                     },
                     "additionalProperties": false,
                     "type": "object",
                     "required": [
                       "text"
+                    ]
+                  }
+                },
+                "required": [
+                  "with"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "uses": {
+                    "type": "string",
+                    "pattern": "^builtin:fetch(@.*)?$"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "properties": {
+                      "method": {
+                        "type": "string",
+                        "description": "HTTP method to use",
+                        "default": "GET"
+                      },
+                      "timeout": {
+                        "type": "integer",
+                        "description": "Timeout in seconds",
+                        "default": 30
+                      },
+                      "url": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "url"
                     ]
                   }
                 },
@@ -209,8 +207,7 @@
                 {
                   "type": "integer"
                 }
-              ],
-              "description": "Text to echo"
+              ]
             }
           },
           "additionalProperties": false,

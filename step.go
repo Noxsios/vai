@@ -4,6 +4,8 @@
 package maru2
 
 import (
+	"slices"
+
 	"github.com/invopop/jsonschema"
 )
 
@@ -161,7 +163,13 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		// Add properties for each parameter in the builtin
 		var required []string
 
-		for paramName, param := range builtin.Params {
+		var names []string
+		for name := range builtin.Params {
+			names = append(names, name)
+		}
+		slices.Sort(names)
+		for _, paramName := range names {
+			param := builtin.Params[paramName]
 			paramSchema := &jsonschema.Schema{
 				Description: param.Description,
 			}
@@ -172,28 +180,23 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 				case string:
 					paramSchema.Type = "string"
 					paramSchema.Default = v
-					paramSchema.Description = param.Description
 				case int:
 					paramSchema.Type = "integer"
 					paramSchema.Default = v
-					paramSchema.Description = param.Description
 				case bool:
 					paramSchema.Type = "boolean"
 					paramSchema.Default = v
-					paramSchema.Description = param.Description
 				default:
 					// For complex types, use oneOf
 					paramSchema = oneOfStringIntBool
-					paramSchema.Description = param.Description
 				}
 			} else {
 				// If no default, use oneOf
 				paramSchema = oneOfStringIntBool
-				paramSchema.Description = param.Description
 			}
 
 			withSchema.Properties.Set(paramName, paramSchema)
-			
+
 			if param.Required {
 				required = append(required, paramName)
 			}
@@ -205,7 +208,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		thenProps := jsonschema.NewProperties()
 		thenProps.Set("with", withSchema)
 		builtinSchema.Then.Properties = thenProps
-		
+
 		if len(required) > 0 {
 			builtinSchema.Then.Required = []string{"with"}
 		}
