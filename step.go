@@ -185,6 +185,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 				}
 			} else {
 				paramSchema = oneOfStringIntBool
+				paramSchema.Description = param.Description
 			}
 
 			withSchema.Properties.Set(paramName, paramSchema)

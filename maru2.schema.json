@@ -81,7 +81,8 @@
                           {
                             "type": "integer"
                           }
-                        ]
+                        ],
+                        "description": "URL to fetch"
                       }
                     },
                     "additionalProperties": false,
@@ -130,7 +131,8 @@
                           {
                             "type": "integer"
                           }
-                        ]
+                        ],
+                        "description": "URL to fetch"
                       }
                     },
                     "additionalProperties": false,
@@ -207,7 +209,8 @@
                 {
                   "type": "integer"
                 }
-              ]
+              ],
+              "description": "URL to fetch"
             }
           },
           "additionalProperties": false,
