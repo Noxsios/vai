@@ -29,9 +29,9 @@ benchmark:
   - run: hyperfine './bin/maru2 hello-world' 'make hello-world' -N --warmup 10
 
 simple:
-  - uses: builtin:echo@v1
+  - uses: builtin:echo
     with:
-      text: "Hello, world!"
+      text: ${{ input "text" }}
 
 chuck:
   - uses: builtin:fetch

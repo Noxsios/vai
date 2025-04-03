@@ -67,22 +67,22 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	props.Set("run", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Command/script to run",
-		Examples:    []interface{}{"echo 'Hello World'", "cat file.txt | grep pattern"},
+		Examples:    []any{"echo 'Hello World'", "cat file.txt | grep pattern"},
 	})
 	props.Set("uses", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Location of a remote task to call conforming to the purl spec",
-		Examples:    []interface{}{"builtin:echo", "pkg:github/defenseunicorns/maru2@main?task=echo"},
+		Examples:    []any{"builtin:echo", "pkg:github/defenseunicorns/maru2@main?task=echo"},
 	})
 	props.Set("id", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Unique identifier for the step",
-		Examples:    []interface{}{"setup", "build", "test"},
+		Examples:    []any{"setup", "build", "test"},
 	})
 	props.Set("name", &jsonschema.Schema{
 		Type:        "string",
 		Description: "Human-readable name for the step",
-		Examples:    []interface{}{"Setup environment", "Build application", "Run tests"},
+		Examples:    []any{"Setup environment", "Build application", "Run tests"},
 	})
 
 	oneOfStringIntBool := &jsonschema.Schema{
@@ -134,8 +134,17 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	}
 
 	var allBuiltinSchemas []*jsonschema.Schema
+	reflector := jsonschema.Reflector{ExpandedStruct: true}
 
-	for name, builtin := range Builtins {
+	var builtinNames []string
+	for name := range Builtins {
+		builtinNames = append(builtinNames, name)
+	}
+	slices.Sort(builtinNames)
+
+	for _, name := range builtinNames {
+		builtinEmpty := Builtins[name]
+
 		builtinSchema := &jsonschema.Schema{
 			If: &jsonschema.Schema{
 				Properties: jsonschema.NewProperties(),
@@ -150,70 +159,25 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 			Pattern: "^builtin:" + name + "(@.*)?$",
 		})
 
-		withSchema := &jsonschema.Schema{
-			Type:                 "object",
-			AdditionalProperties: jsonschema.FalseSchema,
-			Properties:           jsonschema.NewProperties(),
+		var withSchema *jsonschema.Schema
+		switch b := builtinEmpty.(type) {
+		case BuiltinEcho, BuiltinFetch:
+			withSchema = reflector.Reflect(b)
 		}
 
-		var required []string
+		if withSchema != nil {
+			withSchema.ID = jsonschema.EmptyID
+			withSchema.Type = "object"
+			withSchema.AdditionalProperties = jsonschema.FalseSchema
 
-		var names []string
-		for name := range builtin.Params {
-			names = append(names, name)
-		}
-		slices.Sort(names)
-		for _, paramName := range names {
-			param := builtin.Params[paramName]
-			paramSchema := &jsonschema.Schema{
-				Description: param.Description,
+			builtinSchema.Then.Properties.Set("with", withSchema)
+
+			if len(withSchema.Required) > 0 {
+				builtinSchema.Then.Required = []string{"with"}
 			}
 
-			if param.Default != nil {
-				switch v := param.Default.(type) {
-				case string:
-					paramSchema.Type = "string"
-					paramSchema.Default = v
-					paramSchema.Description = param.Description
-				case int:
-					paramSchema.Type = "integer"
-					paramSchema.Default = v
-					paramSchema.Description = param.Description
-				case bool:
-					paramSchema.Type = "boolean"
-					paramSchema.Default = v
-					paramSchema.Description = param.Description
-				default:
-					paramSchema = &jsonschema.Schema{
-						OneOf:       oneOfStringIntBool.OneOf,
-						Description: param.Description,
-					}
-				}
-			} else {
-				paramSchema = &jsonschema.Schema{
-					OneOf:       oneOfStringIntBool.OneOf,
-					Description: param.Description,
-				}
-			}
-
-			withSchema.Properties.Set(paramName, paramSchema)
-
-			if param.Required {
-				required = append(required, paramName)
-			}
+			allBuiltinSchemas = append(allBuiltinSchemas, builtinSchema)
 		}
-
-		withSchema.Required = required
-
-		thenProps := jsonschema.NewProperties()
-		thenProps.Set("with", withSchema)
-		builtinSchema.Then.Properties = thenProps
-
-		if len(required) > 0 {
-			builtinSchema.Then.Required = []string{"with"}
-		}
-
-		allBuiltinSchemas = append(allBuiltinSchemas, builtinSchema)
 	}
 
 	oneOfUses.AllOf = allBuiltinSchemas

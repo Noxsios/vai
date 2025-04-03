@@ -69,19 +69,10 @@
               "then": {
                 "properties": {
                   "with": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
                     "properties": {
                       "text": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "integer"
-                          }
-                        ],
+                        "type": "string",
                         "description": "Text to echo"
                       }
                     },
@@ -109,30 +100,19 @@
               "then": {
                 "properties": {
                   "with": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
                     "properties": {
+                      "url": {
+                        "type": "string",
+                        "description": "URL to fetch"
+                      },
                       "method": {
                         "type": "string",
-                        "description": "HTTP method to use",
-                        "default": "GET"
+                        "description": "HTTP method to use"
                       },
                       "timeout": {
                         "type": "integer",
-                        "description": "Timeout in seconds",
-                        "default": 30
-                      },
-                      "url": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "integer"
-                          }
-                        ],
-                        "description": "URL to fetch"
+                        "description": "Timeout for the request"
                       }
                     },
                     "additionalProperties": false,

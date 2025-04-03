@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
+
 package maru2
 
 import (
@@ -14,11 +17,29 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+// ExecuteBuiltin determines which builtin to run based upon the uses string, converts the With map to the expected struct, then calls the builtin's Execute method
 func ExecuteBuiltin(ctx context.Context, uses string, with With, dry bool) error {
 	name := strings.TrimPrefix(uses, "builtin:")
 
-	builtin, ok := Builtins[name]
+	builtinEmpty, ok := Builtins[name]
 	if !ok {
+		return fmt.Errorf("builtin %q not found", name)
+	}
+
+	var builtin Builtin
+	var err error
+	switch builtinEmpty.(type) {
+	case BuiltinEcho:
+		builtin, err = ConvertWithToType[BuiltinEcho](with)
+		if err != nil {
+			return fmt.Errorf("builtin %q: %w", name, err)
+		}
+	case BuiltinFetch:
+		builtin, err = ConvertWithToType[BuiltinFetch](with)
+		if err != nil {
+			return fmt.Errorf("builtin %q: %w", name, err)
+		}
+	default:
 		return fmt.Errorf("builtin %q not found", name)
 	}
 
@@ -28,15 +49,10 @@ func ExecuteBuiltin(ctx context.Context, uses string, with With, dry bool) error
 		return nil
 	}
 
-	// TODO: how do we want to deal w/ conflicts between workflow inputs and builtin params
-	withDefaults, err := MergeWithAndParams(ctx, with, builtin.Params)
-	if err != nil {
-		return err
-	}
-
-	return builtin.Execute(ctx, withDefaults)
+	return builtin.Execute(ctx)
 }
 
+// MergeWithAndParams merges a With map into an InputMap, handling defaults, logging warnings on deprections, etc...
 func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, error) {
 	logger := log.FromContext(ctx)
 	merged := maps.Clone(with)
@@ -58,87 +74,67 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 	return merged, nil
 }
 
-type Builtin struct {
-	Execute func(context.Context, With) error
-	Params  InputMap
+// Builtin is a simple interface, only implementable on structs due to how the with re-parsing logic works
+type Builtin interface {
+	Execute(ctx context.Context) error
+}
+
+// ConvertWithToType transforms a With (map[string]any) to a Go struct through reparsing the map using generics
+func ConvertWithToType[T any](with With) (T, error) {
+	var result T
+
+	b, err := json.Marshal(with)
+	if err != nil {
+		return result, err
+	}
+
+	return result, json.Unmarshal(b, &result)
 }
 
 // Builtins maps builtin names to their implementations
 var Builtins = map[string]Builtin{
-	"echo": {
-		Execute: Echo,
-		Params: InputMap{
-			"text": InputParameter{
-				Description: "Text to echo",
-				Required:    true,
-			},
-		},
-	},
-	"fetch": {
-		Execute: Fetch,
-		Params: InputMap{
-			"url": InputParameter{
-				Description: "URL to fetch",
-				Required:    true,
-			},
-			"method": InputParameter{
-				Description: "HTTP method to use",
-				Required:    false,
-				Default:     "GET",
-			},
-			"timeout": InputParameter{
-				Description: "Timeout in seconds",
-				Required:    false,
-				Default:     30,
-			},
-		},
-	},
+	"echo":  BuiltinEcho{},
+	"fetch": BuiltinFetch{},
 }
 
-// Echo is a builtin function that echoes text using log
-func Echo(ctx context.Context, with With) error {
-	logger := log.FromContext(ctx)
-	text, ok := with["text"]
-	if !ok {
-		return fmt.Errorf("echo: missing required parameter 'text'")
-	}
+// BuiltinEcho is a sample builtin to MVP execution
+type BuiltinEcho struct {
+	Text string `json:"text" jsonschema:"description=Text to echo"`
+}
 
-	logger.Print(text)
+// Execute the builtin
+func (b BuiltinEcho) Execute(ctx context.Context) error {
+	logger := log.FromContext(ctx)
+
+	logger.Print(b.Text)
 	return nil
 }
 
-// Fetch is a builtin function that makes HTTP requests
-func Fetch(ctx context.Context, with With) error {
+// BuiltinFetch is a sample builtin to showcase configuration and schema gen
+type BuiltinFetch struct {
+	URL    string `json:"url" jsonschema:"description=URL to fetch"`
+	Method string `json:"method,omitempty" jsonschema:"description=HTTP method to use"`
+	// TODO: this is time in nanoseconds
+	Timeout time.Duration `json:"timeout,omitempty" jsonschema:"description=Timeout for the request"`
+}
+
+// Execute the builtin
+func (b BuiltinFetch) Execute(ctx context.Context) error {
 	logger := log.FromContext(ctx)
-	urlParam, ok := with["url"]
-	if !ok {
-		return fmt.Errorf("fetch: missing required parameter 'url'")
+
+	method := b.Method
+	if method == "" {
+		method = "GET"
 	}
 
-	url, ok := urlParam.(string)
-	if !ok {
-		return fmt.Errorf("fetch: 'url' parameter must be a string")
-	}
-
-	method := "GET"
-	if methodParam, ok := with["method"]; ok {
-		if methodStr, ok := methodParam.(string); ok {
-			method = methodStr
-		}
-	}
-
+	// timeout := b.Timeout
 	timeout := 30 * time.Second
-	if timeoutParam, ok := with["timeout"]; ok {
-		if timeoutInt, ok := timeoutParam.(int); ok {
-			timeout = time.Duration(timeoutInt) * time.Second
-		}
-	}
 
 	client := &http.Client{
 		Timeout: timeout,
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, nil)
+	req, err := http.NewRequestWithContext(ctx, method, b.URL, nil)
 	if err != nil {
 		return fmt.Errorf("fetch: error creating request: %w", err)
 	}
