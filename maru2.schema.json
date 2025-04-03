@@ -62,46 +62,6 @@
                 "properties": {
                   "uses": {
                     "type": "string",
-                    "pattern": "^builtin:echo(@.*)?$"
-                  }
-                }
-              },
-              "then": {
-                "properties": {
-                  "with": {
-                    "properties": {
-                      "text": {
-                        "oneOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "integer"
-                          }
-                        ],
-                        "description": "URL to fetch"
-                      }
-                    },
-                    "additionalProperties": false,
-                    "type": "object",
-                    "required": [
-                      "text"
-                    ]
-                  }
-                },
-                "required": [
-                  "with"
-                ]
-              }
-            },
-            {
-              "if": {
-                "properties": {
-                  "uses": {
-                    "type": "string",
                     "pattern": "^builtin:fetch(@.*)?$"
                   }
                 }
@@ -122,7 +82,7 @@
                             "type": "integer"
                           }
                         ],
-                        "description": "URL to fetch"
+                        "description": "Text to echo"
                       },
                       "method": {
                         "type": "string",
@@ -139,6 +99,46 @@
                     "type": "object",
                     "required": [
                       "url"
+                    ]
+                  }
+                },
+                "required": [
+                  "with"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "uses": {
+                    "type": "string",
+                    "pattern": "^builtin:echo(@.*)?$"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "properties": {
+                      "text": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ],
+                        "description": "Text to echo"
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "text"
                     ]
                   }
                 },
@@ -210,7 +210,7 @@
                   "type": "integer"
                 }
               ],
-              "description": "URL to fetch"
+              "description": "Text to echo"
             }
           },
           "additionalProperties": false,
