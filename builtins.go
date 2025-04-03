@@ -110,7 +110,6 @@ func Echo(ctx context.Context, with With) error {
 // Fetch is a builtin function that makes HTTP requests
 func Fetch(ctx context.Context, with With) error {
 	logger := log.FromContext(ctx)
-	// Get URL parameter
 	urlParam, ok := with["url"]
 	if !ok {
 		return fmt.Errorf("fetch: missing required parameter 'url'")
@@ -121,7 +120,6 @@ func Fetch(ctx context.Context, with With) error {
 		return fmt.Errorf("fetch: 'url' parameter must be a string")
 	}
 
-	// Get method parameter (default to GET)
 	method := "GET"
 	if methodParam, ok := with["method"]; ok {
 		if methodStr, ok := methodParam.(string); ok {
@@ -129,7 +127,6 @@ func Fetch(ctx context.Context, with With) error {
 		}
 	}
 
-	// Get timeout parameter (default to 30 seconds)
 	timeout := 30 * time.Second
 	if timeoutParam, ok := with["timeout"]; ok {
 		if timeoutInt, ok := timeoutParam.(int); ok {
@@ -137,36 +134,30 @@ func Fetch(ctx context.Context, with With) error {
 		}
 	}
 
-	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: timeout,
 	}
 
-	// Create request
 	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return fmt.Errorf("fetch: error creating request: %w", err)
 	}
 
-	// Execute request
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("fetch: error executing request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("fetch: error reading response body: %w", err)
 	}
 
-	// Print response info
 	logger.Printf("Status: %s", resp.Status)
 	logger.Printf("Content-Type: %s", resp.Header.Get("Content-Type"))
 	logger.Printf("Content-Length: %d", len(body))
 
-	// Pretty-print JSON if content type is JSON
 	if resp.Header.Get("Content-Type") == "application/json" {
 		var prettyJSON bytes.Buffer
 		if err := json.Indent(&prettyJSON, body, "", "  "); err == nil {
@@ -176,7 +167,6 @@ func Fetch(ctx context.Context, with With) error {
 		}
 	}
 
-	// Otherwise print as plain text
 	logger.Print("Response Body:")
 	logger.Print(string(body))
 

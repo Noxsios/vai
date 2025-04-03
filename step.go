@@ -133,10 +133,8 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Properties: usesProps,
 	}
 
-	// Create conditional schemas for all builtins
 	var allBuiltinSchemas []*jsonschema.Schema
 
-	// Add schema for each builtin
 	for name, builtin := range Builtins {
 		builtinSchema := &jsonschema.Schema{
 			If: &jsonschema.Schema{
@@ -147,20 +145,17 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 			},
 		}
 
-		// Set the "uses" pattern to match this builtin
 		builtinSchema.If.Properties.Set("uses", &jsonschema.Schema{
 			Type:    "string",
 			Pattern: "^builtin:" + name + "(@.*)?$",
 		})
 
-		// Create a schema for the "with" property based on the builtin's parameters
 		withSchema := &jsonschema.Schema{
 			Type:                 "object",
 			AdditionalProperties: jsonschema.FalseSchema,
 			Properties:           jsonschema.NewProperties(),
 		}
 
-		// Add properties for each parameter in the builtin
 		var required []string
 
 		var names []string
@@ -174,7 +169,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 				Description: param.Description,
 			}
 
-			// Set the appropriate type based on the default value
 			if param.Default != nil {
 				switch v := param.Default.(type) {
 				case string:
@@ -187,11 +181,9 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 					paramSchema.Type = "boolean"
 					paramSchema.Default = v
 				default:
-					// For complex types, use oneOf
 					paramSchema = oneOfStringIntBool
 				}
 			} else {
-				// If no default, use oneOf
 				paramSchema = oneOfStringIntBool
 			}
 
@@ -204,7 +196,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 
 		withSchema.Required = required
 
-		// Set the "with" schema in the Then clause
 		thenProps := jsonschema.NewProperties()
 		thenProps.Set("with", withSchema)
 		builtinSchema.Then.Properties = thenProps
@@ -213,11 +204,9 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 			builtinSchema.Then.Required = []string{"with"}
 		}
 
-		// Add to the list of builtin schemas
 		allBuiltinSchemas = append(allBuiltinSchemas, builtinSchema)
 	}
 
-	// Add the conditional schemas to the oneOfUses schema
 	oneOfUses.AllOf = allBuiltinSchemas
 
 	schema.Properties = props

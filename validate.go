@@ -4,7 +4,6 @@
 package maru2
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -199,26 +198,4 @@ func ReadAndValidate(r io.Reader) (Workflow, error) {
 		return Workflow{}, err
 	}
 	return wf, Validate(wf)
-}
-
-// SplitYAMLDocuments reads from r until it finds the YAML document separator "\n---\n",
-// then returns two byte slices: one for the content before the separator and one for the content after.
-// If the separator is not found, the second slice will be empty.
-func SplitYAMLDocuments(r io.Reader) ([]byte, []byte, error) {
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	separator := []byte("\n---\n")
-	index := bytes.Index(data, separator)
-
-	if index == -1 {
-		return data, nil, nil
-	}
-
-	firstPart := data[:index]
-	secondPart := data[index+len(separator):]
-
-	return firstPart, secondPart, nil
 }
