@@ -174,18 +174,26 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 				case string:
 					paramSchema.Type = "string"
 					paramSchema.Default = v
+					paramSchema.Description = param.Description
 				case int:
 					paramSchema.Type = "integer"
 					paramSchema.Default = v
+					paramSchema.Description = param.Description
 				case bool:
 					paramSchema.Type = "boolean"
 					paramSchema.Default = v
+					paramSchema.Description = param.Description
 				default:
-					paramSchema = oneOfStringIntBool
+					paramSchema = &jsonschema.Schema{
+						OneOf:       oneOfStringIntBool.OneOf,
+						Description: param.Description,
+					}
 				}
 			} else {
-				paramSchema = oneOfStringIntBool
-				paramSchema.Description = param.Description
+				paramSchema = &jsonschema.Schema{
+					OneOf:       oneOfStringIntBool.OneOf,
+					Description: param.Description,
+				}
 			}
 
 			withSchema.Properties.Set(paramName, paramSchema)

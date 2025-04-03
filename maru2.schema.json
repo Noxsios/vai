@@ -82,7 +82,7 @@
                             "type": "integer"
                           }
                         ],
-                        "description": "URL to fetch"
+                        "description": "Text to echo"
                       }
                     },
                     "additionalProperties": false,
@@ -209,8 +209,7 @@
                 {
                   "type": "integer"
                 }
-              ],
-              "description": "URL to fetch"
+              ]
             }
           },
           "additionalProperties": false,
