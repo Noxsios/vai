@@ -159,11 +159,7 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 			Pattern: "^builtin:" + name + "(@.*)?$",
 		})
 
-		var withSchema *jsonschema.Schema
-		switch b := builtinEmpty.(type) {
-		case BuiltinEcho, BuiltinFetch:
-			withSchema = reflector.Reflect(b)
-		}
+		withSchema := reflector.Reflect(builtinEmpty)
 
 		if withSchema != nil {
 			withSchema.ID = jsonschema.EmptyID
