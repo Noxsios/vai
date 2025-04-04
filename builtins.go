@@ -116,6 +116,8 @@ type BuiltinFetch struct {
 	Method string `json:"method,omitempty" jsonschema:"description=HTTP method to use"`
 	// TODO: this is time in nanoseconds
 	Timeout time.Duration `json:"timeout,omitempty" jsonschema:"description=Timeout for the request"`
+
+	Headers map[string]string `json:"headers,omitempty" jsonschema:"description=HTTP headers to send"`
 }
 
 // Execute the builtin
@@ -133,6 +135,8 @@ func (b BuiltinFetch) Execute(ctx context.Context) error {
 	client := &http.Client{
 		Timeout: timeout,
 	}
+
+	logger.Printf("Headers: %s", b.Headers)
 
 	req, err := http.NewRequestWithContext(ctx, method, b.URL, nil)
 	if err != nil {

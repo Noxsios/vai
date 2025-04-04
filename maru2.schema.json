@@ -113,6 +113,13 @@
                       "timeout": {
                         "type": "integer",
                         "description": "Timeout for the request"
+                      },
+                      "headers": {
+                        "additionalProperties": {
+                          "type": "string"
+                        },
+                        "type": "object",
+                        "description": "HTTP headers to send"
                       }
                     },
                     "additionalProperties": false,
@@ -125,6 +132,43 @@
                 "required": [
                   "with"
                 ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "uses": {
+                    "not": {
+                      "pattern": "^builtin:.*$"
+                    },
+                    "type": "string"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "patternProperties": {
+                      "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "minItems": 1,
+                    "description": "Additional parameters for the step/task call"
+                  }
+                }
               }
             }
           ],
@@ -177,25 +221,7 @@
           ]
         },
         "with": {
-          "patternProperties": {
-            "^[a-zA-Z_]+[a-zA-Z0-9_]*$": {
-              "oneOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "minItems": 1,
-          "description": "Additional parameters for the step/task call"
+          "type": "object"
         }
       },
       "additionalProperties": false,

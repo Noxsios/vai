@@ -38,6 +38,8 @@ chuck:
     with:
       url: https://api.chucknorris.io/jokes/random
       timeout: 10
+      headers:
+        Accept: application/json
 
 complex-imports:
   - uses: pkg:github/defenseunicorns/maru2@main?task=echo#testdata/simple.yaml

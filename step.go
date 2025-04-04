@@ -85,34 +85,6 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Examples:    []any{"Setup environment", "Build application", "Run tests"},
 	})
 
-	oneOfStringIntBool := &jsonschema.Schema{
-		OneOf: []*jsonschema.Schema{
-			{
-				Type: "string",
-			},
-			{
-				Type: "boolean",
-			},
-			{
-				Type: "integer",
-			},
-		},
-	}
-
-	var single uint64 = 1
-
-	with := &jsonschema.Schema{
-		Type:        "object",
-		Description: "Additional parameters for the step/task call",
-		MinItems:    &single,
-		PatternProperties: map[string]*jsonschema.Schema{
-			EnvVariablePattern.String(): oneOfStringIntBool,
-		},
-		AdditionalProperties: jsonschema.FalseSchema,
-	}
-
-	props.Set("with", with)
-
 	runProps := jsonschema.NewProperties()
 	runProps.Set("run", &jsonschema.Schema{
 		Type: "string",
@@ -176,7 +148,59 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		}
 	}
 
+	var single uint64 = 1
+
+	oneOfGenericWith := &jsonschema.Schema{
+		If: &jsonschema.Schema{
+			Properties: jsonschema.NewProperties(),
+		},
+		Then: &jsonschema.Schema{
+			Properties: jsonschema.NewProperties(),
+		},
+	}
+
+	oneOfGenericWith.If.Properties.Set("uses", &jsonschema.Schema{
+		Type: "string",
+		Not:  &jsonschema.Schema{Pattern: "^builtin:.*$"},
+	})
+
+	withSchema := &jsonschema.Schema{
+		Type:        "object",
+		Description: "Additional parameters for the step/task call",
+		MinItems:    &single,
+		PatternProperties: map[string]*jsonschema.Schema{
+			EnvVariablePattern.String(): {
+				OneOf: []*jsonschema.Schema{
+					{
+						Type: "string",
+					},
+					{
+						Type: "boolean",
+					},
+					{
+						Type: "integer",
+					},
+				},
+			},
+		},
+		AdditionalProperties: jsonschema.FalseSchema,
+	}
+
+	withSchema.PatternProperties[EnvVariablePattern.String()] = &jsonschema.Schema{
+		OneOf: []*jsonschema.Schema{
+			{Type: "string"},
+			{Type: "boolean"},
+			{Type: "integer"},
+		},
+	}
+
+	oneOfGenericWith.Then.Properties.Set("with", withSchema)
+
+	allBuiltinSchemas = append(allBuiltinSchemas, oneOfGenericWith)
+
 	oneOfUses.AllOf = allBuiltinSchemas
+
+	props.Set("with", &jsonschema.Schema{Type: "object"})
 
 	schema.Properties = props
 	schema.OneOf = []*jsonschema.Schema{
