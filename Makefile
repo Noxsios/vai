@@ -5,6 +5,7 @@
 
 build:
 	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/maru2
+	go run gen/main.go
 
 clean:
 	rm -rf bin/

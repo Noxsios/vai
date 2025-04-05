@@ -6,6 +6,7 @@ package maru2
 import (
 	"context"
 	"fmt"
+	"maps"
 	"runtime"
 	"strings"
 	"text/template"
@@ -63,25 +64,11 @@ func TemplateWith(ctx context.Context, input, local With, previousOutputs Comman
 			r[k] = v
 			continue
 		}
-		tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(val)
+		result, err := TemplateString(input, previousOutputs, val)
 		if err != nil {
 			return nil, err
 		}
-
-		var result strings.Builder
-
-		if err := tmpl.Execute(&result, struct {
-			OS       string
-			ARCH     string
-			PLATFORM string
-		}{
-			OS:       runtime.GOOS,
-			ARCH:     runtime.GOARCH,
-			PLATFORM: fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		}); err != nil {
-			return nil, err
-		}
-		r[k] = result.String()
+		r[k] = result
 	}
 
 	logger.Debug("templated", "result", r)
@@ -89,9 +76,9 @@ func TemplateWith(ctx context.Context, input, local With, previousOutputs Comman
 	return r, nil
 }
 
-// TemplateRun templates a run command with the given input and previous outputs
-func TemplateRun(run string, input With, previousOutputs CommandOutputs) (string, error) {
-	tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(run)
+// TemplateString templates a string with the given input and previous outputs
+func TemplateString(input With, previousOutputs CommandOutputs, str string) (string, error) {
+	tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(str)
 	if err != nil {
 		return "", err
 	}
@@ -109,4 +96,26 @@ func TemplateRun(run string, input With, previousOutputs CommandOutputs) (string
 		return "", err
 	}
 	return result.String(), nil
+}
+
+// MergeWithAndParams merges a With map into an InputMap, handling defaults, logging warnings on deprections, etc...
+func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, error) {
+	logger := log.FromContext(ctx)
+	merged := maps.Clone(with)
+
+	for name, param := range params {
+		if _, ok := merged[name]; !ok {
+			if param.Required && merged[name] == nil && param.Default == nil {
+				return nil, fmt.Errorf("missing required input: %q", name)
+			}
+			if merged[name] == nil {
+				merged[name] = param.Default
+			}
+			if param.DeprecatedMessage != "" && merged[name] != nil {
+				logger.Warnf("input %q is deprecated: %s", name, param.DeprecatedMessage)
+			}
+		}
+	}
+
+	return merged, nil
 }

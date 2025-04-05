@@ -206,7 +206,7 @@ echo:
   - run: echo
 `),
 			Workflow{
-				Inputs: InputMap(nil),
+				Inputs: InputMap{},
 				Tasks: TaskMap{
 					"echo": Task{Step{
 						Run: "echo",
@@ -219,11 +219,9 @@ echo:
 echo:
 `),
 			Workflow{
-				Inputs: InputMap(nil),
-				Tasks: TaskMap{
-					"echo": Task(nil),
-				},
-			}, "", "schema validation failed",
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			}, "", "no tasks available",
 		},
 		{
 			"bad task name",
@@ -232,7 +230,7 @@ echo:
   - run: echo
 `),
 			Workflow{
-				Inputs: InputMap(nil),
+				Inputs: InputMap{},
 				Tasks: TaskMap{"2-echo": Task{Step{
 					Run: "echo",
 				}}},
@@ -246,7 +244,7 @@ echo:
     id: "&1337"
 `),
 			Workflow{
-				Inputs: InputMap(nil),
+				Inputs: InputMap{},
 				Tasks: TaskMap{"echo": Task{Step{
 					Run: "echo",
 					ID:  "&1337",

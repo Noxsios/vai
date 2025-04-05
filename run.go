@@ -6,12 +6,13 @@ package maru2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
 // Run executes a task in a workflow with the given inputs.
@@ -34,7 +35,20 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		return err
 	}
 
+	var firstError error
+	logger := log.FromContext(ctx)
+
 	for _, step := range task {
+		if firstError == nil && step.If == "failure" {
+			logger.Debug("skipping step", "name", step.Name, "if", step.If)
+			continue
+		}
+
+		if firstError != nil && step.If == "" {
+			logger.Debug("skipping step", "name", step.Name, "if", step.If)
+			continue
+		}
+
 		if step.Uses != "" {
 			templatedWith, err := TemplateWith(ctx, withDefaults, step.With, outputs)
 			if err != nil {
@@ -42,20 +56,22 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 			}
 			if _, ok := wf.Tasks.Find(step.Uses); ok {
 				if err := Run(ctx, wf, step.Uses, templatedWith, origin, dry); err != nil {
-					return err
+					if firstError == nil { // subsequent errors are ignored
+						firstError = err
+					}
 				}
 				continue
 			}
 			if err := ExecuteUses(ctx, step.Uses, templatedWith, origin, dry); err != nil {
-				return err
+				if firstError == nil { // subsequent errors are ignored
+					firstError = err
+				}
 			}
 			continue
 		}
 
 		if step.Run != "" {
-			templated := withDefaults
-
-			templatedRun, err := TemplateRun(step.Run, templated, outputs)
+			templatedRun, err := TemplateString(withDefaults, outputs, step.Run)
 			if err != nil {
 				return err
 			}
@@ -67,14 +83,17 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 
 			outFile, err := os.CreateTemp("", "maru2-output-*")
 			if err != nil {
-				return err
+				if firstError == nil { // subsequent errors are ignored
+					firstError = err
+				}
+				continue
 			}
 			defer os.Remove(outFile.Name())
 			defer outFile.Close()
 
 			env := os.Environ()
 			// TODO: not a big fan of this
-			for k, v := range templated {
+			for k, v := range withDefaults {
 				var val string
 				switch v := v.(type) {
 				case string:
@@ -83,13 +102,8 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 					val = fmt.Sprintf("%d", v)
 				case bool:
 					val = fmt.Sprintf("%t", v)
-				default:
-					// JSON marshal all other types
-					b, err := json.Marshal(v)
-					if err != nil {
-						return err
-					}
-					val = string(b)
+					// todo: what about the default case?
+					// through schema validation we know that the value is a string|int|bool
 				}
 
 				env = append(env, fmt.Sprintf("INPUT_%s=%s", toEnvVar(k), val))
@@ -103,13 +117,19 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 			cmd.Stdin = os.Stdin
 
 			if err := cmd.Run(); err != nil {
-				return err
+				if firstError == nil { // subsequent errors are ignored
+					firstError = err
+				}
+				continue
 			}
 
 			if step.ID != "" {
 				out, err := ParseOutput(outFile)
 				if err != nil {
-					return err
+					if firstError == nil { // subsequent errors are ignored
+						firstError = err
+					}
+					continue
 				}
 				if len(out) == 0 {
 					continue
@@ -120,7 +140,7 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		}
 	}
 
-	return nil
+	return firstError
 }
 
 func toEnvVar(s string) string {

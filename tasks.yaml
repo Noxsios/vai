@@ -45,3 +45,13 @@ complex-imports:
   - uses: pkg:github/defenseunicorns/maru2@main?task=echo#testdata/simple.yaml
   - uses: https://raw.githubusercontent.com/defenseunicorns/maru2/main/testdata/simple.yaml?task=echo
   - uses: pkg:gitlab/defenseunicorns/maru2?base=https://gitlab.example.com
+
+fails:
+  - run: exit 1
+
+continues:
+  - run: echo 1
+  - uses: fails
+  - run: echo 3
+  - if: always
+    run: echo 3

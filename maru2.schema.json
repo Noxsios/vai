@@ -220,6 +220,14 @@
             "Run tests"
           ]
         },
+        "if": {
+          "type": "string",
+          "enum": [
+            "failure",
+            "always"
+          ],
+          "description": "Condition to determine if the step should be executed"
+        },
         "with": {
           "type": "object"
         }
@@ -253,64 +261,13 @@
         "then": {
           "$ref": "#/$defs/Input"
         }
-      }
+      },
+      "minItems": 1
     },
     "^x-": {
       "type": "object"
     }
   },
   "additionalProperties": false,
-  "type": "object",
-  "examples": [
-    {
-      "default": [
-        {
-          "run": "echo \"$INPUT_TEXT\""
-        },
-        {
-          "run": "echo \"${{ input \"text\" }}\""
-        }
-      ],
-      "text": {
-        "default": "Hello, world!",
-        "description": "Text to echo",
-        "required": true
-      }
-    },
-    {
-      "complex-task": [
-        {
-          "uses": "builtin:complex@v1",
-          "with": {
-            "flag": "${{ input \"flag\" }}",
-            "inner": {
-              "text": "Nested value"
-            }
-          }
-        },
-        {
-          "id": "completion",
-          "run": "echo \"Task complete\""
-        }
-      ],
-      "default": [
-        {
-          "uses": "builtin:echo",
-          "with": {
-            "text": "${{ input \"message\" }}"
-          }
-        }
-      ],
-      "flag": {
-        "default": false,
-        "description": "Optional flag",
-        "required": false
-      },
-      "message": {
-        "default": "Hello from maru2!",
-        "description": "Message to display",
-        "required": true
-      }
-    }
-  ]
+  "type": "object"
 }

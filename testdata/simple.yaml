@@ -3,8 +3,6 @@
 message:
   required: false
   description: message to echo
----
-# yaml-language-server: $schema=../maru2.schema.json
 
 echo:
   - run: |

@@ -55,6 +55,8 @@ type Step struct {
 	ID string `json:"id,omitempty"`
 	// Name is a human-readable name for the step
 	Name string `json:"name,omitempty"`
+	// If controls whether the step is executed
+	If string `json:"if,omitempty"`
 }
 
 // JSONSchemaExtend extends the JSON schema for a step
@@ -83,6 +85,11 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Type:        "string",
 		Description: "Human-readable name for the step",
 		Examples:    []any{"Setup environment", "Build application", "Run tests"},
+	})
+	props.Set("if", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Condition to determine if the step should be executed",
+		Enum:        []any{"failure", "always"}, // todo: tie this to an enum
 	})
 
 	runProps := jsonschema.NewProperties()

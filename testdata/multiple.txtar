@@ -10,7 +10,7 @@ name:
 date:
   description: "Date to use"
   default: "now"
----
+
 default:
   - run: echo "default"
 
