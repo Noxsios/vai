@@ -13,6 +13,29 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type badReadSeeker struct {
+	failOnRead bool
+	failOnSeek bool
+}
+
+func (b badReadSeeker) Read(_ []byte) (n int, err error) {
+	if b.failOnRead {
+		return 0, fmt.Errorf("read failed")
+	}
+	return 0, nil
+}
+
+func (b badReadSeeker) Seek(_ int64, _ int) (int64, error) {
+	if b.failOnSeek {
+		return 0, fmt.Errorf("seek failed")
+	}
+	return 0, nil
+}
+
+func (badReadSeeker) Close() error {
+	return nil
+}
+
 func TestTaskNamePattern(t *testing.T) {
 	testCases := []struct {
 		name     string
@@ -347,6 +370,187 @@ func TestValidate(t *testing.T) {
 			},
 			expectedError: "",
 		},
+		{
+			name: "invalid task name",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"1-task": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: fmt.Sprintf("task name \"1-task\" does not satisfy %q", TaskNamePattern.String()),
+		},
+		{
+			name: "duplicate step IDs",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{
+						Step{
+							ID:  "step1",
+							Run: "echo first",
+						},
+						Step{
+							ID:  "step1",
+							Run: "echo second",
+						},
+					},
+				},
+			},
+			expectedError: ".task[0] and .task[1] have the same ID \"step1\"",
+		},
+		{
+			name: "invalid step ID",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						ID:  "1-step",
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: fmt.Sprintf(".task[0].id \"1-step\" does not satisfy %q", TaskNamePattern.String()),
+		},
+		{
+			name: "both run and uses fields set",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run:  "echo",
+						Uses: "other-task",
+					}},
+				},
+			},
+			expectedError: ".task[0] has both run and uses fields set",
+		},
+		{
+			name: "neither run nor uses fields set",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{}},
+				},
+			},
+			expectedError: ".task[0] must have one of [run, uses] fields set",
+		},
+		{
+			name: "uses with invalid URL",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: ":\\invalid",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses parse \":\\\\invalid\": missing protocol scheme",
+		},
+		{
+			name: "uses with non-existent task",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: "non-existent-task",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses \"non-existent-task\" not found",
+		},
+		{
+			name: "uses with invalid scheme",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: "invalid://example.com",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses \"invalid\" is not one of [file, http, https, pkg, builtin]",
+		},
+		{
+			name: "valid workflow",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "uses with valid task reference",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task1": Task{Step{
+						Run: "echo first",
+					}},
+					"task2": Task{Step{
+						Uses: "task1",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "invalid input schema validation",
+			wf: Workflow{
+				Inputs: InputMap{
+					"input": InputParameter{
+						Description: "Invalid input",
+						Required:    true,
+						Default:     make(chan int), // Invalid type for Default field
+					},
+				},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "json: unsupported type: chan int",
+		},
+		{
+			name: "invalid task schema",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run: "echo",
+						With: map[string]any{
+							"invalid": make(chan int), // Invalid type for With field
+						},
+					}},
+				},
+			},
+			expectedError: "json: unsupported type: chan int",
+		},
+		{
+			name: "valid input schema",
+			wf: Workflow{
+				Inputs: InputMap{
+					"input": InputParameter{
+						Description: "A test input",
+						Required:    true,
+						Default:     "default value",
+					},
+				},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -438,7 +642,62 @@ echo:
 				Inputs: InputMap{},
 				Tasks:  TaskMap{},
 			},
-			expectedError: "[1:10] mapping value is not allowed in this context\n>  1 | invalid: yaml::\n                ^\n",
+			expectedError: `[1:10] mapping value is not allowed in this context
+>  1 | invalid: yaml::
+                ^
+`,
+		},
+		{
+			name: "read error from reader",
+			r:    badReadSeeker{failOnRead: true},
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedError: "read failed",
+		},
+		{
+			name: "seek error from reader",
+			r:    badReadSeeker{failOnSeek: true},
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedError: "seek failed",
+		},
+		{
+			name: "error marshaling task",
+			r: strings.NewReader(`
+echo:
+  - run: echo
+    with:
+    - invalid
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedError: `[3:3] sequence was used where mapping is expected
+   1 | - run: echo
+   2 |   with:
+>  3 |   - invalid
+         ^
+`,
+		},
+		{
+			name: "error marshaling input",
+			r: strings.NewReader(`
+name:
+  description: []
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedError: `[1:14] cannot unmarshal []interface {} into Go struct field InputParameter.Description of type string
+>  1 | description: []
+                    ^
+`,
 		},
 	}
 
