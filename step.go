@@ -6,6 +6,7 @@ package maru2
 import (
 	"slices"
 
+	"github.com/defenseunicorns/maru2/builtins"
 	"github.com/invopop/jsonschema"
 )
 
@@ -116,13 +117,13 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 	reflector := jsonschema.Reflector{ExpandedStruct: true}
 
 	var builtinNames []string
-	for name := range Builtins {
+	for name := range builtins.Builtins {
 		builtinNames = append(builtinNames, name)
 	}
 	slices.Sort(builtinNames)
 
 	for _, name := range builtinNames {
-		builtinEmpty := Builtins[name]
+		builtinEmpty := builtins.Builtins[name]
 
 		builtinSchema := &jsonschema.Schema{
 			If: &jsonschema.Schema{
