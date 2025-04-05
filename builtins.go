@@ -45,7 +45,12 @@ func ExecuteBuiltin(ctx context.Context, uses string, with With, dry bool) error
 		return nil
 	}
 
-	return builtin.Execute(ctx)
+	err = builtin.Execute(ctx)
+	if err != nil {
+		return fmt.Errorf("builtin %q: %w", name, err)
+	}
+
+	return nil
 }
 
 // ConvertWithToType transforms a With (map[string]any) to a Go struct through reparsing the map using generics

@@ -111,7 +111,7 @@
                         "description": "HTTP method to use"
                       },
                       "timeout": {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Timeout for the request"
                       },
                       "headers": {
