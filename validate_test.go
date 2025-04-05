@@ -191,85 +191,340 @@ func FuzzEnvVariablePattern(f *testing.F) {
 	})
 }
 
-func TestReadAndValidate(t *testing.T) {
+func TestValidate(t *testing.T) {
 	testCases := []struct {
-		name                string
-		r                   io.Reader
-		wf                  Workflow
-		expectedReadErr     string
-		expectedValidateErr string
+		name          string
+		wf            Workflow
+		expectedError string
 	}{
 		{
-			"simple good read",
-			strings.NewReader(`
-echo:
-  - run: echo
-`),
-			Workflow{
+			name: "valid workflow",
+			wf: Workflow{
 				Inputs: InputMap{},
 				Tasks: TaskMap{
 					"echo": Task{Step{
 						Run: "echo",
 					}},
 				},
-			}, "", ""},
+			},
+			expectedError: "",
+		},
 		{
-			"malformed YAML",
-			strings.NewReader(`
-echo:
-`),
-			Workflow{
+			name: "no tasks",
+			wf: Workflow{
 				Inputs: InputMap{},
 				Tasks:  TaskMap{},
-			}, "", "no tasks available",
+			},
+			expectedError: "no tasks available",
 		},
 		{
-			"bad task name",
-			strings.NewReader(`
-2-echo:
-  - run: echo
-`),
-			Workflow{
+			name: "invalid task name",
+			wf: Workflow{
 				Inputs: InputMap{},
-				Tasks: TaskMap{"2-echo": Task{Step{
-					Run: "echo",
-				}}},
-			}, "", fmt.Sprintf("task name \"2-echo\" does not satisfy %q", TaskNamePattern.String()),
+				Tasks: TaskMap{
+					"2-echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: fmt.Sprintf("task name \"2-echo\" does not satisfy %q", TaskNamePattern.String()),
 		},
 		{
-			"bad step id",
-			strings.NewReader(`
-echo:
-  - run: echo
-    id: "&1337"
-`),
-			Workflow{
+			name: "invalid step id",
+			wf: Workflow{
 				Inputs: InputMap{},
-				Tasks: TaskMap{"echo": Task{Step{
-					Run: "echo",
-					ID:  "&1337",
-				}}},
-			}, "", fmt.Sprintf(".echo[0].id \"&1337\" does not satisfy %q", TaskNamePattern.String()),
+				Tasks: TaskMap{
+					"echo": Task{Step{
+						Run: "echo",
+						ID:  "&1337",
+					}},
+				},
+			},
+			expectedError: fmt.Sprintf(".echo[0].id \"&1337\" does not satisfy %q", TaskNamePattern.String()),
+		},
+		{
+			name: "duplicate step ids",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"echo": Task{
+						Step{
+							Run: "echo first",
+							ID:  "same-id",
+						},
+						Step{
+							Run: "echo second",
+							ID:  "same-id",
+						},
+					},
+				},
+			},
+			expectedError: ".echo[0] and .echo[1] have the same ID \"same-id\"",
+		},
+		{
+			name: "both run and uses set",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run:  "echo",
+						Uses: "other-task",
+					}},
+				},
+			},
+			expectedError: ".task[0] has both run and uses fields set",
+		},
+		{
+			name: "neither run nor uses set",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{}},
+				},
+			},
+			expectedError: ".task[0] must have one of [run, uses] fields set",
+		},
+		{
+			name: "uses with invalid URL",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: ":\\invalid",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses parse \":\\\\invalid\": missing protocol scheme",
+		},
+		{
+			name: "uses with task that doesn't exist",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: "non-existent-task",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses \"non-existent-task\" not found",
+		},
+		{
+			name: "uses with invalid scheme",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: "invalid://scheme",
+					}},
+				},
+			},
+			expectedError: ".task[0].uses \"invalid\" is not one of [file, http, https, pkg, builtin]",
+		},
+		{
+			name: "uses with valid task reference",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task1": Task{Step{
+						Run: "echo first",
+					}},
+					"task2": Task{Step{
+						Uses: "task1",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "uses with valid URL scheme",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Uses: "http://example.com/task",
+					}},
+				},
+			},
+			expectedError: "",
 		},
 	}
 
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			// t.Parallel()
+			t.Parallel()
+
+			err := Validate(tc.wf)
+			if tc.expectedError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestRead(t *testing.T) {
+	testCases := []struct {
+		name          string
+		r             io.Reader
+		expected      Workflow
+		expectedError string
+	}{
+		{
+			name: "simple workflow",
+			r: strings.NewReader(`
+echo:
+  - run: echo
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "workflow with inputs",
+			r: strings.NewReader(`
+name:
+  description: "string"
+  default: "default name"
+
+echo:
+  - run: echo
+`),
+			expected: Workflow{
+				Inputs: InputMap{
+					"name": InputParameter{
+						Description: "string",
+						Default:     "default name",
+					},
+				},
+				Tasks: TaskMap{
+					"echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "workflow with extension keys",
+			r: strings.NewReader(`
+x-metadata:
+  description: "This is a test workflow"
+
+echo:
+  - run: echo
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedError: "",
+		},
+		{
+			name: "invalid yaml",
+			r:    strings.NewReader(`invalid: yaml::`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedError: "[1:10] mapping value is not allowed in this context\n>  1 | invalid: yaml::\n                ^\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
 			wf, err := Read(tc.r)
-			require.Equal(t, tc.wf, wf)
-			if err != nil {
-				require.EqualError(t, err, tc.expectedReadErr)
+			if tc.expectedError == "" {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, wf)
+			} else {
+				require.EqualError(t, err, tc.expectedError)
 			}
-			if err == nil {
-				require.NotEmpty(t, wf)
-			}
+		})
+	}
+}
 
-			err = Validate(wf)
-			if err != nil {
+func TestReadAndValidate(t *testing.T) {
+	testCases := []struct {
+		name                string
+		r                   io.Reader
+		expected            Workflow
+		expectedReadErr     string
+		expectedValidateErr string
+	}{
+		{
+			name: "simple good read",
+			r: strings.NewReader(`
+echo:
+  - run: echo
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedReadErr:     "",
+			expectedValidateErr: "",
+		},
+		{
+			name: "read error",
+			r:    strings.NewReader(`invalid: yaml::`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks:  TaskMap{},
+			},
+			expectedReadErr:     "[1:10] mapping value is not allowed in this context\n>  1 | invalid: yaml::\n                ^\n",
+			expectedValidateErr: "",
+		},
+		{
+			name: "validation error",
+			r: strings.NewReader(`
+2-echo:
+  - run: echo
+`),
+			expected: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"2-echo": Task{Step{
+						Run: "echo",
+					}},
+				},
+			},
+			expectedReadErr:     "",
+			expectedValidateErr: fmt.Sprintf("task name \"2-echo\" does not satisfy %q", TaskNamePattern.String()),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			wf, err := ReadAndValidate(tc.r)
+			if tc.expectedReadErr != "" {
+				require.EqualError(t, err, tc.expectedReadErr)
+			} else if tc.expectedValidateErr != "" {
 				require.EqualError(t, err, tc.expectedValidateErr)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, wf)
 			}
 		})
 	}

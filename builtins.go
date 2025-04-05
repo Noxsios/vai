@@ -35,8 +35,7 @@ func ExecuteBuiltin(ctx context.Context, uses string, with With, dry bool) error
 		if err != nil {
 			return fmt.Errorf("builtin %q: %w", name, err)
 		}
-	default:
-		return fmt.Errorf("builtin %q not found", name)
+		// no default case due to map access handling that
 	}
 
 	if dry {
