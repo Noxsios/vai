@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"runtime/debug"
 	"syscall"
@@ -179,6 +180,11 @@ func Main() int {
 	if err := cli.ExecuteContext(ctx); err != nil {
 		logger.Print("")
 		logger.Error(err)
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				return status.ExitStatus()
+			}
+		}
 		return 1
 	}
 	return 0

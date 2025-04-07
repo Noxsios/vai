@@ -47,7 +47,7 @@ complex-imports:
   - uses: pkg:gitlab/defenseunicorns/maru2?base=https://gitlab.example.com
 
 fails:
-  - run: exit 1
+  - run: exit 2
 
 continues:
   - run: echo 1
