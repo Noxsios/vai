@@ -9,7 +9,7 @@
           "type": "string",
           "description": "Description of the parameter"
         },
-        "deprecatedMessage": {
+        "deprecated-message": {
           "type": "string",
           "description": "Message to display when the parameter is deprecated"
         },
