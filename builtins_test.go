@@ -165,7 +165,7 @@ func TestConvertWithToType(t *testing.T) {
 	testCases := []struct {
 		name          string
 		with          With
-		expectedValue interface{}
+		expectedValue any
 		expectedError string
 	}{
 		{

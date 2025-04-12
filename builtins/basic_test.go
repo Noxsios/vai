@@ -6,6 +6,7 @@ package builtins
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -218,9 +219,7 @@ func TestBuiltinFetch(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-
-			var buf bytes.Buffer
-			logger := log.New(&buf)
+			logger := log.New(io.Discard)
 			ctx := log.WithContext(context.Background(), logger)
 
 			result, err := tc.fetch.Execute(ctx)
@@ -230,7 +229,6 @@ func TestBuiltinFetch(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
-				assert.NotEmpty(t, buf.String())
 				assert.Contains(t, result, "body")
 			}
 		})

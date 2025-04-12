@@ -5,6 +5,7 @@ package maru2
 
 import (
 	"context"
+	"io"
 	"runtime"
 	"testing"
 
@@ -226,7 +227,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			t.Parallel()
 
 			ctx := context.Background()
-			logger := log.New(nil) // Use nil writer for tests
+			logger := log.New(io.Discard) // Use io.Discard for tests
 			ctx = log.WithContext(ctx, logger)
 
 			result, err := MergeWithAndParams(ctx, tc.with, tc.params)

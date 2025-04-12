@@ -4,8 +4,8 @@
 package maru2
 
 import (
-	"bytes"
 	"context"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -161,8 +161,7 @@ func TestRunExtended(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var buf bytes.Buffer
-			logger := log.New(&buf)
+			logger := log.New(io.Discard)
 			ctx := log.WithContext(context.Background(), logger)
 
 			result, err := Run(ctx, tc.workflow, tc.taskName, tc.with, tc.origin, tc.dry)
@@ -335,8 +334,7 @@ func TestHandleRunStep(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var buf bytes.Buffer
-			logger := log.New(&buf)
+			logger := log.New(io.Discard)
 			ctx := log.WithContext(context.Background(), logger)
 
 			result, err := handleRunStep(ctx, tc.step, tc.withDefaults, tc.outputs, tc.dry)
@@ -458,8 +456,7 @@ func TestHandleUsesStep(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			var buf bytes.Buffer
-			logger := log.New(&buf)
+			logger := log.New(io.Discard)
 			ctx := log.WithContext(context.Background(), logger)
 
 			result, err := handleUsesStep(ctx, tc.step, tc.workflow, tc.withDefaults, tc.outputs, tc.origin, tc.dry)
