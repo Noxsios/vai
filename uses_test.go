@@ -62,34 +62,34 @@ func TestExecuteUses(t *testing.T) {
 	helloWorld := server.URL + "/hello-world.yaml"
 	with := With{}
 
-	err := ExecuteUses(ctx, "file:testdata/hello-world.yaml", with, "file:test", false)
+	_, err := ExecuteUses(ctx, "file:testdata/hello-world.yaml", with, "file:test", false)
 	require.NoError(t, err)
 
-	err = ExecuteUses(ctx, "file:testdata/hello-world.yaml?task=a-task", with, "file:test", false)
+	_, err = ExecuteUses(ctx, "file:testdata/hello-world.yaml?task=a-task", with, "file:test", false)
 	require.NoError(t, err)
 
-	err = ExecuteUses(ctx, helloWorld, with, "file:test", false)
+	_, err = ExecuteUses(ctx, helloWorld, with, "file:test", false)
 	require.NoError(t, err)
 
-	err = ExecuteUses(ctx, "./path-with-no-scheme", with, "file:test", false)
+	_, err = ExecuteUses(ctx, "./path-with-no-scheme", with, "file:test", false)
 	require.EqualError(t, err, `must contain a scheme: "./path-with-no-scheme"`)
 
-	err = ExecuteUses(ctx, "file:test", with, "./missing-scheme", false)
+	_, err = ExecuteUses(ctx, "file:test", with, "./missing-scheme", false)
 	require.EqualError(t, err, `must contain a scheme: "./missing-scheme"`)
 
-	err = ExecuteUses(ctx, "http://www.example.com/\x7f", with, "file:test", false)
+	_, err = ExecuteUses(ctx, "http://www.example.com/\x7f", with, "file:test", false)
 	require.EqualError(t, err, `parse "http://www.example.com/\x7f": net/url: invalid control character in URL`)
 
-	err = ExecuteUses(ctx, "file:test", with, "http://www.example.com/\x7f", false)
+	_, err = ExecuteUses(ctx, "file:test", with, "http://www.example.com/\x7f", false)
 	require.EqualError(t, err, `parse "http://www.example.com/\x7f": net/url: invalid control character in URL`)
 
-	err = ExecuteUses(ctx, "ssh:not-supported", with, "file:test", false)
+	_, err = ExecuteUses(ctx, "ssh:not-supported", with, "file:test", false)
 	require.EqualError(t, err, `unsupported scheme: "ssh"`)
 
-	err = ExecuteUses(ctx, "pkg:bitbucket/owner/repo", with, "file:test", false)
+	_, err = ExecuteUses(ctx, "pkg:bitbucket/owner/repo", with, "file:test", false)
 	require.EqualError(t, err, `unsupported type: "bitbucket"`)
 
-	err = ExecuteUses(ctx, "file:..?task=hello-world", with, "pkg:", false)
+	_, err = ExecuteUses(ctx, "file:..?task=hello-world", with, "pkg:", false)
 	require.EqualError(t, err, `purl is missing type or name`)
 
 	// TODO: restore this test
@@ -100,6 +100,6 @@ func TestExecuteUses(t *testing.T) {
 
 	// lets get crazy w/ it
 	// foo.yaml uses baz.yaml which uses hello-world.yaml
-	err = ExecuteUses(ctx, server.URL+"/foo.yaml", with, "file:test", false)
+	_, err = ExecuteUses(ctx, server.URL+"/foo.yaml", with, "file:test", false)
 	require.NoError(t, err)
 }

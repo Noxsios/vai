@@ -16,12 +16,13 @@ import (
 
 func TestExecuteBuiltin(t *testing.T) {
 	testCases := []struct {
-		name          string
-		uses          string
-		with          With
-		dry           bool
-		expectedError string
-		expectedLog   string
+		name           string
+		uses           string
+		with           With
+		dry            bool
+		expectedError  string
+		expectedLog    string
+		expectedResult map[string]any
 	}{
 		{
 			name: "echo builtin",
@@ -29,9 +30,10 @@ func TestExecuteBuiltin(t *testing.T) {
 			with: With{
 				"text": "Hello, World!",
 			},
-			dry:           false,
-			expectedError: "",
-			expectedLog:   "Hello, World!\n",
+			dry:            false,
+			expectedError:  "",
+			expectedLog:    "Hello, World!\n",
+			expectedResult: map[string]any{"stdout": "Hello, World!"},
 		},
 		{
 			name: "echo builtin dry run",
@@ -39,9 +41,10 @@ func TestExecuteBuiltin(t *testing.T) {
 			with: With{
 				"text": "Hello, World!",
 			},
-			dry:           true,
-			expectedError: "",
-			expectedLog:   "dry run",
+			dry:            true,
+			expectedError:  "",
+			expectedLog:    "dry run",
+			expectedResult: nil,
 		},
 		{
 			name: "fetch builtin",
@@ -50,16 +53,18 @@ func TestExecuteBuiltin(t *testing.T) {
 				"url":    "http://example.com",
 				"method": "GET",
 			},
-			dry:           true, // Use dry run to avoid actual HTTP requests
-			expectedError: "",
-			expectedLog:   "dry run",
+			dry:            true, // Use dry run to avoid actual HTTP requests
+			expectedError:  "",
+			expectedLog:    "dry run",
+			expectedResult: nil,
 		},
 		{
-			name:          "non-existent builtin",
-			uses:          "builtin:nonexistent",
-			with:          With{},
-			dry:           false,
-			expectedError: "builtin \"nonexistent\" not found",
+			name:           "non-existent builtin",
+			uses:           "builtin:nonexistent",
+			with:           With{},
+			dry:            false,
+			expectedError:  "builtin:nonexistent not found",
+			expectedResult: nil,
 		},
 		{
 			name: "echo builtin with invalid with",
@@ -67,8 +72,9 @@ func TestExecuteBuiltin(t *testing.T) {
 			with: With{
 				"invalid": make(chan int), // Channels can't be marshaled to JSON
 			},
-			dry:           false,
-			expectedError: "builtin \"echo\": json: unsupported type: chan int",
+			dry:            false,
+			expectedError:  "builtin:echo: json: unsupported type: chan int",
+			expectedResult: nil,
 		},
 		{
 			name: "fetch builtin with invalid with",
@@ -76,8 +82,9 @@ func TestExecuteBuiltin(t *testing.T) {
 			with: With{
 				"invalid": make(chan int), // Channels can't be marshaled to JSON
 			},
-			dry:           false,
-			expectedError: "builtin \"fetch\": json: unsupported type: chan int",
+			dry:            false,
+			expectedError:  "builtin:fetch: json: unsupported type: chan int",
+			expectedResult: nil,
 		},
 	}
 
@@ -90,13 +97,18 @@ func TestExecuteBuiltin(t *testing.T) {
 			logger := log.New(&buf)
 			ctx := log.WithContext(context.Background(), logger)
 
-			err := ExecuteBuiltin(ctx, tc.uses, tc.with, tc.dry)
+			// TODO: currently no test builtins grab from previous outputs
+			result, err := ExecuteBuiltin(ctx, tc.uses, tc.with, CommandOutputs{}, tc.dry)
 
 			if tc.expectedError != "" {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedError)
+				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
+				if tc.expectedResult != nil {
+					assert.Equal(t, tc.expectedResult, result)
+				}
 			}
 
 			if tc.expectedLog != "" {
@@ -160,7 +172,7 @@ func TestConvertWithToType(t *testing.T) {
 
 			switch expected := tc.expectedValue.(type) {
 			case builtins.BuiltinEcho:
-				result, err := ConvertWithToType[builtins.BuiltinEcho](tc.with)
+				result, err := ConvertWithTo[builtins.BuiltinEcho](tc.with)
 				if tc.expectedError != "" {
 					require.Error(t, err)
 					assert.Contains(t, err.Error(), tc.expectedError)
@@ -169,7 +181,7 @@ func TestConvertWithToType(t *testing.T) {
 					assert.Equal(t, expected, result)
 				}
 			case builtins.BuiltinFetch:
-				result, err := ConvertWithToType[builtins.BuiltinFetch](tc.with)
+				result, err := ConvertWithTo[builtins.BuiltinFetch](tc.with)
 				if tc.expectedError != "" {
 					require.Error(t, err)
 					assert.Contains(t, err.Error(), tc.expectedError)

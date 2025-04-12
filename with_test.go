@@ -62,7 +62,7 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},
@@ -90,7 +90,7 @@ func TestPerformLookups(t *testing.T) {
 		{
 			name: "lookup from previous outputs - output from step not found",
 			previous: CommandOutputs{
-				"step-1": map[string]string{
+				"step-1": map[string]any{
 					"bar": "baz",
 				},
 			},

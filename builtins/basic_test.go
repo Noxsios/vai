@@ -88,9 +88,10 @@ func TestBuiltinEcho(t *testing.T) {
 			ctx := log.WithContext(context.Background(), logger)
 
 			echo := BuiltinEcho{Text: tc.text}
-			err := echo.Execute(ctx)
+			result, err := echo.Execute(ctx)
 
 			require.NoError(t, err)
+			assert.Equal(t, tc.text, result["stdout"])
 			assert.Equal(t, tc.expected, buf.String())
 		})
 	}
@@ -222,13 +223,15 @@ func TestBuiltinFetch(t *testing.T) {
 			logger := log.New(&buf)
 			ctx := log.WithContext(context.Background(), logger)
 
-			err := tc.fetch.Execute(ctx)
+			result, err := tc.fetch.Execute(ctx)
 
 			if tc.expectedError {
 				require.Error(t, err)
+				assert.Nil(t, result)
 			} else {
 				require.NoError(t, err)
 				assert.NotEmpty(t, buf.String())
+				assert.Contains(t, result, "body")
 			}
 		})
 	}

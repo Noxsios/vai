@@ -139,7 +139,8 @@ func NewRootCmd() *cobra.Command {
 			rootOrigin := "file:" + filename
 
 			for _, call := range args {
-				if err := maru2.Run(ctx, wf, call, with, rootOrigin, dry); err != nil {
+				_, err := maru2.Run(ctx, wf, call, with, rootOrigin, dry)
+				if err != nil {
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 						return fmt.Errorf("task %q timed out", call)
 					}

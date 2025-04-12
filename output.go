@@ -12,7 +12,7 @@ import (
 )
 
 // CommandOutputs is a map of step IDs to their outputs.
-type CommandOutputs map[string]map[string]string
+type CommandOutputs map[string]map[string]any
 
 // ParseOutput parses the output file of a step
 //

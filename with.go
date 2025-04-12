@@ -30,7 +30,7 @@ func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *tem
 			}
 			return v, nil
 		},
-		"from": func(stepName, id string) (string, error) {
+		"from": func(stepName, id string) (any, error) {
 			stepOutputs, ok := previousOutputs[stepName]
 			if !ok {
 				return "", fmt.Errorf("no outputs for step %q", stepName)

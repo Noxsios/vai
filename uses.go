@@ -15,30 +15,26 @@ import (
 )
 
 // ExecuteUses executes a task from a given URI.
-func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool) error {
+func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool) (map[string]any, error) {
 	logger := log.FromContext(ctx)
 	logger.Debug("using", "task", u)
 
 	uri, err := url.Parse(u)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if uri.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %q", u)
-	}
-
-	if uri.Scheme == "builtin" {
-		return ExecuteBuiltin(ctx, u, with, dry)
+		return nil, fmt.Errorf("must contain a scheme: %q", u)
 	}
 
 	previous, err := url.Parse(prev)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if previous.Scheme == "" {
-		return fmt.Errorf("must contain a scheme: %q", prev)
+		return nil, fmt.Errorf("must contain a scheme: %q", prev)
 	}
 
 	var next *url.URL
@@ -55,7 +51,7 @@ func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool
 		case "pkg":
 			pURL, err := packageurl.FromString(prev)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			// turn relative paths into absolute references
 			pURL.Subpath = filepath.Join(filepath.Dir(pURL.Subpath), uri.Opaque)
@@ -101,20 +97,20 @@ func ExecuteUses(ctx context.Context, u string, with With, prev string, dry bool
 
 	fetcher, err := uses.SelectFetcher(uri, previous)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	logger.Debug("chosen", "fetcher", fmt.Sprintf("%T", fetcher))
 
 	rc, err := fetcher.Fetch(ctx, u)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer rc.Close()
 
 	wf, err := ReadAndValidate(rc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	taskName := uri.Query().Get("task")

@@ -18,7 +18,7 @@ import (
 
 // Builtin is a simple interface, only implementable on structs due to how the with re-parsing logic works
 type Builtin interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context) (map[string]any, error)
 }
 
 // Builtins maps builtin names to their implementations
@@ -33,11 +33,11 @@ type BuiltinEcho struct {
 }
 
 // Execute the builtin
-func (b BuiltinEcho) Execute(ctx context.Context) error {
+func (b BuiltinEcho) Execute(ctx context.Context) (map[string]any, error) {
 	logger := log.FromContext(ctx)
 
 	logger.Print(b.Text)
-	return nil
+	return map[string]any{"stdout": b.Text}, nil
 }
 
 // BuiltinFetch is a sample builtin to showcase configuration and schema gen
@@ -49,7 +49,7 @@ type BuiltinFetch struct {
 }
 
 // Execute the builtin
-func (b BuiltinFetch) Execute(ctx context.Context) error {
+func (b BuiltinFetch) Execute(ctx context.Context) (map[string]any, error) {
 	logger := log.FromContext(ctx)
 
 	method := b.Method
@@ -61,7 +61,7 @@ func (b BuiltinFetch) Execute(ctx context.Context) error {
 	if b.Timeout != "" {
 		parsedTimeout, err := time.ParseDuration(b.Timeout)
 		if err != nil {
-			return fmt.Errorf("invalid timeout: %w", err)
+			return nil, fmt.Errorf("invalid timeout: %w", err)
 		}
 		timeout = parsedTimeout
 	}
@@ -74,18 +74,18 @@ func (b BuiltinFetch) Execute(ctx context.Context) error {
 
 	req, err := http.NewRequestWithContext(ctx, method, b.URL, nil)
 	if err != nil {
-		return fmt.Errorf("error creating request: %w", err)
+		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error executing request: %w", err)
+		return nil, fmt.Errorf("error executing request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error reading response body: %w", err)
+		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
 	logger.Printf("Status: %s", resp.Status)
@@ -97,12 +97,12 @@ func (b BuiltinFetch) Execute(ctx context.Context) error {
 		if err := json.Indent(&prettyJSON, body, "", "  "); err == nil {
 			logger.Print("Response Body:")
 			logger.Print(prettyJSON.String())
-			return nil
+			return map[string]any{"body": string(body)}, nil
 		}
 	}
 
 	logger.Print("Response Body:")
 	logger.Print(string(body))
 
-	return nil
+	return map[string]any{"body": string(body)}, nil
 }
