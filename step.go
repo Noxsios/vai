@@ -10,10 +10,10 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
-// InputMap is a map of input parameters for a workflos
+// InputMap is a map of input parameters for a workflow
 type InputMap map[string]InputParameter
 
-// InputParameter represents a single input parameter for a task, to be used w/ `with`
+// InputParameter represents a single input parameter for a workflow, to be used w/ `with`
 type InputParameter struct {
 	Description       string `json:"description" jsonschema:"description=Description of the parameter,required"`
 	DeprecatedMessage string `json:"deprecated-message,omitempty" jsonschema:"description=Message to display when the parameter is deprecated"`
