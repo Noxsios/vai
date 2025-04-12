@@ -17,7 +17,7 @@ import (
 func TestExecuteBuiltin(t *testing.T) {
 	testCases := []struct {
 		name           string
-		uses           string
+		step           Step
 		with           With
 		dry            bool
 		expectedError  string
@@ -26,10 +26,13 @@ func TestExecuteBuiltin(t *testing.T) {
 	}{
 		{
 			name: "echo builtin",
-			uses: "builtin:echo",
-			with: With{
-				"text": "Hello, World!",
+			step: Step{
+				Uses: "builtin:echo",
+				With: With{
+					"text": "Hello, World!",
+				},
 			},
+			with:           With{},
 			dry:            false,
 			expectedError:  "",
 			expectedLog:    "Hello, World!\n",
@@ -37,10 +40,13 @@ func TestExecuteBuiltin(t *testing.T) {
 		},
 		{
 			name: "echo builtin dry run",
-			uses: "builtin:echo",
-			with: With{
-				"text": "Hello, World!",
+			step: Step{
+				Uses: "builtin:echo",
+				With: With{
+					"text": "Hello, World!",
+				},
 			},
+			with:           With{},
 			dry:            true,
 			expectedError:  "",
 			expectedLog:    "dry run",
@@ -48,19 +54,24 @@ func TestExecuteBuiltin(t *testing.T) {
 		},
 		{
 			name: "fetch builtin",
-			uses: "builtin:fetch",
-			with: With{
-				"url":    "http://example.com",
-				"method": "GET",
+			step: Step{
+				Uses: "builtin:fetch",
+				With: With{
+					"url":    "http://example.com",
+					"method": "GET",
+				},
 			},
+			with:           With{},
 			dry:            true, // Use dry run to avoid actual HTTP requests
 			expectedError:  "",
 			expectedLog:    "dry run",
 			expectedResult: nil,
 		},
 		{
-			name:           "non-existent builtin",
-			uses:           "builtin:nonexistent",
+			name: "non-existent builtin",
+			step: Step{
+				Uses: "builtin:nonexistent",
+			},
 			with:           With{},
 			dry:            false,
 			expectedError:  "builtin:nonexistent not found",
@@ -68,22 +79,55 @@ func TestExecuteBuiltin(t *testing.T) {
 		},
 		{
 			name: "echo builtin with invalid with",
-			uses: "builtin:echo",
-			with: With{
-				"invalid": make(chan int), // Channels can't be marshaled to JSON
+			step: Step{
+				Uses: "builtin:echo",
+				With: With{
+					"invalid": make(chan int), // Channels can't be marshaled to YAML
+				},
 			},
+			with:           With{},
 			dry:            false,
-			expectedError:  "builtin:echo: json: unsupported type: chan int",
+			expectedError:  "builtin:echo: [1:1] string was used where mapping is expected\n>  1 | <nil>\n       ^\n",
 			expectedResult: nil,
 		},
 		{
 			name: "fetch builtin with invalid with",
-			uses: "builtin:fetch",
-			with: With{
-				"invalid": make(chan int), // Channels can't be marshaled to JSON
+			step: Step{
+				Uses: "builtin:fetch",
+				With: With{
+					"invalid": make(chan int), // Channels can't be marshaled to YAML
+				},
 			},
+			with:           With{},
 			dry:            false,
-			expectedError:  "builtin:fetch: json: unsupported type: chan int",
+			expectedError:  "builtin:fetch: [1:1] string was used where mapping is expected\n>  1 | <nil>\n       ^\n",
+			expectedResult: nil,
+		},
+		{
+			name: "echo builtin with templated with",
+			step: Step{
+				Uses: "builtin:echo",
+				With: With{
+					"text": "${{ input \"greeting\" }}",
+				},
+			},
+			with:           With{"greeting": "Hello from template"},
+			dry:            false,
+			expectedError:  "",
+			expectedLog:    "Hello from template\n",
+			expectedResult: map[string]any{"stdout": "Hello from template"},
+		},
+		{
+			name: "echo builtin with broken structure",
+			step: Step{
+				Uses: "builtin:echo",
+				With: With{
+					"text": []string{"not", "a", "string"}, // Text should be a string, not an array
+				},
+			},
+			with:           With{},
+			dry:            false,
+			expectedError:  "builtin:echo: json: cannot unmarshal array into Go struct field BuiltinEcho.text of type string",
 			expectedResult: nil,
 		},
 	}
@@ -97,18 +141,17 @@ func TestExecuteBuiltin(t *testing.T) {
 			logger := log.New(&buf)
 			ctx := log.WithContext(context.Background(), logger)
 
-			// TODO: currently no test builtins grab from previous outputs
-			result, err := ExecuteBuiltin(ctx, tc.uses, tc.with, CommandOutputs{}, tc.dry)
+			// Execute the builtin with the updated function signature
+			result, err := ExecuteBuiltin(ctx, tc.step, tc.with, CommandOutputs{}, tc.dry)
 
-			if tc.expectedError != "" {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedError)
-				assert.Nil(t, result)
-			} else {
+			if tc.expectedError == "" {
 				require.NoError(t, err)
 				if tc.expectedResult != nil {
 					assert.Equal(t, tc.expectedResult, result)
 				}
+			} else {
+				require.EqualError(t, err, tc.expectedError)
+				assert.Nil(t, result)
 			}
 
 			if tc.expectedLog != "" {

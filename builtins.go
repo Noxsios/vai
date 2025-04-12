@@ -11,31 +11,34 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/defenseunicorns/maru2/builtins"
+	"github.com/goccy/go-yaml"
 )
 
 // ExecuteBuiltin determines which builtin to run based upon the uses string, converts the With map to the expected struct, then calls the builtin's Execute method
-func ExecuteBuiltin(ctx context.Context, uses string, with With, previous CommandOutputs, dry bool) (map[string]any, error) {
-	name := strings.TrimPrefix(uses, "builtin:")
+func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandOutputs, dry bool) (map[string]any, error) {
+	name := strings.TrimPrefix(step.Uses, "builtin:")
 	logger := log.FromContext(ctx)
 
 	builtinEmpty, ok := builtins.Builtins[name]
 	if !ok {
-		return nil, fmt.Errorf("%s not found", uses)
+		return nil, fmt.Errorf("%s not found", step.Uses)
 	}
 
 	// what I'm doing here can't be legal
 	var rendered With
 	if with != nil {
-		b, err := json.Marshal(with)
+		b, err := yaml.Marshal(step.With)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", uses, err)
+			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
+
 		templated, err := TemplateString(with, previous, string(b))
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", uses, err)
+			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-		if err := json.Unmarshal([]byte(templated), &rendered); err != nil {
-			return nil, fmt.Errorf("%s: %w", uses, err)
+
+		if err := yaml.Unmarshal([]byte(templated), &rendered); err != nil {
+			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
 	}
 
@@ -45,12 +48,12 @@ func ExecuteBuiltin(ctx context.Context, uses string, with With, previous Comman
 	case builtins.BuiltinEcho:
 		builtin, err = ConvertWithTo[builtins.BuiltinEcho](rendered)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", uses, err)
+			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
 	case builtins.BuiltinFetch:
 		builtin, err = ConvertWithTo[builtins.BuiltinFetch](rendered)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", uses, err)
+			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
 		// no default case due to map access handling that
 	}
@@ -62,7 +65,7 @@ func ExecuteBuiltin(ctx context.Context, uses string, with With, previous Comman
 
 	result, err := builtin.Execute(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", uses, err)
+		return nil, fmt.Errorf("%s: %w", step.Uses, err)
 	}
 
 	return result, nil

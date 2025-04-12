@@ -320,7 +320,7 @@ func TestValidate(t *testing.T) {
 			expectedError: ".task[0].uses parse \":\\\\invalid\": missing protocol scheme",
 		},
 		{
-			name: "uses with task that doesn't exist",
+			name: "uses with non-existent task",
 			wf: Workflow{
 				Inputs: InputMap{},
 				Tasks: TaskMap{
@@ -371,97 +371,6 @@ func TestValidate(t *testing.T) {
 			expectedError: "",
 		},
 		{
-			name: "invalid task name",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"1-task": Task{Step{
-						Run: "echo",
-					}},
-				},
-			},
-			expectedError: fmt.Sprintf("task name \"1-task\" does not satisfy %q", TaskNamePattern.String()),
-		},
-		{
-			name: "duplicate step IDs",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{
-						Step{
-							ID:  "step1",
-							Run: "echo first",
-						},
-						Step{
-							ID:  "step1",
-							Run: "echo second",
-						},
-					},
-				},
-			},
-			expectedError: ".task[0] and .task[1] have the same ID \"step1\"",
-		},
-		{
-			name: "invalid step ID",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{Step{
-						ID:  "1-step",
-						Run: "echo",
-					}},
-				},
-			},
-			expectedError: fmt.Sprintf(".task[0].id \"1-step\" does not satisfy %q", TaskNamePattern.String()),
-		},
-		{
-			name: "both run and uses fields set",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{Step{
-						Run:  "echo",
-						Uses: "other-task",
-					}},
-				},
-			},
-			expectedError: ".task[0] has both run and uses fields set",
-		},
-		{
-			name: "neither run nor uses fields set",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{Step{}},
-				},
-			},
-			expectedError: ".task[0] must have one of [run, uses] fields set",
-		},
-		{
-			name: "uses with invalid URL",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{Step{
-						Uses: ":\\invalid",
-					}},
-				},
-			},
-			expectedError: ".task[0].uses parse \":\\\\invalid\": missing protocol scheme",
-		},
-		{
-			name: "uses with non-existent task",
-			wf: Workflow{
-				Inputs: InputMap{},
-				Tasks: TaskMap{
-					"task": Task{Step{
-						Uses: "non-existent-task",
-					}},
-				},
-			},
-			expectedError: ".task[0].uses \"non-existent-task\" not found",
-		},
-		{
 			name: "uses with invalid scheme",
 			wf: Workflow{
 				Inputs: InputMap{},
@@ -499,6 +408,62 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			expectedError: "",
+		},
+		{
+			name: "task with both run and uses",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run:  "echo",
+						Uses: "builtin:echo",
+					}},
+				},
+			},
+			expectedError: ".task[0] has both run and uses fields set",
+		},
+		{
+			name: "task with neither run nor uses",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						// Missing both Run and Uses
+					}},
+				},
+			},
+			expectedError: ".task[0] must have one of [run, uses] fields set",
+		},
+		{
+			name: "task with multiple validation errors",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{
+						Step{
+							Run:  "echo",
+							Uses: "builtin:echo",
+						},
+						Step{
+							// Missing both Run and Uses
+						},
+					},
+				},
+			},
+			expectedError: ".task[0] has both run and uses fields set",
+		},
+		{
+			name: "task with invalid if condition",
+			wf: Workflow{
+				Inputs: InputMap{},
+				Tasks: TaskMap{
+					"task": Task{Step{
+						Run: "echo",
+						If:  "invalid-condition", // Only "" or "failure" are allowed
+					}},
+				},
+			},
+			expectedError: "task: Must validate \"then\" as \"if\" was valid\ntask.0.if: task.0.if must be one of the following: \"failure\", \"always\"",
 		},
 		{
 			name: "invalid input schema validation",

@@ -75,7 +75,7 @@ func handleUsesStep(ctx context.Context, step Step, wf Workflow, withDefaults Wi
 	outputs CommandOutputs, origin string, dry bool) (map[string]any, error) {
 
 	if strings.HasPrefix(step.Uses, "builtin:") {
-		return ExecuteBuiltin(ctx, step.Uses, step.With, outputs, dry)
+		return ExecuteBuiltin(ctx, step, withDefaults, outputs, dry)
 	}
 
 	templatedWith, err := TemplateWith(ctx, withDefaults, step.With, outputs)
