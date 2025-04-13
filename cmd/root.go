@@ -33,7 +33,7 @@ func NewRootCmd() *cobra.Command {
 	)
 
 	root := &cobra.Command{
-		Use:   "maru",
+		Use:   "maru2",
 		Short: "A simple task runner",
 		ValidArgsFunction: func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 			if filename == "" {
