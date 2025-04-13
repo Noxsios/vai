@@ -19,7 +19,7 @@ import (
 // Each key will be mapped to an equivalent environment variable
 // when the command is run. eg. `with: {foo: bar}` will be passed
 // as `foo=bar` to the command.
-type With map[string]any
+type With = map[string]any
 
 func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *template.Template {
 	fm := template.FuncMap{
@@ -99,7 +99,7 @@ func TemplateString(input With, previousOutputs CommandOutputs, str string) (str
 }
 
 // TemplateWithMap recursively processes a With map and templates all string values
-func TemplateWithMap(input With, previousOutputs CommandOutputs, withMap map[string]any) (With, error) {
+func TemplateWithMap(input With, previousOutputs CommandOutputs, withMap With) (With, error) {
 	if withMap == nil {
 		return nil, nil
 	}

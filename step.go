@@ -92,6 +92,10 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Description: "Condition to determine if the step should be executed",
 		Enum:        []any{"failure", "always"}, // todo: tie this to an enum
 	})
+	props.Set("with", &jsonschema.Schema{
+		Type:        "object",
+		Description: "Additional parameters for the step/task call",
+	})
 
 	runProps := jsonschema.NewProperties()
 	runProps.Set("run", &jsonschema.Schema{

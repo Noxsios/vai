@@ -240,9 +240,6 @@
         "$ref": "#/$defs/Step"
       },
       "type": "array"
-    },
-    "With": {
-      "type": "object"
     }
   },
   "patternProperties": {
