@@ -35,30 +35,7 @@ func NewGitLabClient(base string) (*GitLabClient, error) {
 	return &GitLabClient{client}, nil
 }
 
-// Describe returns a descriptor for the given file
-func (g *GitLabClient) Describe(ctx context.Context, uses string) (Descriptor, error) {
-	pURL, err := packageurl.FromString(uses)
-	if err != nil {
-		return Descriptor{}, err
-	}
 
-	pid := pURL.Namespace + "/" + pURL.Name
-	file, resp, err := g.client.RepositoryFiles.GetFileMetaData(pid, pURL.Subpath, &gitlab.GetFileMetaDataOptions{
-		Ref: &pURL.Version,
-	}, gitlab.WithContext(ctx))
-	if err != nil {
-		return Descriptor{}, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return Descriptor{}, fmt.Errorf("failed to get file metadata %s: %s", pURL, resp.Status)
-	}
-
-	return Descriptor{
-		Size: int64(file.Size),
-		Hex:  file.SHA256,
-	}, nil
-}
 
 // Fetch the file
 func (g *GitLabClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {

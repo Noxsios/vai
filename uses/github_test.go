@@ -22,11 +22,6 @@ func TestGitHubFetcher(t *testing.T) {
 
 	client := NewGitHubClient()
 
-	desc, err := client.Describe(ctx, uses)
-	require.NoError(t, err)
-	require.Equal(t, "53df01bd752c536a52836ccf988f656c3e4ed9d728aabed9974ac62453488840", desc.Hex)
-	require.Equal(t, int64(122), desc.Size)
-
 	rc, err := client.Fetch(ctx, uses)
 	require.NoError(t, err)
 
