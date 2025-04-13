@@ -7,11 +7,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/defenseunicorns/maru2/builtins"
-	"github.com/goccy/go-yaml"
 )
 
 // ExecuteBuiltin determines which builtin to run based upon the uses string, converts the With map to the expected struct, then calls the builtin's Execute method
@@ -20,42 +20,36 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 	logger := log.FromContext(ctx)
 
 	builtinEmpty, ok := builtins.Builtins[name]
-	if !ok {
+	if !ok || builtinEmpty == nil {
 		return nil, fmt.Errorf("%s not found", step.Uses)
 	}
 
-	// what I'm doing here can't be legal
 	var rendered With
 	if with != nil {
-		b, err := yaml.Marshal(step.With)
+		var err error
+		rendered, err = TemplateWithMap(with, previous, step.With)
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", step.Uses, err)
-		}
-
-		templated, err := TemplateString(with, previous, string(b))
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", step.Uses, err)
-		}
-
-		if err := yaml.Unmarshal([]byte(templated), &rendered); err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
 	}
 
-	var builtin builtins.Builtin
-	var err error
-	switch builtinEmpty.(type) {
-	case builtins.BuiltinEcho:
-		builtin, err = ConvertWithTo[builtins.BuiltinEcho](rendered)
+	builtinType := reflect.TypeOf(builtinEmpty)
+	builtinValue := reflect.New(builtinType).Elem()
+
+	if rendered != nil {
+		data, err := json.Marshal(rendered)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-	case builtins.BuiltinFetch:
-		builtin, err = ConvertWithTo[builtins.BuiltinFetch](rendered)
-		if err != nil {
+
+		if err := json.Unmarshal(data, builtinValue.Addr().Interface()); err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-		// no default case due to map access handling that
+	}
+
+	builtin, ok := builtinValue.Interface().(builtins.Builtin)
+	if !ok {
+		return nil, fmt.Errorf("%s: failed to convert to Builtin interface", step.Uses)
 	}
 
 	if dry {
@@ -69,16 +63,4 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 	}
 
 	return result, nil
-}
-
-// ConvertWithTo transforms a With (map[string]any) to a Go struct through reparsing the map using generics
-func ConvertWithTo[T any](with With) (T, error) {
-	var result T
-
-	b, err := json.Marshal(with)
-	if err != nil {
-		return result, err
-	}
-
-	return result, json.Unmarshal(b, &result)
 }

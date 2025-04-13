@@ -20,19 +20,19 @@ func TestTemplateString(t *testing.T) {
 		input          With
 		previousOutput CommandOutputs
 		str            string
-		expectedResult string
+		expected       string
 		expectedError  string
 	}{
 		{
-			name:           "no template",
-			str:            "hello world",
-			expectedResult: "hello world",
+			name:     "no template",
+			str:      "hello world",
+			expected: "hello world",
 		},
 		{
-			name:           "with input",
-			input:          With{"name": "test"},
-			str:            "hello ${{ input \"name\" }}",
-			expectedResult: "hello test",
+			name:     "with input",
+			input:    With{"name": "test"},
+			str:      "hello ${{ input \"name\" }}",
+			expected: "hello test",
 		},
 		{
 			name:          "with missing input",
@@ -47,8 +47,8 @@ func TestTemplateString(t *testing.T) {
 					"result": "success",
 				},
 			},
-			str:            "status: ${{ from \"step1\" \"result\" }}",
-			expectedResult: "status: success",
+			str:      "status: ${{ from \"step1\" \"result\" }}",
+			expected: "status: success",
 		},
 		{
 			name:           "with missing previous output",
@@ -57,19 +57,19 @@ func TestTemplateString(t *testing.T) {
 			expectedError:  "no outputs for step \"step1\"",
 		},
 		{
-			name:           "with OS variable",
-			str:            "OS: ${{ .OS }}",
-			expectedResult: "OS: " + runtime.GOOS,
+			name:     "with OS variable",
+			str:      "OS: ${{ .OS }}",
+			expected: "OS: " + runtime.GOOS,
 		},
 		{
-			name:           "with ARCH variable",
-			str:            "ARCH: ${{ .ARCH }}",
-			expectedResult: "ARCH: " + runtime.GOARCH,
+			name:     "with ARCH variable",
+			str:      "ARCH: ${{ .ARCH }}",
+			expected: "ARCH: " + runtime.GOARCH,
 		},
 		{
-			name:           "with PLATFORM variable",
-			str:            "PLATFORM: ${{ .PLATFORM }}",
-			expectedResult: "PLATFORM: " + runtime.GOOS + "/" + runtime.GOARCH,
+			name:     "with PLATFORM variable",
+			str:      "PLATFORM: ${{ .PLATFORM }}",
+			expected: "PLATFORM: " + runtime.GOOS + "/" + runtime.GOARCH,
 		},
 		{
 			name:  "with multiple variables",
@@ -79,8 +79,8 @@ func TestTemplateString(t *testing.T) {
 					"result": "success",
 				},
 			},
-			str:            "Hello ${{ input \"name\" }}, status: ${{ from \"step1\" \"result\" }}, OS: ${{ .OS }}",
-			expectedResult: "Hello test, status: success, OS: " + runtime.GOOS,
+			str:      "Hello ${{ input \"name\" }}, status: ${{ from \"step1\" \"result\" }}, OS: ${{ .OS }}",
+			expected: "Hello test, status: success, OS: " + runtime.GOOS,
 		},
 		{
 			name:          "invalid template syntax",
@@ -98,7 +98,7 @@ func TestTemplateString(t *testing.T) {
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expectedResult, result)
+				assert.Equal(t, tc.expected, result)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedError)
@@ -112,14 +112,14 @@ func TestMergeWithAndParams(t *testing.T) {
 		name          string
 		with          With
 		params        InputMap
-		expectedWith  With
+		expected      With
 		expectedError string
 	}{
 		{
-			name:         "empty inputs",
-			with:         With{},
-			params:       InputMap{},
-			expectedWith: With{},
+			name:     "empty inputs",
+			with:     With{},
+			params:   InputMap{},
+			expected: With{},
 		},
 		{
 			name: "with default values",
@@ -134,7 +134,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default:     "1.0.0",
 				},
 			},
-			expectedWith: With{
+			expected: With{
 				"name":    "default-name",
 				"version": "1.0.0",
 			},
@@ -154,7 +154,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default:     "1.0.0",
 				},
 			},
-			expectedWith: With{
+			expected: With{
 				"name":    "custom-name",
 				"version": "1.0.0",
 			},
@@ -181,7 +181,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					Required:    true,
 				},
 			},
-			expectedWith: With{
+			expected: With{
 				"name": "custom-name",
 			},
 		},
@@ -196,7 +196,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					DeprecatedMessage: "Use new-param instead",
 				},
 			},
-			expectedWith: With{
+			expected: With{
 				"old-param": "value",
 			},
 		},
@@ -213,7 +213,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default:     "default-name",
 				},
 			},
-			expectedWith: With{
+			expected: With{
 				"name":    "custom-name",
 				"extra":   "extra-value",
 				"another": 123,
@@ -234,7 +234,7 @@ func TestMergeWithAndParams(t *testing.T) {
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)
-				assert.Equal(t, tc.expectedWith, result)
+				assert.Equal(t, tc.expected, result)
 			} else {
 				require.EqualError(t, err, tc.expectedError)
 			}
@@ -242,14 +242,373 @@ func TestMergeWithAndParams(t *testing.T) {
 	}
 }
 
+func TestTemplateWithMap(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          With
+		previousOutput CommandOutputs
+		withMap        map[string]any
+		expected       With
+		expectedError  string
+	}{
+		{
+			name:     "nil map",
+			withMap:  nil,
+			expected: nil,
+		},
+		{
+			name:     "empty map",
+			withMap:  map[string]any{},
+			expected: With{},
+		},
+		{
+			name: "simple string value",
+			input: With{
+				"name": "test",
+			},
+			withMap: map[string]any{
+				"greeting": "Hello ${{ input \"name\" }}",
+			},
+			expected: With{
+				"greeting": "Hello test",
+			},
+		},
+		{
+			name: "nested map",
+			input: With{
+				"name": "test",
+			},
+			withMap: map[string]any{
+				"config": map[string]any{
+					"greeting": "Hello ${{ input \"name\" }}",
+					"version":  "1.0",
+				},
+			},
+			expected: With{
+				"config": With{
+					"greeting": "Hello test",
+					"version":  "1.0",
+				},
+			},
+		},
+		{
+			name: "array with strings",
+			input: With{
+				"name": "test",
+			},
+			withMap: map[string]any{
+				"greetings": []interface{}{
+					"Hello ${{ input \"name\" }}",
+					"Hi ${{ input \"name\" }}",
+				},
+			},
+			expected: With{
+				"greetings": []interface{}{
+					"Hello test",
+					"Hi test",
+				},
+			},
+		},
+		{
+			name: "array with maps",
+			input: With{
+				"name": "test",
+			},
+			withMap: map[string]any{
+				"users": []interface{}{
+					map[string]any{
+						"name": "${{ input \"name\" }}",
+						"role": "admin",
+					},
+					map[string]any{
+						"name": "other",
+						"role": "user",
+					},
+				},
+			},
+			expected: With{
+				"users": []interface{}{
+					With{
+						"name": "test",
+						"role": "admin",
+					},
+					With{
+						"name": "other",
+						"role": "user",
+					},
+				},
+			},
+		},
+		{
+			name: "nested arrays",
+			input: With{
+				"name": "test",
+			},
+			withMap: map[string]any{
+				"data": []interface{}{
+					[]interface{}{
+						"${{ input \"name\" }}",
+						"value",
+					},
+				},
+			},
+			expected: With{
+				"data": []interface{}{
+					[]interface{}{
+						"test",
+						"value",
+					},
+				},
+			},
+		},
+		{
+			name: "complex nested structure",
+			input: With{
+				"name":    "test",
+				"version": "2.0",
+			},
+			previousOutput: CommandOutputs{
+				"step1": map[string]any{
+					"result": "success",
+				},
+			},
+			withMap: map[string]any{
+				"config": map[string]any{
+					"app": map[string]any{
+						"name":    "${{ input \"name\" }}",
+						"version": "${{ input \"version\" }}",
+					},
+					"status": "${{ from \"step1\" \"result\" }}",
+				},
+				"data": []interface{}{
+					map[string]any{
+						"key":   "app_name",
+						"value": "${{ input \"name\" }}",
+					},
+					map[string]any{
+						"key":   "app_version",
+						"value": "${{ input \"version\" }}",
+					},
+				},
+			},
+			expected: With{
+				"config": With{
+					"app": With{
+						"name":    "test",
+						"version": "2.0",
+					},
+					"status": "success",
+				},
+				"data": []interface{}{
+					With{
+						"key":   "app_name",
+						"value": "test",
+					},
+					With{
+						"key":   "app_version",
+						"value": "2.0",
+					},
+				},
+			},
+		},
+		{
+			name:  "with template error",
+			input: With{},
+			withMap: map[string]any{
+				"greeting": "Hello ${{ input \"missing\" }}",
+			},
+			expectedError: "\"missing\" does not exist in the map of inputs",
+		},
+		{
+			name: "non-string primitive values",
+			withMap: map[string]any{
+				"number":  42,
+				"boolean": true,
+				"null":    nil,
+			},
+			expected: With{
+				"number":  42,
+				"boolean": true,
+				"null":    nil,
+			},
+		},
+		{
+			name: "With type instead of map[string]any",
+			input: With{
+				"name": "test",
+			},
+			withMap: With{
+				"greeting": "Hello ${{ input \"name\" }}",
+			},
+			expected: With{
+				"greeting": "Hello test",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := TemplateWithMap(tc.input, tc.previousOutput, tc.withMap)
+
+			if tc.expectedError == "" {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedError)
+			}
+		})
+	}
+}
+
+func TestTemplateSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          With
+		previousOutput CommandOutputs
+		slice          []any
+		expected       []any
+		expectedError  string
+	}{
+		{
+			name:     "empty slice",
+			slice:    []any{},
+			expected: []any{},
+		},
+		{
+			name: "slice with strings",
+			input: With{
+				"name": "test",
+			},
+			slice: []any{
+				"Hello ${{ input \"name\" }}",
+				"Hi ${{ input \"name\" }}",
+			},
+			expected: []any{
+				"Hello test",
+				"Hi test",
+			},
+		},
+		{
+			name: "slice with maps",
+			input: With{
+				"name": "test",
+			},
+			slice: []any{
+				map[string]any{
+					"greeting": "Hello ${{ input \"name\" }}",
+				},
+				map[string]any{
+					"greeting": "Hi ${{ input \"name\" }}",
+				},
+			},
+			expected: []any{
+				With{
+					"greeting": "Hello test",
+				},
+				With{
+					"greeting": "Hi test",
+				},
+			},
+		},
+		{
+			name: "nested slices",
+			input: With{
+				"name": "test",
+			},
+			slice: []any{
+				[]any{
+					"${{ input \"name\" }}",
+					"value",
+				},
+			},
+			expected: []any{
+				[]any{
+					"test",
+					"value",
+				},
+			},
+		},
+		{
+			name:  "with template error",
+			input: With{},
+			slice: []any{
+				"Hello ${{ input \"missing\" }}",
+			},
+			expectedError: "\"missing\" does not exist in the map of inputs",
+		},
+		{
+			name: "non-string primitive values",
+			slice: []any{
+				42,
+				true,
+				nil,
+			},
+			expected: []any{
+				42,
+				true,
+				nil,
+			},
+		},
+		{
+			name: "mixed types",
+			input: With{
+				"name": "test",
+			},
+			slice: []any{
+				"Hello ${{ input \"name\" }}",
+				42,
+				map[string]any{
+					"greeting": "Hi ${{ input \"name\" }}",
+				},
+				[]any{
+					"${{ input \"name\" }}",
+					"value",
+				},
+			},
+			expected: []any{
+				"Hello test",
+				42,
+				With{
+					"greeting": "Hi test",
+				},
+				[]any{
+					"test",
+					"value",
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := templateSlice(tc.input, tc.previousOutput, tc.slice)
+
+			if tc.expectedError == "" {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedError)
+			}
+		})
+	}
+}
+
 func TestPerformLookups(t *testing.T) {
 	testCases := []struct {
-		name              string
-		input             With
-		local             With
-		previous          CommandOutputs
-		expectedTemplated With
-		expectedError     string
+		name          string
+		input         With
+		local         With
+		previous      CommandOutputs
+		expected      With
+		expectedError string
 	}{
 		{
 			name: "no lookups",
@@ -274,7 +633,7 @@ func TestPerformLookups(t *testing.T) {
 				"int":      1,
 				"bool":     false,
 			},
-			expectedTemplated: With{
+			expected: With{
 				"key":      "value",
 				"os":       runtime.GOOS,
 				"arch":     runtime.GOARCH,
@@ -300,7 +659,7 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `${{ from "step-1" "bar" }}`,
 			},
-			expectedTemplated: With{
+			expected: With{
 				"foo": "baz",
 			},
 		},
@@ -342,7 +701,7 @@ func TestPerformLookups(t *testing.T) {
 			} else {
 				require.EqualError(t, err, tc.expectedError)
 			}
-			assert.Equal(t, tc.expectedTemplated, templated)
+			assert.Equal(t, tc.expected, templated)
 		})
 	}
 }

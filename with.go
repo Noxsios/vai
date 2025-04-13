@@ -98,6 +98,70 @@ func TemplateString(input With, previousOutputs CommandOutputs, str string) (str
 	return result.String(), nil
 }
 
+// TemplateWithMap recursively processes a With map and templates all string values
+func TemplateWithMap(input With, previousOutputs CommandOutputs, withMap map[string]any) (With, error) {
+	if withMap == nil {
+		return nil, nil
+	}
+
+	result := make(With)
+	for k, v := range withMap {
+		switch val := v.(type) {
+		case string:
+			templated, err := TemplateString(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[k] = templated
+		case map[string]any:
+			nestedMap, err := TemplateWithMap(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[k] = nestedMap
+		case []any:
+			templatedSlice, err := templateSlice(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[k] = templatedSlice
+		default:
+			result[k] = v
+		}
+	}
+	return result, nil
+}
+
+// templateSlice recursively processes a slice and templates all string values
+func templateSlice(input With, previousOutputs CommandOutputs, slice []any) ([]any, error) {
+	result := make([]any, len(slice))
+	for i, v := range slice {
+		switch val := v.(type) {
+		case string:
+			templated, err := TemplateString(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[i] = templated
+		case map[string]any:
+			nestedMap, err := TemplateWithMap(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[i] = nestedMap
+		case []any:
+			templatedSlice, err := templateSlice(input, previousOutputs, val)
+			if err != nil {
+				return nil, err
+			}
+			result[i] = templatedSlice
+		default:
+			result[i] = v
+		}
+	}
+	return result, nil
+}
+
 // MergeWithAndParams merges a With map into an InputMap, handling defaults, logging warnings on deprections, etc...
 func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, error) {
 	logger := log.FromContext(ctx)
