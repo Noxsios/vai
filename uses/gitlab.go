@@ -35,8 +35,6 @@ func NewGitLabClient(base string) (*GitLabClient, error) {
 	return &GitLabClient{client}, nil
 }
 
-
-
 // Fetch the file
 func (g *GitLabClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {
 	pURL, err := packageurl.FromString(uses)

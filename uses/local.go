@@ -22,8 +22,6 @@ func NewLocalFetcher(fs afero.Fs) *LocalFetcher {
 	return &LocalFetcher{fs}
 }
 
-
-
 // Fetch opens a file handle at the given location
 func (f *LocalFetcher) Fetch(_ context.Context, uses string) (io.ReadCloser, error) {
 	uri, err := url.Parse(uses)

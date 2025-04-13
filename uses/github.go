@@ -30,8 +30,6 @@ func NewGitHubClient() *GitHubClient {
 	return &GitHubClient{client}
 }
 
-
-
 // Fetch the file
 func (g *GitHubClient) Fetch(ctx context.Context, uses string) (io.ReadCloser, error) {
 	pURL, err := packageurl.FromString(uses)
