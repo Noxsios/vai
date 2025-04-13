@@ -130,9 +130,9 @@ func Validate(wf Workflow) error {
 				}
 
 				if u.Scheme == "" {
-					// if step.Uses == name {
-					// 	return fmt.Errorf(".%s[%d].uses cannot reference itself", name, idx)
-					// }
+					if step.Uses == name {
+						return fmt.Errorf(".%s[%d].uses cannot reference itself", name, idx)
+					}
 					_, ok := wf.Tasks.Find(step.Uses)
 					if !ok {
 						return fmt.Errorf(".%s[%d].uses %q not found", name, idx, step.Uses)
