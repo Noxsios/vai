@@ -49,11 +49,12 @@ func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *tem
 // TemplateWith templates a With map with the given input and previous outputs
 func TemplateWith(ctx context.Context, input, local With, previousOutputs CommandOutputs) (With, error) {
 	logger := log.FromContext(ctx)
-	logger.Debug("templating", "input", input, "local", local)
 
 	if len(local) == 0 {
 		return input, nil
 	}
+
+	logger.Debug("templating", "input", input, "local", local)
 
 	r := make(With, len(local))
 
@@ -175,9 +176,11 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 			if merged[name] == nil {
 				merged[name] = param.Default
 			}
-			if param.DeprecatedMessage != "" && merged[name] != nil {
-				logger.Warnf("input %q is deprecated: %s", name, param.DeprecatedMessage)
-			}
+			continue
+		}
+		// If the input is deprecated AND provided, log a warning
+		if param.DeprecatedMessage != "" && with[name] != nil {
+			logger.Warnf("input %q is deprecated: %s", name, param.DeprecatedMessage)
 		}
 	}
 

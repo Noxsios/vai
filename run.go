@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/log"
 )
@@ -24,6 +25,9 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		taskName = DefaultTaskName
 	}
 
+	logger := log.FromContext(ctx)
+	logger.Debug("run", "task", taskName, "from", origin, "dry-run", dry)
+
 	task, ok := wf.Tasks.Find(taskName)
 	if !ok {
 		return nil, fmt.Errorf("task %q not found", taskName)
@@ -35,12 +39,12 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 	}
 
 	outputs := make(CommandOutputs)
-	logger := log.FromContext(ctx)
 	var firstError error
 
+	start := time.Now()
 	for i, step := range task {
 		if (firstError == nil && step.If == "failure") || (firstError != nil && step.If == "") {
-			logger.Debug("skipping step", "name", step.Name, "if", step.If)
+			logger.Debug("skipping step", "name", step.Name, "idx", i, "if", step.If)
 			continue
 		}
 
@@ -59,6 +63,7 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		}
 
 		if isLastStep && stepResult != nil {
+			logger.Debug("completed", "task", taskName, "duration", time.Since(start), "error", firstError != nil, "outputs", len(stepResult))
 			return stepResult, firstError
 		}
 
@@ -68,11 +73,15 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		}
 	}
 
+	logger.Debug("completed", "task", taskName, "duration", time.Since(start), "error", firstError != nil)
 	return nil, firstError
 }
 
 func handleUsesStep(ctx context.Context, step Step, wf Workflow, withDefaults With,
 	outputs CommandOutputs, origin string, dry bool) (map[string]any, error) {
+
+	logger := log.FromContext(ctx)
+	logger.Debug("uses", "task", step.Uses)
 
 	if strings.HasPrefix(step.Uses, "builtin:") {
 		return ExecuteBuiltin(ctx, step, withDefaults, outputs, dry)
