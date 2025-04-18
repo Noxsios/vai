@@ -126,12 +126,10 @@ func TestMergeWithAndParams(t *testing.T) {
 			with: With{},
 			params: InputMap{
 				"name": InputParameter{
-					Description: "Name parameter",
-					Default:     "default-name",
+					Default: "default-name",
 				},
 				"version": InputParameter{
-					Description: "Version parameter",
-					Default:     "1.0.0",
+					Default: "1.0.0",
 				},
 			},
 			expected: With{
@@ -146,12 +144,10 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 			params: InputMap{
 				"name": InputParameter{
-					Description: "Name parameter",
-					Default:     "default-name",
+					Default: "default-name",
 				},
 				"version": InputParameter{
-					Description: "Version parameter",
-					Default:     "1.0.0",
+					Default: "1.0.0",
 				},
 			},
 			expected: With{
@@ -164,8 +160,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			with: With{},
 			params: InputMap{
 				"name": InputParameter{
-					Description: "Name parameter",
-					Required:    true,
+					Required: true,
 				},
 			},
 			expectedError: "missing required input: \"name\"",
@@ -177,8 +172,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 			params: InputMap{
 				"name": InputParameter{
-					Description: "Name parameter",
-					Required:    true,
+					Required: true,
 				},
 			},
 			expected: With{
@@ -192,7 +186,6 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 			params: InputMap{
 				"old-param": InputParameter{
-					Description:       "Old parameter",
 					DeprecatedMessage: "Use new-param instead",
 				},
 			},
@@ -209,8 +202,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 			params: InputMap{
 				"name": InputParameter{
-					Description: "Name parameter",
-					Default:     "default-name",
+					Default: "default-name",
 				},
 			},
 			expected: With{
@@ -218,6 +210,96 @@ func TestMergeWithAndParams(t *testing.T) {
 				"extra":   "extra-value",
 				"another": 123,
 			},
+		},
+		{
+			name: "string input with string default - type match",
+			with: With{
+				"name": "custom-name",
+			},
+			params: InputMap{
+				"name": InputParameter{
+					Default: "default-name",
+				},
+			},
+			expected: With{
+				"name": "custom-name",
+			},
+		},
+		{
+			name: "string input with non-string default - type mismatch",
+			with: With{
+				"count": "5",
+			},
+			params: InputMap{
+				"count": InputParameter{
+					Default: 5,
+				},
+			},
+			expectedError: "input \"count\" has type string, but default is int",
+		},
+		{
+			name: "bool input with bool default - type match",
+			with: With{
+				"enabled": true,
+			},
+			params: InputMap{
+				"enabled": InputParameter{
+					Default: false,
+				},
+			},
+			expected: With{
+				"enabled": true,
+			},
+		},
+		{
+			name: "bool input with non-bool default - type mismatch",
+			with: With{
+				"enabled": true,
+			},
+			params: InputMap{
+				"enabled": InputParameter{
+					Default: "false",
+				},
+			},
+			expectedError: "input \"enabled\" has type bool, but default is string",
+		},
+		{
+			name: "int input with int default - type match",
+			with: With{
+				"count": 10,
+			},
+			params: InputMap{
+				"count": InputParameter{
+					Default: 5,
+				},
+			},
+			expected: With{
+				"count": 10,
+			},
+		},
+		{
+			name: "int input with non-int default - type mismatch",
+			with: With{
+				"count": 10,
+			},
+			params: InputMap{
+				"count": InputParameter{
+					Default: "5",
+				},
+			},
+			expectedError: "input \"count\" has type int, but default is string",
+		},
+		{
+			name: "unknown type input",
+			with: With{
+				"data": []string{"a", "b"},
+			},
+			params: InputMap{
+				"data": InputParameter{
+					Default: true,
+				},
+			},
+			expectedError: "unknown type for input \"data\", default is bool, got []string",
 		},
 	}
 

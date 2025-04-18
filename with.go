@@ -182,6 +182,26 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 		if param.DeprecatedMessage != "" && with[name] != nil {
 			logger.Warnf("input %q is deprecated: %s", name, param.DeprecatedMessage)
 		}
+
+		// If the input is provided, and the default is set, ensure the types match
+		if param.Default != nil && with[name] != nil {
+			switch with[name].(type) {
+			case string:
+				if _, ok := param.Default.(string); !ok {
+					return nil, fmt.Errorf("input %q has type string, but default is %T", name, param.Default)
+				}
+			case bool:
+				if _, ok := param.Default.(bool); !ok {
+					return nil, fmt.Errorf("input %q has type bool, but default is %T", name, param.Default)
+				}
+			case int:
+				if _, ok := param.Default.(int); !ok {
+					return nil, fmt.Errorf("input %q has type int, but default is %T", name, param.Default)
+				}
+			default:
+				return nil, fmt.Errorf("unknown type for input %q, default is %T, got %T", name, param.Default, with[name])
+			}
+		}
 	}
 
 	return merged, nil
