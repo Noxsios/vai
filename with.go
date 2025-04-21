@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	"github.com/charmbracelet/log"
+	"github.com/spf13/cast"
 )
 
 // With is a map of string keys and WithEntry values used to pass parameters to called tasks and within steps
@@ -183,23 +184,29 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 			logger.Warnf("input %q is deprecated: %s", name, param.DeprecatedMessage)
 		}
 
-		// If the input is provided, and the default is set, ensure the types match
+		// If the input is provided, and the default is set, ensure the types match, cast otherwise
 		if param.Default != nil && with[name] != nil {
-			switch with[name].(type) {
-			case string:
-				if _, ok := param.Default.(string); !ok {
-					return nil, fmt.Errorf("input %q has type string, but default is %T", name, param.Default)
-				}
+			switch param.Default.(type) {
 			case bool:
-				if _, ok := param.Default.(bool); !ok {
-					return nil, fmt.Errorf("input %q has type bool, but default is %T", name, param.Default)
+				casted, err := cast.ToBoolE(with[name])
+				if err != nil {
+					return nil, err
 				}
-			case int:
-				if _, ok := param.Default.(int); !ok {
-					return nil, fmt.Errorf("input %q has type int, but default is %T", name, param.Default)
+				merged[name] = casted
+			case string:
+				casted, err := cast.ToStringE(with[name])
+				if err != nil {
+					return nil, err
 				}
+				merged[name] = casted
+			case uint64:
+				casted, err := cast.ToUint64E(with[name])
+				if err != nil {
+					return nil, err
+				}
+				merged[name] = casted
 			default:
-				return nil, fmt.Errorf("unknown type for input %q, default is %T, got %T", name, param.Default, with[name])
+				return nil, fmt.Errorf("unable to cast %s from %T to %T", name, with[name], param.Default)
 			}
 		}
 	}

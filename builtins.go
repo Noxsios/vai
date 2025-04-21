@@ -5,13 +5,12 @@ package maru2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/defenseunicorns/maru2/builtins"
+	"github.com/go-viper/mapstructure/v2"
 )
 
 // ExecuteBuiltin determines which builtin to run based upon the uses string, converts the With map to the expected struct, then calls the builtin's Execute method
@@ -19,8 +18,8 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 	name := strings.TrimPrefix(step.Uses, "builtin:")
 	logger := log.FromContext(ctx)
 
-	builtinEmpty, ok := builtins.Builtins[name]
-	if !ok || builtinEmpty == nil {
+	builtin, ok := builtins.Builtins[name]
+	if !ok || builtin == nil {
 		return nil, fmt.Errorf("%s not found", step.Uses)
 	}
 
@@ -33,23 +32,18 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 		}
 	}
 
-	builtinType := reflect.TypeOf(builtinEmpty)
-	builtinValue := reflect.New(builtinType).Elem()
-
 	if rendered != nil {
-		data, err := json.Marshal(rendered)
+		config := &mapstructure.DecoderConfig{
+			WeaklyTypedInput: true,
+			Result:           &builtin,
+		}
+		decoder, err := mapstructure.NewDecoder(config)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-
-		if err := json.Unmarshal(data, builtinValue.Addr().Interface()); err != nil {
+		if err := decoder.Decode(rendered); err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-	}
-
-	builtin, ok := builtinValue.Interface().(builtins.Builtin)
-	if !ok {
-		return nil, fmt.Errorf("%s: failed to convert to Builtin interface", step.Uses)
 	}
 
 	if dry {

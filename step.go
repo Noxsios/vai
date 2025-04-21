@@ -146,6 +146,92 @@ func (Step) JSONSchemaExtend(schema *jsonschema.Schema) {
 		withSchema := reflector.Reflect(builtinEmpty)
 
 		if withSchema != nil {
+			// processSchema allows schema types to be either string or their original type for templating
+			var processSchema func(schema *jsonschema.Schema)
+			processSchema = func(schema *jsonschema.Schema) {
+				// Skip if already a string type
+				if schema.Type == "string" {
+					return
+				}
+
+				// Process primitive types (not array or object)
+				if schema.Type != "array" && schema.Type != "object" {
+					schema.OneOf = []*jsonschema.Schema{
+						{Type: "string"},
+						{Type: schema.Type},
+					}
+					schema.Type = ""
+					return
+				}
+
+				// Process array items
+				if schema.Type == "array" && schema.Items != nil {
+					processSchema(schema.Items)
+					return
+				}
+
+				// Process object properties
+				if schema.Type == "object" && schema.Properties != nil {
+					for nestedPair := schema.Properties.Oldest(); nestedPair != nil; nestedPair = nestedPair.Next() {
+						processSchema(nestedPair.Value)
+					}
+				}
+			}
+
+			// Process all properties in the schema
+			for pair := withSchema.Properties.Oldest(); pair != nil; pair = pair.Next() {
+				// Skip string types
+				if pair.Value.Type == "string" {
+					continue
+				}
+
+				switch pair.Value.Type {
+				case "array":
+					// For arrays, keep structure but process items
+					if pair.Value.Items != nil {
+						processSchema(pair.Value.Items)
+					}
+
+				case "object":
+					// Special handling for maps
+					if pair.Value.AdditionalProperties != nil && pair.Value.AdditionalProperties != jsonschema.FalseSchema {
+						// Process map values if they're not strings
+						if pair.Value.AdditionalProperties.Type != "string" {
+							processSchema(pair.Value.AdditionalProperties)
+						}
+					} else {
+						// For regular objects, allow string or original type
+						objectSchema := *pair.Value
+
+						// Process nested properties
+						if objectSchema.Properties != nil {
+							for nestedPair := objectSchema.Properties.Oldest(); nestedPair != nil; nestedPair = nestedPair.Next() {
+								processSchema(nestedPair.Value)
+							}
+						}
+
+						pair.Value.OneOf = []*jsonschema.Schema{
+							{Type: "string"},
+							&objectSchema,
+						}
+						pair.Value.Type = ""
+						pair.Value.Properties = nil
+						pair.Value.PatternProperties = nil
+						pair.Value.AdditionalProperties = nil
+					}
+
+				default:
+					// Handle primitive types
+					pair.Value.OneOf = []*jsonschema.Schema{
+						{Type: "string"},
+						{Type: pair.Value.Type},
+					}
+					pair.Value.Type = ""
+				}
+			}
+		}
+
+		if withSchema != nil {
 			withSchema.ID = jsonschema.EmptyID
 			withSchema.Type = "object"
 			withSchema.AdditionalProperties = jsonschema.FalseSchema
