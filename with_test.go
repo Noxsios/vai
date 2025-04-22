@@ -226,16 +226,18 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 		},
 		{
-			name: "string input with non-string default - type mismatch",
+			name: "string input with non-string default - type cast",
 			with: With{
-				"count": "5",
+				"count": "10",
 			},
 			params: InputMap{
 				"count": InputParameter{
 					Default: 5,
 				},
 			},
-			expectedError: "input \"count\" has type string, but default is int",
+			expected: With{
+				"count": 10,
+			},
 		},
 		{
 			name: "bool input with bool default - type match",
@@ -252,7 +254,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 		},
 		{
-			name: "bool input with non-bool default - type mismatch",
+			name: "bool input with non-bool default - type cast",
 			with: With{
 				"enabled": true,
 			},
@@ -261,7 +263,9 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default: "false",
 				},
 			},
-			expectedError: "input \"enabled\" has type bool, but default is string",
+			expected: With{
+				"enabled": "true",
+			},
 		},
 		{
 			name: "int input with int default - type match",
@@ -278,7 +282,7 @@ func TestMergeWithAndParams(t *testing.T) {
 			},
 		},
 		{
-			name: "int input with non-int default - type mismatch",
+			name: "int input with non-int default - type cast",
 			with: With{
 				"count": 10,
 			},
@@ -287,7 +291,21 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default: "5",
 				},
 			},
-			expectedError: "input \"count\" has type int, but default is string",
+			expected: With{
+				"count": "10",
+			},
+		},
+		{
+			name: "int input with non-int default - failed type cast",
+			with: With{
+				"count": "hello",
+			},
+			params: InputMap{
+				"count": InputParameter{
+					Default: true,
+				},
+			},
+			expectedError: "strconv.ParseBool: parsing \"hello\": invalid syntax",
 		},
 		{
 			name: "unknown type input",
@@ -299,7 +317,7 @@ func TestMergeWithAndParams(t *testing.T) {
 					Default: true,
 				},
 			},
-			expectedError: "unknown type for input \"data\", default is bool, got []string",
+			expectedError: "unable to cast []string{\"a\", \"b\"} of type []string to bool",
 		},
 	}
 

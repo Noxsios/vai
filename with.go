@@ -199,6 +199,12 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 					return nil, err
 				}
 				merged[name] = casted
+			case int:
+				casted, err := cast.ToIntE(with[name])
+				if err != nil {
+					return nil, err
+				}
+				merged[name] = casted
 			case uint64:
 				casted, err := cast.ToUint64E(with[name])
 				if err != nil {
@@ -206,7 +212,7 @@ func MergeWithAndParams(ctx context.Context, with With, params InputMap) (With, 
 				}
 				merged[name] = casted
 			default:
-				return nil, fmt.Errorf("unable to cast %s from %T to %T", name, with[name], param.Default)
+				return nil, fmt.Errorf("unable to cast input %q from %T to %T", name, with[name], param.Default)
 			}
 		}
 	}

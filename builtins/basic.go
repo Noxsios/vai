@@ -16,17 +16,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// Builtin is a simple interface, only implementable on structs due to how the with re-parsing logic works
-type Builtin interface {
-	Execute(ctx context.Context) (map[string]any, error)
-}
-
-// Builtins maps builtin names to their implementations
-var Builtins = map[string]Builtin{
-	"echo":  BuiltinEcho{},
-	"fetch": BuiltinFetch{},
-}
-
 // BuiltinEcho is a sample builtin to MVP execution
 type BuiltinEcho struct {
 	Text string `json:"text" jsonschema:"description=Text to echo"`
