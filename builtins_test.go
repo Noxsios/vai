@@ -6,6 +6,7 @@ package maru2
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/log"
@@ -86,7 +87,7 @@ func TestExecuteBuiltin(t *testing.T) {
 			},
 			with:          With{},
 			dry:           false,
-			expectedError: "builtin:echo: decoding failed due to the following error(s):\n\n'Text' expected type 'string', got unconvertible type 'chan int', value: '0xc0000487e0'",
+			expectedError: "builtin:echo: decoding failed due to the following error(s):\n\n'Text' expected type 'string', got unconvertible type 'chan int', value:",
 			expected:      nil,
 		},
 		{
@@ -137,7 +138,6 @@ func TestExecuteBuiltin(t *testing.T) {
 			logger := log.New(&buf)
 			ctx := log.WithContext(context.Background(), logger)
 
-			// Execute the builtin with the updated function signature
 			result, err := ExecuteBuiltin(ctx, tc.step, tc.with, CommandOutputs{}, tc.dry)
 
 			if tc.expectedError == "" {
@@ -145,6 +145,9 @@ func TestExecuteBuiltin(t *testing.T) {
 				if tc.expected != nil {
 					assert.Equal(t, tc.expected, result)
 				}
+			} else if strings.Contains(tc.expectedError, "got unconvertible type 'chan int'") {
+				require.ErrorContains(t, err, tc.expectedError)
+				assert.Nil(t, result)
 			} else {
 				require.EqualError(t, err, tc.expectedError)
 				assert.Nil(t, result)

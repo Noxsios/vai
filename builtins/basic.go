@@ -16,21 +16,21 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// BuiltinEcho is a sample builtin to MVP execution
-type BuiltinEcho struct {
+// echo is a sample builtin to MVP execution
+type echo struct {
 	Text string `json:"text" jsonschema:"description=Text to echo"`
 }
 
 // Execute the builtin
-func (b BuiltinEcho) Execute(ctx context.Context) (map[string]any, error) {
+func (b echo) Execute(ctx context.Context) (map[string]any, error) {
 	logger := log.FromContext(ctx)
 
 	logger.Print(b.Text)
 	return map[string]any{"stdout": b.Text}, nil
 }
 
-// BuiltinFetch is a sample builtin to showcase configuration and schema gen
-type BuiltinFetch struct {
+// fetch is a sample builtin to showcase configuration and schema gen
+type fetch struct {
 	URL     string            `json:"url" jsonschema:"description=URL to fetch"`
 	Method  string            `json:"method,omitempty" jsonschema:"description=HTTP method to use"`
 	Timeout string            `json:"timeout,omitempty" jsonschema:"description=Timeout for the request"`
@@ -38,7 +38,7 @@ type BuiltinFetch struct {
 }
 
 // Execute the builtin
-func (b BuiltinFetch) Execute(ctx context.Context) (map[string]any, error) {
+func (b fetch) Execute(ctx context.Context) (map[string]any, error) {
 	logger := log.FromContext(ctx)
 
 	method := b.Method

@@ -88,7 +88,7 @@ func TestBuiltinEcho(t *testing.T) {
 			logger := log.New(&buf)
 			ctx := log.WithContext(context.Background(), logger)
 
-			echo := BuiltinEcho{Text: tc.text}
+			echo := echo{Text: tc.text}
 			result, err := echo.Execute(ctx)
 
 			require.NoError(t, err)
@@ -125,12 +125,12 @@ func TestBuiltinFetch(t *testing.T) {
 
 	testCases := []struct {
 		name          string
-		fetch         BuiltinFetch
+		fetch         fetch
 		expectedError bool
 	}{
 		{
 			name: "fetch json",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:    server.URL + "/json",
 				Method: "GET",
 			},
@@ -138,7 +138,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "fetch text",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:    server.URL + "/text",
 				Method: "GET",
 			},
@@ -146,14 +146,14 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "default method",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL: server.URL + "/text",
 			},
 			expectedError: false,
 		},
 		{
 			name: "with headers",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:    server.URL + "/headers",
 				Method: "GET",
 				Headers: map[string]string{
@@ -164,7 +164,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "with timeout",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:     server.URL + "/text",
 				Method:  "GET",
 				Timeout: "1s",
@@ -173,7 +173,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "invalid url",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:    "http://invalid-url-that-does-not-exist.example",
 				Method: "GET",
 			},
@@ -181,7 +181,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "invalid timeout format",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:     server.URL + "/text",
 				Method:  "GET",
 				Timeout: "invalid",
@@ -190,7 +190,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "empty timeout",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:     server.URL + "/text",
 				Method:  "GET",
 				Timeout: "",
@@ -199,7 +199,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "complex timeout",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:     server.URL + "/text",
 				Method:  "GET",
 				Timeout: "1m30s",
@@ -208,7 +208,7 @@ func TestBuiltinFetch(t *testing.T) {
 		},
 		{
 			name: "invalid request",
-			fetch: BuiltinFetch{
+			fetch: fetch{
 				URL:    string([]byte{0x7f}),
 				Method: "GET",
 			},

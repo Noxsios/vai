@@ -12,6 +12,7 @@ type Builtin interface {
 
 // Builtins maps builtin names to their implementations
 var Builtins = map[string]Builtin{
-	"echo":  BuiltinEcho{},
-	"fetch": BuiltinFetch{},
+	"echo":          echo{},
+	"fetch":         fetch{},
+	"wacky-structs": wackyStructs{},
 }

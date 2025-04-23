@@ -138,6 +138,145 @@
               "if": {
                 "properties": {
                   "uses": {
+                    "type": "string",
+                    "pattern": "^builtin:wacky-structs(@.*)?$"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "with": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "properties": {
+                      "Int": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      "Bool": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "String": {
+                        "type": "string"
+                      },
+                      "Map": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object"
+                          }
+                        ]
+                      },
+                      "Slice": {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            true
+                          ]
+                        },
+                        "type": "array"
+                      },
+                      "Nested": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "properties": {
+                              "Field": {
+                                "type": "string"
+                              },
+                              "Slice": {
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    true
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              "IntSlice": {
+                                "items": {
+                                  "oneOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "integer"
+                                    }
+                                  ]
+                                },
+                                "type": "array"
+                              },
+                              "Map": {
+                                "type": "object"
+                              },
+                              "BoolMap": {
+                                "additionalProperties": {
+                                  "type": "boolean"
+                                },
+                                "type": "object"
+                              }
+                            },
+                            "additionalProperties": false,
+                            "type": "object",
+                            "required": [
+                              "Field",
+                              "Slice",
+                              "IntSlice",
+                              "Map",
+                              "BoolMap"
+                            ]
+                          }
+                        ],
+                        "required": [
+                          "Field",
+                          "Slice",
+                          "IntSlice",
+                          "Map",
+                          "BoolMap"
+                        ]
+                      }
+                    },
+                    "additionalProperties": false,
+                    "type": "object",
+                    "required": [
+                      "Int",
+                      "Bool",
+                      "String",
+                      "Map",
+                      "Slice",
+                      "Nested"
+                    ]
+                  }
+                },
+                "required": [
+                  "with"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "uses": {
                     "not": {
                       "pattern": "^builtin:.*$"
                     },
