@@ -7,6 +7,9 @@ build:
 	CGO_ENABLED=0 go build -o bin/ -ldflags="-s -w" ./cmd/maru2
 	go run gen/main.go
 
+lint:
+	golangci-lint run ./...
+
 clean:
 	rm -rf bin/
 
@@ -17,4 +20,4 @@ alias:
 hello-world:
 	echo "Hello, World!"
 
-.PHONY: build clean alias hello-world
+.PHONY: build clean alias hello-world lint

@@ -81,22 +81,18 @@ func TestExecuteBuiltin(t *testing.T) {
 			step: Step{
 				Uses: "builtin:echo",
 				With: With{
-					"invalid": make(chan int), // Channels can't be marshaled to JSON
+					"text": make(chan int),
 				},
 			},
 			with:          With{},
 			dry:           false,
-			expectedError: "builtin:echo: json: unsupported type: chan int",
+			expectedError: "builtin:echo: decoding failed due to the following error(s):\n\n'Text' expected type 'string', got unconvertible type 'chan int', value: '0xc0000487e0'",
 			expected:      nil,
-			// This test now passes with nil error due to changes in implementation
 		},
 		{
 			name: "fetch builtin with invalid with",
 			step: Step{
 				Uses: "builtin:fetch",
-				With: With{
-					"invalid": make(chan int), // Channels can't be marshaled to JSON
-				},
 			},
 			with:          With{},
 			dry:           false,
@@ -150,13 +146,8 @@ func TestExecuteBuiltin(t *testing.T) {
 					assert.Equal(t, tc.expected, result)
 				}
 			} else {
-				if tc.name == "echo builtin with invalid with" {
-					// This test case now passes with nil error due to implementation changes
-					// Skip the error check for this specific test
-				} else {
-					require.EqualError(t, err, tc.expectedError)
-					assert.Nil(t, result)
-				}
+				require.EqualError(t, err, tc.expectedError)
+				assert.Nil(t, result)
 			}
 
 			if tc.expectedLog != "" {
