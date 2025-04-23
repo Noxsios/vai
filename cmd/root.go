@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2024-Present Defense Unicorns
+// SPDX-FileCopyrightText: 2024-Present Harry Randazzo
 
 // Package cmd provides the root command for the vai CLI.
 package cmd
