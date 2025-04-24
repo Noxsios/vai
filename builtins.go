@@ -26,10 +26,19 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 	var rendered With
 	if with != nil {
 		var err error
-		rendered, err = TemplateWithMap(with, previous, step.With)
+		rendered, err = TemplateWithMap(ctx, with, previous, step.With, dry)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
+	}
+
+	if dry {
+		logger.Info("dry run", "builtin", name)
+		err := printBuiltin(ctx, rendered)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
 	}
 
 	if rendered != nil {
@@ -44,11 +53,6 @@ func ExecuteBuiltin(ctx context.Context, step Step, with With, previous CommandO
 		if err := decoder.Decode(rendered); err != nil {
 			return nil, fmt.Errorf("%s: %w", step.Uses, err)
 		}
-	}
-
-	if dry {
-		logger.Info("dry run", "builtin", name, "with", rendered)
-		return nil, nil
 	}
 
 	result, err := builtin.Execute(ctx)

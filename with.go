@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"maps"
 	"runtime"
+	"slices"
 	"strings"
 	"text/template"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cast"
 )
@@ -22,33 +24,8 @@ import (
 // as `foo=bar` to the command.
 type With = map[string]any
 
-func constructTemplateEvaluator(input With, previousOutputs CommandOutputs) *template.Template {
-	fm := template.FuncMap{
-		"input": func(in string) (any, error) {
-			v, ok := input[in]
-			if !ok {
-				return "", fmt.Errorf("%q does not exist in the map of inputs", in)
-			}
-			return v, nil
-		},
-		"from": func(stepName, id string) (any, error) {
-			stepOutputs, ok := previousOutputs[stepName]
-			if !ok {
-				return "", fmt.Errorf("no outputs for step %q", stepName)
-			}
-
-			v, ok := stepOutputs[id]
-			if ok {
-				return v, nil
-			}
-			return "", fmt.Errorf("no output %q from %q", id, stepName)
-		},
-	}
-	return template.New("expression evaluator").Option("missingkey=error").Delims("${{", "}}").Funcs(fm)
-}
-
 // TemplateWith templates a With map with the given input and previous outputs
-func TemplateWith(ctx context.Context, input, local With, previousOutputs CommandOutputs) (With, error) {
+func TemplateWith(ctx context.Context, input, local With, previousOutputs CommandOutputs, dry bool) (With, error) {
 	logger := log.FromContext(ctx)
 
 	if len(local) == 0 {
@@ -66,7 +43,7 @@ func TemplateWith(ctx context.Context, input, local With, previousOutputs Comman
 			r[k] = v
 			continue
 		}
-		result, err := TemplateString(input, previousOutputs, val)
+		result, err := TemplateString(ctx, input, previousOutputs, val, dry)
 		if err != nil {
 			return nil, err
 		}
@@ -79,11 +56,76 @@ func TemplateWith(ctx context.Context, input, local With, previousOutputs Comman
 }
 
 // TemplateString templates a string with the given input and previous outputs
-func TemplateString(input With, previousOutputs CommandOutputs, str string) (string, error) {
-	tmpl, err := constructTemplateEvaluator(input, previousOutputs).Parse(str)
+func TemplateString(ctx context.Context, input With, previousOutputs CommandOutputs, str string, dry bool) (string, error) {
+	var tmpl *template.Template
+
+	inputKeys := make([]string, 0, len(input))
+	for k := range maps.Keys(input) {
+		inputKeys = append(inputKeys, k)
+	}
+	slices.Sort(inputKeys)
+
+	logger := log.FromContext(ctx)
+
+	if dry {
+		style := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFBF00")) // amber
+
+		fm := template.FuncMap{
+			"input": func(in string) (any, error) {
+				v, ok := input[in]
+				if !ok {
+					logger.Warnf("input %q was not provided, available: %s", in, inputKeys)
+					return style.Render(fmt.Sprintf("❯ input %s ❮", in)), nil
+				}
+				return v, nil
+			},
+			"from": func(stepName, id string) (any, error) {
+				stepOutputs, ok := previousOutputs[stepName]
+				if !ok {
+					logger.Warnf("no outputs from step %q", stepName)
+					return style.Render(fmt.Sprintf("❯ from %s %s ❮", stepName, id)), nil
+				}
+
+				v, ok := stepOutputs[id]
+				if ok {
+					return v, nil
+				}
+				logger.Warnf("no output %q from %q", id, stepName)
+				return style.Render(fmt.Sprintf("❯ from %s %s ❮", stepName, id)), nil
+			},
+		}
+		tmpl = template.New("dry-run expression evaluator").Funcs(fm)
+	} else {
+		fm := template.FuncMap{
+			"input": func(in string) (any, error) {
+				v, ok := input[in]
+				if !ok {
+					return "", fmt.Errorf("input %q does not exist in %s", in, inputKeys)
+				}
+				return v, nil
+			},
+			"from": func(stepName, id string) (any, error) {
+				stepOutputs, ok := previousOutputs[stepName]
+				if !ok {
+					return "", fmt.Errorf("no outputs from step %q", stepName)
+				}
+
+				v, ok := stepOutputs[id]
+				if ok {
+					return v, nil
+				}
+				return "", fmt.Errorf("no output %q from step %q", id, stepName)
+			},
+		}
+		tmpl = template.New("expression evaluator").Funcs(fm)
+	}
+
+	var err error
+	tmpl, err = tmpl.Option("missingkey=error").Delims("${{", "}}").Parse(str)
 	if err != nil {
 		return "", err
 	}
+
 	var result strings.Builder
 
 	if err := tmpl.Execute(&result, struct {
@@ -97,32 +139,33 @@ func TemplateString(input With, previousOutputs CommandOutputs, str string) (str
 	}); err != nil {
 		return "", err
 	}
+
 	return result.String(), nil
 }
 
 // TemplateWithMap recursively processes a With map and templates all string values
-func TemplateWithMap(input With, previousOutputs CommandOutputs, withMap With) (With, error) {
+func TemplateWithMap(ctx context.Context, input With, previousOutputs CommandOutputs, withMap With, dry bool) (With, error) {
 	if withMap == nil {
 		return nil, nil
 	}
 
-	result := make(With)
+	result := make(With, len(withMap))
 	for k, v := range withMap {
 		switch val := v.(type) {
 		case string:
-			templated, err := TemplateString(input, previousOutputs, val)
+			templated, err := TemplateString(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}
 			result[k] = templated
 		case map[string]any:
-			nestedMap, err := TemplateWithMap(input, previousOutputs, val)
+			nestedMap, err := TemplateWithMap(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}
 			result[k] = nestedMap
 		case []any:
-			templatedSlice, err := templateSlice(input, previousOutputs, val)
+			templatedSlice, err := templateSlice(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}
@@ -135,24 +178,24 @@ func TemplateWithMap(input With, previousOutputs CommandOutputs, withMap With) (
 }
 
 // templateSlice recursively processes a slice and templates all string values
-func templateSlice(input With, previousOutputs CommandOutputs, slice []any) ([]any, error) {
+func templateSlice(ctx context.Context, input With, previousOutputs CommandOutputs, slice []any, dry bool) ([]any, error) {
 	result := make([]any, len(slice))
 	for i, v := range slice {
 		switch val := v.(type) {
 		case string:
-			templated, err := TemplateString(input, previousOutputs, val)
+			templated, err := TemplateString(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}
 			result[i] = templated
 		case map[string]any:
-			nestedMap, err := TemplateWithMap(input, previousOutputs, val)
+			nestedMap, err := TemplateWithMap(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}
 			result[i] = nestedMap
 		case []any:
-			templatedSlice, err := templateSlice(input, previousOutputs, val)
+			templatedSlice, err := templateSlice(ctx, input, previousOutputs, val, dry)
 			if err != nil {
 				return nil, err
 			}

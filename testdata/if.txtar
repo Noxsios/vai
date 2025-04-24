@@ -33,6 +33,9 @@ $ echo 6
 $ echo 7
 
 ERRO exit status 1
+  traceback (most recent call first)=
+  │ at fails[0] (file:tasks.yaml)
+  │ at continues[3] (file:tasks.yaml)
 -- stdout.txt --
 0
 2

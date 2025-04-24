@@ -5,7 +5,6 @@ package maru2
 
 import (
 	"bytes"
-	"context"
 	"strings"
 	"testing"
 
@@ -135,8 +134,7 @@ func TestExecuteBuiltin(t *testing.T) {
 			t.Parallel()
 
 			var buf bytes.Buffer
-			logger := log.New(&buf)
-			ctx := log.WithContext(context.Background(), logger)
+			ctx := log.WithContext(t.Context(), log.New(&buf))
 
 			result, err := ExecuteBuiltin(ctx, tc.step, tc.with, CommandOutputs{}, tc.dry)
 

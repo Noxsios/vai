@@ -4,16 +4,18 @@
 package maru2
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/goccy/go-yaml"
 	"github.com/stretchr/testify/require"
 )
 
 func TestExecuteUses(t *testing.T) {
-	ctx := t.Context()
+	ctx := log.WithContext(t.Context(), log.New(io.Discard))
 
 	workflowFoo := Workflow{Tasks: TaskMap{"default": {Step{Run: "echo 'foo'"}, Step{Uses: "file:bar/baz.yaml?task=baz"}}}}
 	workflowBaz := Workflow{Tasks: TaskMap{"baz": {Step{Run: "echo 'baz'"}, Step{Uses: "file:../hello-world.yaml"}}}}

@@ -28,11 +28,6 @@ hello-world:
 benchmark:
   - run: hyperfine './bin/maru2 hello-world' 'make hello-world' -N --warmup 10
 
-simple:
-  - uses: builtin:echo
-    with:
-      text: ${{ input "text" }}
-
 chuck:
   - uses: builtin:fetch
     with:
@@ -55,3 +50,13 @@ continues:
   - run: echo 3
   - if: always
     run: echo 3
+
+bad-echo:
+  - run: echo "${{ input "text2" }}"
+
+show-stack-trace:
+  - uses: bad-echo
+  - uses: builtin:echo
+    with:
+      text: ${{ input "text2" }}
+  - uses: continues

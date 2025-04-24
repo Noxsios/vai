@@ -4,7 +4,6 @@
 package maru2
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -44,7 +43,7 @@ func TestPrintScript(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := log.WithContext(context.TODO(), log.New(&buf))
+			ctx := log.WithContext(t.Context(), log.New(&buf))
 			printScript(ctx, tc.prefix, tc.script)
 			require.Equal(t, tc.expected, ansi.Strip(buf.String()))
 			buf.Reset()

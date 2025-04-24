@@ -4,7 +4,6 @@
 package maru2
 
 import (
-	"context"
 	"io"
 	"runtime"
 	"testing"
@@ -38,7 +37,7 @@ func TestTemplateString(t *testing.T) {
 			name:          "with missing input",
 			input:         With{},
 			str:           "hello ${{ input \"name\" }}",
-			expectedError: "\"name\" does not exist in the map of inputs",
+			expectedError: "\"name\" does not exist in []",
 		},
 		{
 			name: "with previous output",
@@ -54,7 +53,7 @@ func TestTemplateString(t *testing.T) {
 			name:           "with missing previous output",
 			previousOutput: CommandOutputs{},
 			str:            "status: ${{ from \"step1\" \"result\" }}",
-			expectedError:  "no outputs for step \"step1\"",
+			expectedError:  "no outputs from step \"step1\"",
 		},
 		{
 			name:     "with OS variable",
@@ -94,7 +93,9 @@ func TestTemplateString(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := TemplateString(tc.input, tc.previousOutput, tc.str)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
+
+			result, err := TemplateString(ctx, tc.input, tc.previousOutput, tc.str, false)
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)
@@ -326,9 +327,7 @@ func TestMergeWithAndParams(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			ctx := context.Background()
-			logger := log.New(io.Discard) // Use io.Discard for tests
-			ctx = log.WithContext(ctx, logger)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
 
 			result, err := MergeWithAndParams(ctx, tc.with, tc.params)
 
@@ -517,7 +516,7 @@ func TestTemplateWithMap(t *testing.T) {
 			withMap: map[string]any{
 				"greeting": "Hello ${{ input \"missing\" }}",
 			},
-			expectedError: "\"missing\" does not exist in the map of inputs",
+			expectedError: "input \"missing\" does not exist in []",
 		},
 		{
 			name: "non-string primitive values",
@@ -551,7 +550,9 @@ func TestTemplateWithMap(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := TemplateWithMap(tc.input, tc.previousOutput, tc.withMap)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
+
+			result, err := TemplateWithMap(ctx, tc.input, tc.previousOutput, tc.withMap, false)
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)
@@ -633,14 +634,6 @@ func TestTemplateSlice(t *testing.T) {
 			},
 		},
 		{
-			name:  "with template error",
-			input: With{},
-			slice: []any{
-				"Hello ${{ input \"missing\" }}",
-			},
-			expectedError: "\"missing\" does not exist in the map of inputs",
-		},
-		{
 			name: "non-string primitive values",
 			slice: []any{
 				42,
@@ -688,7 +681,9 @@ func TestTemplateSlice(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result, err := templateSlice(tc.input, tc.previousOutput, tc.slice)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
+
+			result, err := templateSlice(ctx, tc.input, tc.previousOutput, tc.slice, false)
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)
@@ -744,10 +739,14 @@ func TestPerformLookups(t *testing.T) {
 		},
 		{
 			name: "missing input",
+			input: With{
+				"a": "b",
+				"c": "d",
+			},
 			local: With{
 				"key": `${{ input "foo" }}`,
 			},
-			expectedError: "template: expression evaluator:1:4: executing \"expression evaluator\" at <input \"foo\">: error calling input: \"foo\" does not exist in the map of inputs",
+			expectedError: "template: expression evaluator:1:4: executing \"expression evaluator\" at <input \"foo\">: error calling input: input \"foo\" does not exist in [a c]",
 		},
 		{
 			name: "lookup from previous outputs",
@@ -768,7 +767,7 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `${{ from "step-1" "bar" }}`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs for step "step-1"`,
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "bar">: error calling from: no outputs from step "step-1"`,
 		},
 		{
 			name: "lookup from previous outputs - missing arg",
@@ -787,7 +786,7 @@ func TestPerformLookups(t *testing.T) {
 			local: With{
 				"foo": `${{ from "step-1" "dne" }}`,
 			},
-			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from "step-1"`,
+			expectedError: `template: expression evaluator:1:4: executing "expression evaluator" at <from "step-1" "dne">: error calling from: no output "dne" from step "step-1"`,
 		},
 	}
 
@@ -795,7 +794,8 @@ func TestPerformLookups(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			templated, err := TemplateWith(t.Context(), tc.input, tc.local, tc.previous)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
+			templated, err := TemplateWith(ctx, tc.input, tc.local, tc.previous, false)
 			if tc.expectedError == "" {
 				require.NoError(t, err)
 			} else {

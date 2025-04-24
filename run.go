@@ -6,6 +6,7 @@ package maru2
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"os"
@@ -25,9 +26,6 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		taskName = DefaultTaskName
 	}
 
-	logger := log.FromContext(ctx)
-	logger.Debug("run", "task", taskName, "from", origin, "dry-run", dry)
-
 	task, ok := wf.Tasks.Find(taskName)
 	if !ok {
 		return nil, fmt.Errorf("task %q not found", taskName)
@@ -38,18 +36,21 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		return nil, err
 	}
 
+	logger := log.FromContext(ctx)
 	outputs := make(CommandOutputs)
 	var firstError error
 
 	start := time.Now()
 	for i, step := range task {
 		if (firstError == nil && step.If == "failure") || (firstError != nil && step.If == "") {
-			logger.Debug("skipping step", "name", step.Name, "idx", i, "if", step.If)
+			logger.Debug("skip", "step", fmt.Sprintf("%s[%d]", taskName, i), "if", step.If)
 			continue
 		}
 
 		var stepResult map[string]any
 		isLastStep := i == len(task)-1
+
+		logger.Debug("run", "step", fmt.Sprintf("%s[%d]", taskName, i))
 
 		if step.Uses != "" {
 			stepResult, err = handleUsesStep(ctx, step, wf, withDefaults, outputs, origin, dry)
@@ -57,13 +58,14 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 			stepResult, err = handleRunStep(ctx, step, withDefaults, outputs, dry)
 		}
 
+		logger.Debug("ran", "step", fmt.Sprintf("%s[%d]", taskName, i), "outputs", len(stepResult), "duration", time.Since(start))
+
 		if err != nil && firstError == nil {
-			firstError = err
+			firstError = addTrace(err, fmt.Sprintf("at %s[%d] (%s)", taskName, i, origin))
 			continue
 		}
 
 		if isLastStep && stepResult != nil {
-			logger.Debug("completed", "task", taskName, "duration", time.Since(start), "error", firstError != nil, "outputs", len(stepResult))
 			return stepResult, firstError
 		}
 
@@ -73,21 +75,17 @@ func Run(ctx context.Context, wf Workflow, taskName string, outer With, origin s
 		}
 	}
 
-	logger.Debug("completed", "task", taskName, "duration", time.Since(start), "error", firstError != nil)
 	return nil, firstError
 }
 
 func handleUsesStep(ctx context.Context, step Step, wf Workflow, withDefaults With,
 	outputs CommandOutputs, origin string, dry bool) (map[string]any, error) {
 
-	logger := log.FromContext(ctx)
-	logger.Debug("uses", "task", step.Uses)
-
 	if strings.HasPrefix(step.Uses, "builtin:") {
 		return ExecuteBuiltin(ctx, step, withDefaults, outputs, dry)
 	}
 
-	templatedWith, err := TemplateWith(ctx, withDefaults, step.With, outputs)
+	templatedWith, err := TemplateWith(ctx, withDefaults, step.With, outputs, dry)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +99,11 @@ func handleUsesStep(ctx context.Context, step Step, wf Workflow, withDefaults Wi
 func handleRunStep(ctx context.Context, step Step, withDefaults With,
 	outputs CommandOutputs, dry bool) (map[string]any, error) {
 
-	templatedRun, err := TemplateString(withDefaults, outputs, step.Run)
+	templatedRun, err := TemplateString(ctx, withDefaults, outputs, step.Run, dry)
 	if err != nil {
+		if dry {
+			printScript(ctx, "$", templatedRun)
+		}
 		return nil, err
 	}
 
@@ -168,4 +169,36 @@ func prepareEnvironment(withDefaults With, outFileName string) []string {
 
 func toEnvVar(s string) string {
 	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
+}
+
+// TraceError is an error with a logical stack trace
+type TraceError struct {
+	err   error    // The original error
+	Trace []string // Logical stack trace
+}
+
+var _ error = &TraceError{}
+
+// Error returns the original error message
+func (e *TraceError) Error() string {
+	return e.err.Error()
+}
+
+// Unwrap returns the underlying error
+func (e *TraceError) Unwrap() error {
+	return e.err
+}
+
+// addTrace adds a new frame and returns a new TraceError
+func addTrace(err error, frame string) error {
+	var tErr *TraceError
+	if errors.As(err, &tErr) {
+		tErr.Trace = append([]string{frame}, tErr.Trace...)
+		return tErr
+	}
+
+	return &TraceError{
+		err:   err,
+		Trace: []string{frame},
+	}
 }

@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime/debug"
+	"slices"
+	"strings"
 	"syscall"
 	"time"
 
@@ -139,6 +141,11 @@ func NewRootCmd() *cobra.Command {
 			rootOrigin := "file:" + filename
 
 			for _, call := range args {
+				start := time.Now()
+				logger.Debug("run", "task", call, "from", rootOrigin, "dry-run", dry)
+				defer func() {
+					logger.Debug("ran", "task", call, "from", rootOrigin, "dry-run", dry, "duration", time.Since(start))
+				}()
 				_, err := maru2.Run(ctx, wf, call, with, rootOrigin, dry)
 				if err != nil {
 					if errors.Is(ctx.Err(), context.DeadlineExceeded) {
@@ -180,7 +187,14 @@ func Main() int {
 	ctx = log.WithContext(ctx, logger)
 	if err := cli.ExecuteContext(ctx); err != nil {
 		logger.Print("")
-		logger.Error(err)
+		var tErr *maru2.TraceError
+		if errors.As(err, &tErr) {
+			trace := tErr.Trace
+			slices.Reverse(trace)
+			logger.Error(tErr, "traceback (most recent call first)", strings.Join(trace, "\n"))
+		} else {
+			logger.Error(err)
+		}
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 				return status.ExitStatus()

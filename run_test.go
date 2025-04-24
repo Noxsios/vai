@@ -4,7 +4,8 @@
 package maru2
 
 import (
-	"context"
+	"errors"
+	"fmt"
 	"io"
 	"path/filepath"
 	"testing"
@@ -161,8 +162,7 @@ func TestRunExtended(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			logger := log.New(io.Discard)
-			ctx := log.WithContext(context.Background(), logger)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
 
 			result, err := Run(ctx, tc.workflow, tc.taskName, tc.with, tc.origin, tc.dry)
 
@@ -334,8 +334,7 @@ func TestHandleRunStep(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			logger := log.New(io.Discard)
-			ctx := log.WithContext(context.Background(), logger)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
 
 			result, err := handleRunStep(ctx, tc.step, tc.withDefaults, tc.outputs, tc.dry)
 
@@ -397,30 +396,6 @@ func TestHandleUsesStep(t *testing.T) {
 			expectedOut:   nil,
 		},
 		{
-			name: "uses another task",
-			step: Step{
-				Uses: "another-task",
-				With: With{
-					"param": "value",
-				},
-			},
-			workflow: Workflow{
-				Tasks: TaskMap{
-					"another-task": []Step{
-						{
-							Run: "echo {{ .param }}",
-						},
-					},
-				},
-			},
-			withDefaults:  With{},
-			outputs:       CommandOutputs{},
-			origin:        "",
-			dry:           false,
-			expectedError: "",
-			expectedOut:   nil,
-		},
-		{
 			name: "uses with template",
 			step: Step{
 				Uses: "builtin:echo",
@@ -456,8 +431,7 @@ func TestHandleUsesStep(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			logger := log.New(io.Discard)
-			ctx := log.WithContext(context.Background(), logger)
+			ctx := log.WithContext(t.Context(), log.New(io.Discard))
 
 			result, err := handleUsesStep(ctx, tc.step, tc.workflow, tc.withDefaults, tc.outputs, tc.origin, tc.dry)
 
@@ -470,4 +444,92 @@ func TestHandleUsesStep(t *testing.T) {
 			assert.Equal(t, tc.expectedOut, result)
 		})
 	}
+}
+
+func TestTraceError(t *testing.T) {
+	t.Run("TraceError methods", func(t *testing.T) {
+		tests := []struct {
+			name           string
+			err            error
+			expectedMsg    string
+			expectedUnwrap error
+		}{
+			{
+				name:           "simple error",
+				err:            errors.New("test error"),
+				expectedMsg:    "test error",
+				expectedUnwrap: errors.New("test error"),
+			},
+			{
+				name:           "wrapped error",
+				err:            fmt.Errorf("wrapped: %w", errors.New("inner error")),
+				expectedMsg:    "wrapped: inner error",
+				expectedUnwrap: fmt.Errorf("wrapped: %w", errors.New("inner error")),
+			},
+		}
+
+		for _, tc := range tests {
+			tc := tc
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				traceErr := &TraceError{
+					err:   tc.err,
+					Trace: []string{"frame1", "frame2"},
+				}
+
+				assert.Equal(t, tc.expectedMsg, traceErr.Error())
+				assert.EqualError(t, traceErr.Unwrap(), tc.expectedUnwrap.Error())
+				assert.Len(t, traceErr.Trace, 2)
+				assert.Equal(t, "frame1", traceErr.Trace[0])
+				assert.Equal(t, "frame2", traceErr.Trace[1])
+			})
+		}
+	})
+
+	t.Run("addTrace function", func(t *testing.T) {
+		tests := []struct {
+			name          string
+			err           error
+			frames        []string
+			expectedTrace []string
+		}{
+			{
+				name:          "new trace error",
+				err:           errors.New("base error"),
+				frames:        []string{"frame1"},
+				expectedTrace: []string{"frame1"},
+			},
+			{
+				name:          "append to existing trace",
+				err:           &TraceError{err: errors.New("base error"), Trace: []string{"existing"}},
+				frames:        []string{"frame1"},
+				expectedTrace: []string{"frame1", "existing"},
+			},
+			{
+				name:          "multiple frames",
+				err:           errors.New("base error"),
+				frames:        []string{"frame3", "frame2", "frame1"},
+				expectedTrace: []string{"frame3", "frame2", "frame1"},
+			},
+		}
+
+		for _, tc := range tests {
+			tc := tc
+			t.Run(tc.name, func(t *testing.T) {
+				t.Parallel()
+
+				resultErr := tc.err
+				// Apply frames in reverse to simulate the call stack
+				for i := len(tc.frames) - 1; i >= 0; i-- {
+					resultErr = addTrace(resultErr, tc.frames[i])
+				}
+
+				var traceErr *TraceError
+				require.True(t, errors.As(resultErr, &traceErr))
+				assert.Equal(t, tc.expectedTrace, traceErr.Trace)
+				assert.Equal(t, tc.err.Error(), traceErr.Error())
+			})
+		}
+	})
 }

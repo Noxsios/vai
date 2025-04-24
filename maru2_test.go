@@ -4,14 +4,15 @@
 package maru2
 
 import (
-	"context"
+	"io"
 	"testing"
 
+	"github.com/charmbracelet/log"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRun(t *testing.T) {
-	ctx := context.Background()
+	ctx := log.WithContext(t.Context(), log.New(io.Discard))
 	with := With{}
 
 	// simple happy path
