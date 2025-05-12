@@ -13,8 +13,8 @@ retract (
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/alecthomas/chroma/v2 v2.15.0
-	github.com/charmbracelet/lipgloss v1.0.0
-	github.com/charmbracelet/log v0.4.0
+	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/charmbracelet/log v0.4.2
 	github.com/charmbracelet/x/ansi v0.8.0
 	github.com/d5/tengo/v2 v2.17.0
 	github.com/goccy/go-yaml v1.15.23
@@ -34,6 +34,9 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
+	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
+	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.4 // indirect
 	github.com/fatih/color v1.18.0 // indirect
@@ -53,6 +56,7 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
